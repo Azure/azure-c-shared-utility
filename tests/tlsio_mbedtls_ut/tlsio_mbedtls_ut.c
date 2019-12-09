@@ -98,6 +98,7 @@ MOCKABLE_FUNCTION(, int, mbedtls_ssl_handshake_step, mbedtls_ssl_context*, ssl)
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_setup, mbedtls_ssl_context*, ssl, const mbedtls_ssl_config*, conf)
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_set_session, mbedtls_ssl_context*, ssl, const mbedtls_ssl_session*, session)
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_read, mbedtls_ssl_context*, ssl, unsigned char*, buf, size_t, len)
+MOCKABLE_FUNCTION(, size_t, mbedtls_ssl_get_max_frag_len, const mbedtls_ssl_context*, ssl)
 
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_authmode, mbedtls_ssl_config*, conf, int, authmode)
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_rng, mbedtls_ssl_config*, conf, f_rng, fr, void*, p_rng);
@@ -149,6 +150,8 @@ static ON_BYTES_RECEIVED g_on_bytes_received = NULL;
 static void* g_on_bytes_received_ctx = NULL;
 static ON_IO_ERROR g_on_io_error = NULL;
 static void* g_on_io_error_ctx = NULL;
+static size_t g_max_send_fragment_size = 0;
+static int g_failed_fragment_index = -1;
 
 static mbedtls_ssl_send_t* mbed_f_send = NULL;
 static mbedtls_ssl_recv_t* mbed_f_recv = NULL;
@@ -204,6 +207,30 @@ static void my_xio_destroy(XIO_HANDLE xio)
     my_gballoc_free(xio);
 }
 
+static int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+{
+    (void)xio;
+    (void)buffer;
+    (void)size;
+    (void)on_send_complete;
+
+    if (on_send_complete != NULL)
+    {
+        if (g_failed_fragment_index == 0)
+        {
+            on_send_complete(callback_context, IO_SEND_ERROR);
+        }
+        else
+        {
+            on_send_complete(callback_context, IO_SEND_OK);
+        }
+
+        g_failed_fragment_index >= 0 ? g_failed_fragment_index-- : g_failed_fragment_index;
+    }
+
+    return 0;
+}
+
 static void my_mbedtls_ssl_set_bio(mbedtls_ssl_context* ssl, void* p_bio, mbedtls_ssl_send_t* f_send, mbedtls_ssl_recv_t* f_recv, mbedtls_ssl_recv_timeout_t* f_recv_timeout)
 {
     (void)ssl;
@@ -221,6 +248,30 @@ static int my_mbedtls_entropy_add_source(mbedtls_entropy_context* ctx, mbedtls_e
     (void)strong;
     g_entropy_f_source = f_source;
     return 0;
+}
+
+static int my_mbedtls_ssl_write(mbedtls_ssl_context* ssl, const unsigned char *buf, size_t len)
+{
+    int ret;
+    (void)buf;
+
+    if (mbed_f_send != NULL)
+    {
+        // send tls app data
+        ssl->out_msgtype = MBEDTLS_SSL_MSG_APPLICATION_DATA;
+        mbed_f_send(g_mbedtls_ctx, buf, len);
+    }
+
+    if (g_max_send_fragment_size > 0)
+    {
+        ret = (int)(g_max_send_fragment_size > len ? len : g_max_send_fragment_size);
+    }
+    else
+    {
+        ret = (int)len;
+    }
+
+    return ret;
 }
 
 static void my_os_delay_us(int us)
@@ -332,6 +383,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_GLOBAL_MOCK_HOOK(xio_open, my_xio_open);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_open, __LINE__);
         REGISTER_GLOBAL_MOCK_HOOK(xio_destroy, my_xio_destroy);
+        REGISTER_GLOBAL_MOCK_HOOK(xio_send, my_xio_send);
 
         REGISTER_GLOBAL_MOCK_RETURN(socketio_get_interface_description, TEST_INTERFACE_DESC);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(socketio_get_interface_description, NULL);
@@ -339,6 +391,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_GLOBAL_MOCK_RETURN(mbedtls_ssl_read, 0);
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_ssl_set_bio, my_mbedtls_ssl_set_bio);
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_entropy_add_source, my_mbedtls_entropy_add_source);
+        REGISTER_GLOBAL_MOCK_HOOK(mbedtls_ssl_write, my_mbedtls_ssl_write);
 
         REGISTER_GLOBAL_MOCK_HOOK(on_io_open_complete, my_on_io_open_complete);
         REGISTER_GLOBAL_MOCK_HOOK(on_bytes_received, my_on_bytes_received);
@@ -369,6 +422,9 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         mbed_f_send = NULL;
         mbed_f_recv = NULL;
         mbed_f_recv_timeout = NULL;
+
+        g_max_send_fragment_size = 0;
+        g_failed_fragment_index = -1;
 
         umock_c_reset_all_calls();
     }
@@ -762,6 +818,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
+        STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
         STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(TEST_DATA_SIZE);
 
         //act
@@ -789,10 +846,98 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(1);
+        STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
+        STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(-1);
 
         //act
         int result = tlsio_mbedtls_send(handle, TEST_DATA_VALUE, TEST_DATA_SIZE, on_send_complete, NULL);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_send_large_payload_success)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        size_t MAX_FRAGMENT_SIZE = 1;
+        int rounds = 3;
+        size_t total_data = rounds * MAX_FRAGMENT_SIZE;
+        const unsigned char* dummy_data = (const unsigned char*) 0x51;
+        g_max_send_fragment_size = MAX_FRAGMENT_SIZE;
+
+        for (int index = 0; index < rounds; index++)
+        {
+            size_t data_left = total_data - index * MAX_FRAGMENT_SIZE;
+            size_t data_processed = data_left > MAX_FRAGMENT_SIZE ? MAX_FRAGMENT_SIZE : data_left;
+            const unsigned char* data_ptr = dummy_data + index * MAX_FRAGMENT_SIZE;
+            STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+            STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, data_ptr, data_left));
+            STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        }
+
+        STRICT_EXPECTED_CALL(on_send_complete(IGNORED_PTR_ARG, IO_SEND_OK));
+
+        //act
+        int result = tlsio_mbedtls_send(handle, dummy_data, total_data, on_send_complete, NULL);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_send_large_payload_failure)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        size_t MAX_FRAGMENT_SIZE = 1;
+        int rounds = 3;
+        size_t total_data = rounds * MAX_FRAGMENT_SIZE;
+        const unsigned char* dummy_data = (const unsigned char*) 0x51;
+        g_failed_fragment_index = 1; // second fragment to fail
+        g_max_send_fragment_size = MAX_FRAGMENT_SIZE;
+
+        for (int index = 0; index <= g_failed_fragment_index; index++)
+        {
+            size_t data_left = total_data - index * MAX_FRAGMENT_SIZE;
+            size_t data_processed = data_left > MAX_FRAGMENT_SIZE ? MAX_FRAGMENT_SIZE : data_left;
+            const unsigned char* data_ptr = dummy_data + index * MAX_FRAGMENT_SIZE;
+            STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+            STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, data_ptr, data_left));
+            STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        }
+
+        STRICT_EXPECTED_CALL(on_send_complete(IGNORED_PTR_ARG, IO_SEND_ERROR));
+
+        //act
+        int result = tlsio_mbedtls_send(handle, dummy_data, total_data, on_send_complete, NULL);
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
