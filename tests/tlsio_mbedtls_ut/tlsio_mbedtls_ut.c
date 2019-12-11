@@ -125,6 +125,10 @@ MOCKABLE_FUNCTION(, int, mbedtls_entropy_add_source, mbedtls_entropy_context*, c
 MOCKABLE_FUNCTION(, int, mbedtls_entropy_func, void*, data, unsigned char*, output, size_t, len);
 MOCKABLE_FUNCTION(, void, mbedtls_entropy_free, mbedtls_entropy_context*, ctx)
 
+MOCKABLE_FUNCTION(, void, mbedtls_pk_init, mbedtls_pk_context*, ctx);
+MOCKABLE_FUNCTION(, mbedtls_pk_type_t, mbedtls_pk_get_type, const mbedtls_pk_context*, ctx);
+MOCKABLE_FUNCTION(, void, mbedtls_pk_free, mbedtls_pk_context*, ctx);
+
 MOCKABLE_FUNCTION(, void, on_io_open_complete, void*, context, IO_OPEN_RESULT, open_result);
 MOCKABLE_FUNCTION(, void, on_bytes_received, void*, context, const unsigned char*, buffer, size_t, size);
 MOCKABLE_FUNCTION(, void, on_io_error, void*, context);
@@ -363,6 +367,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_UMOCK_ALIAS_TYPE(ON_IO_ERROR, void*);
         REGISTER_UMOCK_ALIAS_TYPE(ON_IO_CLOSE_COMPLETE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(ON_SEND_COMPLETE, void*);
+        REGISTER_UMOCK_ALIAS_TYPE(mbedtls_pk_type_t, int);
 
         REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
         REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
@@ -458,6 +463,8 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(xio_create(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_init(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_x509_crt_init(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_pk_init(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_init(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_add_source(IGNORED_PTR_ARG, IGNORED_PTR_ARG, NULL, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_init(IGNORED_PTR_ARG));
@@ -561,6 +568,8 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mbedtls_ssl_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_pk_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
@@ -1146,6 +1155,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
 
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_X509_CERTIFICATE));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_parse(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_pk_get_type(IGNORED_PTR_ARG)).SetReturn(MBEDTLS_PK_NONE);
 
         //act
         tlsio_mbedtls_setoption(handle, SU_OPTION_X509_CERT, TEST_X509_CERTIFICATE);
