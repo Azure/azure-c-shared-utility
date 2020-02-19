@@ -24,7 +24,7 @@ typedef struct MAP_HANDLE_DATA_TAG
 MAP_HANDLE Map_Create(MAP_FILTER_CALLBACK mapFilterFunc)
 {
     /*Codes_SRS_MAP_02_001: [Map_Create shall create a new, empty map.]*/
-    MAP_HANDLE_DATA* result = (MAP_HANDLE_DATA*)malloc(sizeof(MAP_HANDLE_DATA));
+    MAP_HANDLE_DATA* result = (MAP_HANDLE_DATA*)calloc(1, sizeof(MAP_HANDLE_DATA));
     /*Codes_SRS_MAP_02_002: [If during creation there are any error, then Map_Create shall return NULL.]*/
     if (result != NULL)
     {
@@ -109,7 +109,7 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
     else
     {
         MAP_HANDLE_DATA * handleData = (MAP_HANDLE_DATA *)handle;
-        result = (MAP_HANDLE_DATA*)malloc(sizeof(MAP_HANDLE_DATA));
+        result = (MAP_HANDLE_DATA*)calloc(1, sizeof(MAP_HANDLE_DATA));
         if (result == NULL)
         {
             /*Codes_SRS_MAP_02_047: [If during cloning, any operation fails, then Map_Clone shall return NULL.] */

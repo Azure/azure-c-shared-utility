@@ -1296,7 +1296,7 @@ int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t si
     if (tls_io_instance->tlsio_state == TLSIO_STATE_RENEGOTIATE)
     {
         /* add to pending list */
-        PENDING_SEND* new_pending_send = (PENDING_SEND*)malloc(sizeof(PENDING_SEND));
+        PENDING_SEND* new_pending_send = (PENDING_SEND*)calloc(1, sizeof(PENDING_SEND));
         if (new_pending_send == NULL)
         {
             LogError("Cannot allocate memory for pending IO");

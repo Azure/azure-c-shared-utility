@@ -111,7 +111,7 @@ static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
 static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned char* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
-    PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)malloc(sizeof(PENDING_SOCKET_IO));
+    PENDING_SOCKET_IO* pending_socket_io = (PENDING_SOCKET_IO*)calloc(1, sizeof(PENDING_SOCKET_IO));
     if (pending_socket_io == NULL)
     {
         result = MU_FAILURE;
