@@ -61,7 +61,7 @@ int get_time_ns(struct timespec* ts)
     return err;
 }
 
-time_t get_time_s()
+time_t get_time_ms()
 {
     struct timespec ts;
     if (get_time_ns(&ts) != 0)
@@ -70,6 +70,6 @@ time_t get_time_s()
         return INVALID_TIME_VALUE;
     }
 
-    return (time_t)ts.tv_sec;
+    return (time_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
 
