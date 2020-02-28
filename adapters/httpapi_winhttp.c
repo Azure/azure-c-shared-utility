@@ -1017,7 +1017,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 }
                 else
                 {
-                    result = 0;
+                    result = HTTPAPI_OK;
                 }
             }
         }
