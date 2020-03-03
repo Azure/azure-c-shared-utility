@@ -137,9 +137,8 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
 
     umock_c_init(on_umock_c_error);
 
-    REGISTER_UMOCK_ALIAS_TYPE(time_t, int);
+    REGISTER_UMOCK_ALIAS_TYPE(time_t, long long);
     REGISTER_UMOCK_ALIAS_TYPE(time_t*, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(size_t, unsigned int);
     REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
 
