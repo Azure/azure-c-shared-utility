@@ -72,7 +72,11 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_UMOCK_ALIAS_TYPE(TICK_COUNTER_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(uint32_t, unsigned int);
-    REGISTER_UMOCK_ALIAS_TYPE(tickcounter_ms_t, unsigned long long);
+    #if defined(_WIN32) || defined(__MBED__)
+        REGISTER_UMOCK_ALIAS_TYPE(tickcounter_ms_t, unsigned long long);
+    #else
+        REGISTER_UMOCK_ALIAS_TYPE(tickcounter_ms_t, unsigned int);
+    #endif
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
