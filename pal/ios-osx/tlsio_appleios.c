@@ -258,7 +258,7 @@ static CONCRETE_IO_HANDLE tlsio_appleios_create(void* io_create_parameters)
                     result->sockWrite = NULL;
                     result->hostname = NULL;
                     result->pending_transmission_list = NULL;
-                    tlsio_options_initialize(&result->options, TLSIO_OPTION_BIT_NONE);
+                    tlsio_options_initialize(&result->options, TLSIO_OPTION_BIT_TRUSTED_CERTS);
                     /* Codes_SRS_TLSIO_30_016: [ tlsio_create shall make a copy of the hostname member of io_create_parameters to allow deletion of hostname immediately after the call. ]*/
                     if (NULL == (result->hostname = CFStringCreateWithCString(NULL, tls_io_config->hostname, kCFStringEncodingUTF8)))
                     {
