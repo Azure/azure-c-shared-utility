@@ -72,7 +72,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                 }
 
                 /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_007: [ constbuffer_array_batcher_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
-                all_buffers = malloc(sizeof(CONSTBUFFER_HANDLE) * (total_buffer_count + 1));
+                all_buffers = malloc(sizeof(CONSTBUFFER_HANDLE) * (total_buffer_count));
                 if (all_buffers == NULL)
                 {
                     /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_010: [ If any error occurrs, constbuffer_array_batcher_batch shall fail and return NULL. ]*/
@@ -109,7 +109,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                             }
                         }
 
-                        result = constbuffer_array_create(all_buffers, total_buffer_count + 1);
+                        result = constbuffer_array_create(all_buffers, total_buffer_count);
                         for (i = 0; i < current_index; i++)
                         {
                             CONSTBUFFER_DecRef(all_buffers[i]);
