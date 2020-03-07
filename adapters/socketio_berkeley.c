@@ -351,6 +351,8 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             }
             else
             {
+                // Async connect will return -1.
+                result = 0;
                 if (socket_io_instance->on_io_open_complete != NULL)
                 {
                     socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
@@ -372,7 +374,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     {
         if (result == 0)
         {
-            initiate_socket_connection(socket_io_instance);
+            result = initiate_socket_connection(socket_io_instance);
         }
     }
 
