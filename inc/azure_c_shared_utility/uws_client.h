@@ -112,7 +112,7 @@ MOCKABLE_FUNCTION(, int, uws_client_close_async, UWS_CLIENT_HANDLE, uws_client, 
 MOCKABLE_FUNCTION(, int, uws_client_close_handshake_async, UWS_CLIENT_HANDLE, uws_client, uint16_t, close_code, const char*, close_reason, ON_WS_CLOSE_COMPLETE, on_ws_close_complete, void*, on_ws_close_complete_context);
 MOCKABLE_FUNCTION(, int, uws_client_send_frame_async, UWS_CLIENT_HANDLE, uws_client, unsigned char, frame_type, const unsigned char*, buffer, size_t, size, bool, is_final, ON_WS_SEND_FRAME_COMPLETE, on_ws_send_frame_complete, void*, callback_context);
 MOCKABLE_FUNCTION(, void, uws_client_dowork, UWS_CLIENT_HANDLE, uws_client);
-
+MOCKABLE_FUNCTION(, int, uws_client_set_request_header, UWS_CLIENT_HANDLE, uws_client, const char*, name, const char*, value);
 MOCKABLE_FUNCTION(, int, uws_client_set_option, UWS_CLIENT_HANDLE, uws_client, const char*, option_name, const void*, value);
 MOCKABLE_FUNCTION(, OPTIONHANDLER_HANDLE, uws_client_retrieve_options, UWS_CLIENT_HANDLE, uws_client);
 
