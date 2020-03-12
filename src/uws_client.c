@@ -23,8 +23,14 @@
 #include "azure_c_shared_utility/gb_rand.h"
 #include "azure_c_shared_utility/base64.h"
 #include "azure_c_shared_utility/optionhandler.h"
+#include "azure_c_shared_utility/map.h"
 
 static const char* UWS_CLIENT_OPTIONS = "uWSClientOptions";
+
+static const char* HTTP_HEADER_KEY_VALUE_SEPARATOR = ": ";
+static const size_t HTTP_HEADER_KEY_VALUE_SEPARATOR_LENGTH = 2;
+static const char* HTTP_HEADER_TERMINATOR = "\r\n";
+static const size_t HTTP_HEADER_TERMINATOR_LENGTH = 2;
 
 /* Requirements not needed as they are optional:
 Codes_SRS_UWS_CLIENT_01_254: [ If an endpoint receives a Ping frame and has not yet sent Pong frame(s) in response to previous Ping frame(s), the endpoint MAY elect to send a Pong frame for only the most recently processed Ping frame. ]
@@ -77,6 +83,7 @@ typedef struct UWS_CLIENT_INSTANCE_TAG
     WS_INSTANCE_PROTOCOL* protocols;
     size_t protocol_count;
     int port;
+    MAP_HANDLE request_headers;
     UWS_STATE uws_state;
     ON_WS_OPEN_COMPLETE on_ws_open_complete;
     void* on_ws_open_complete_context;
@@ -141,6 +148,8 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
             }
             else
             {
+                (void)memset(result, 0, sizeof(UWS_CLIENT_INSTANCE));
+
                 /* Codes_SRS_UWS_CLIENT_01_004: [ The argument `hostname` shall be copied for later use. ]*/
                 if (mallocAndStrcpy_s(&result->hostname, hostname) != 0)
                 {
@@ -160,6 +169,14 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                         free(result);
                         result = NULL;
                     }
+                    else if ((result->request_headers = Map_Create(NULL)) == NULL)
+                    {
+                        LogError("Failed allocating MAP for request headers");
+                        free(result->resource_name);
+                        free(result->hostname);
+                        free(result);
+                        result = NULL;
+                    }
                     else
                     {
                         /* Codes_SRS_UWS_CLIENT_01_017: [ `uws_client_create` shall create a pending send IO list that is to be used to queue send packets by calling `singlylinkedlist_create`. ]*/
@@ -168,6 +185,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                         {
                             /* Codes_SRS_UWS_CLIENT_01_018: [ If `singlylinkedlist_create` fails then `uws_client_create` shall fail and return NULL. ]*/
                             LogError("Could not allocate pending send frames list");
+                            Map_Destroy(result->request_headers);
                             free(result->resource_name);
                             free(result->hostname);
                             free(result);
@@ -245,6 +263,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                             {
                                 /* Codes_SRS_UWS_CLIENT_01_016: [ If `xio_create` fails, then `uws_client_create` shall fail and return NULL. ]*/
                                 singlylinkedlist_destroy(result->pending_sends);
+                                Map_Destroy(result->request_headers);
                                 free(result->resource_name);
                                 free(result->hostname);
                                 free(result);
@@ -256,18 +275,6 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                 /* Codes_SRS_UWS_CLIENT_01_403: [ The argument `port` shall be copied for later use. ]*/
                                 result->port = port;
 
-                                result->on_ws_open_complete = NULL;
-                                result->on_ws_open_complete_context = NULL;
-                                result->on_ws_frame_received = NULL;
-                                result->on_ws_frame_received_context = NULL;
-                                result->on_ws_error = NULL;
-                                result->on_ws_error_context = NULL;
-                                result->on_ws_close_complete = NULL;
-                                result->on_ws_close_complete_context = NULL;
-                                result->stream_buffer = NULL;
-                                result->stream_buffer_count = 0;
-                                result->fragment_buffer = NULL;
-                                result->fragment_buffer_count = 0;
                                 result->fragmented_frame_type = WS_FRAME_TYPE_UNKNOWN;
 
                                 result->protocol_count = protocol_count;
@@ -286,6 +293,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                         LogError("Cannot allocate memory for the protocols array.");
                                         xio_destroy(result->underlying_io);
                                         singlylinkedlist_destroy(result->pending_sends);
+                                        Map_Destroy(result->request_headers);
                                         free(result->resource_name);
                                         free(result->hostname);
                                         free(result);
@@ -316,6 +324,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                             free(result->protocols);
                                             xio_destroy(result->underlying_io);
                                             singlylinkedlist_destroy(result->pending_sends);
+                                            Map_Destroy(result->request_headers);
                                             free(result->resource_name);
                                             free(result->hostname);
                                             free(result);
@@ -380,6 +389,8 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
             }
             else
             {
+                memset(result, 0, sizeof(UWS_CLIENT_INSTANCE));
+
                 /* Codes_SRS_UWS_CLIENT_01_518: [ The argument `hostname` shall be copied for later use. ]*/
                 if (mallocAndStrcpy_s(&result->hostname, hostname) != 0)
                 {
@@ -399,6 +410,14 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                         free(result);
                         result = NULL;
                     }
+                    else if ((result->request_headers = Map_Create(NULL)) == NULL)
+                    {
+                        LogError("Failed allocating MAP for request headers");
+                        free(result->resource_name);
+                        free(result->hostname);
+                        free(result);
+                        result = NULL;
+                    }
                     else
                     {
                         /* Codes_SRS_UWS_CLIENT_01_530: [ `uws_client_create_with_io` shall create a pending send IO list that is to be used to queue send packets by calling `singlylinkedlist_create`. ]*/
@@ -407,6 +426,7 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                         {
                             /* Codes_SRS_UWS_CLIENT_01_531: [ If `singlylinkedlist_create` fails then `uws_client_create_with_io` shall fail and return NULL. ]*/
                             LogError("Could not allocate pending send frames list");
+                            Map_Destroy(result->request_headers);
                             free(result->resource_name);
                             free(result->hostname);
                             free(result);
@@ -421,6 +441,7 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                                 /* Codes_SRS_UWS_CLIENT_01_522: [ If `xio_create` fails, then `uws_client_create_with_io` shall fail and return NULL. ]*/
                                 LogError("Cannot create underlying IO.");
                                 singlylinkedlist_destroy(result->pending_sends);
+                                Map_Destroy(result->request_headers);
                                 free(result->resource_name);
                                 free(result->hostname);
                                 free(result);
@@ -433,18 +454,6 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                                 /* Codes_SRS_UWS_CLIENT_01_520: [ The argument `port` shall be copied for later use. ]*/
                                 result->port = port;
 
-                                result->on_ws_open_complete = NULL;
-                                result->on_ws_open_complete_context = NULL;
-                                result->on_ws_frame_received = NULL;
-                                result->on_ws_frame_received_context = NULL;
-                                result->on_ws_error = NULL;
-                                result->on_ws_error_context = NULL;
-                                result->on_ws_close_complete = NULL;
-                                result->on_ws_close_complete_context = NULL;
-                                result->stream_buffer = NULL;
-                                result->stream_buffer_count = 0;
-                                result->fragment_buffer = NULL;
-                                result->fragment_buffer_count = 0;
                                 result->fragmented_frame_type = WS_FRAME_TYPE_UNKNOWN;
 
                                 result->protocol_count = protocol_count;
@@ -463,6 +472,7 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                                         LogError("Cannot allocate memory for the protocols array.");
                                         xio_destroy(result->underlying_io);
                                         singlylinkedlist_destroy(result->pending_sends);
+                                        Map_Destroy(result->request_headers);
                                         free(result->resource_name);
                                         free(result->hostname);
                                         free(result);
@@ -493,6 +503,7 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                                             free(result->protocols);
                                             xio_destroy(result->underlying_io);
                                             singlylinkedlist_destroy(result->pending_sends);
+                                            Map_Destroy(result->request_headers);
                                             free(result->resource_name);
                                             free(result->hostname);
                                             free(result);
@@ -566,6 +577,7 @@ void uws_client_destroy(UWS_CLIENT_HANDLE uws_client)
         singlylinkedlist_destroy(uws_client->pending_sends);
         free(uws_client->resource_name);
         free(uws_client->hostname);
+        Map_Destroy(uws_client->request_headers);
         free(uws_client);
     }
 }
@@ -659,6 +671,60 @@ static void indicate_ws_error_and_close(UWS_CLIENT_INSTANCE* uws_client, WS_ERRO
     uws_client->on_ws_error(uws_client->on_ws_error_context, error_code);
 }
 
+static char* get_request_headers(MAP_HANDLE headers)
+{
+    char* result;
+    const char* const* keys;
+    const char* const* values;
+    size_t count;
+
+    if (Map_GetInternals(headers, &keys, &values, &count) != MAP_OK)
+    {
+        LogError("Failed getting the request headers");
+        result = NULL;
+    }
+    else
+    {
+        size_t length = 0;
+        size_t i;
+
+        for (i = 0; i < count; i++)
+        {
+            // 4 = 2 (": ") + 2 ("\r\n")
+            length += strlen(keys[i]) + strlen(values[i]) + 4;
+        }
+
+        if ((result = (char*)malloc(sizeof(char) * (length + 1))) == NULL)
+        {
+            LogError("Failed allocating string for request headers");
+            result = NULL;
+        }
+        else
+        {
+            size_t position = 0;
+
+            for (i = 0; i < count; i++)
+            {
+                size_t key_length = strlen(keys[i]);
+                size_t value_length = strlen(values[i]);
+
+                (void)memcpy(result + position, keys[i], key_length);
+                position += key_length;
+                (void)memcpy(result + position, HTTP_HEADER_KEY_VALUE_SEPARATOR, HTTP_HEADER_KEY_VALUE_SEPARATOR_LENGTH);
+                position += HTTP_HEADER_KEY_VALUE_SEPARATOR_LENGTH;
+                (void)memcpy(result + position, values[i], value_length);
+                position += value_length;
+                (void)memcpy(result + position, HTTP_HEADER_TERMINATOR, HTTP_HEADER_TERMINATOR_LENGTH);
+                position += HTTP_HEADER_TERMINATOR_LENGTH;
+            }
+
+            result[position] = '\0';
+        }
+    }
+
+    return result;
+}
+
 static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED io_open_result_detailed)
 {
     UWS_CLIENT_HANDLE uws_client = (UWS_CLIENT_HANDLE)context;
@@ -708,6 +774,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                 size_t i;
                 unsigned char nonce[16];
                 STRING_HANDLE base64_nonce;
+                char* request_headers = NULL;
 
                 /* Codes_SRS_UWS_CLIENT_01_089: [ The value of this header field MUST be a nonce consisting of a randomly selected 16-byte value that has been base64-encoded (see Section 4 of [RFC4648]). ]*/
                 /* Codes_SRS_UWS_CLIENT_01_090: [ The nonce MUST be selected randomly for each connection. ]*/
@@ -725,6 +792,12 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                     ws_open_result.result = WS_OPEN_ERROR_BASE64_ENCODE_FAILED;
                     indicate_ws_open_complete_error_and_close(uws_client, ws_open_result);
                 }
+                else if ((request_headers = get_request_headers(uws_client->request_headers)) == NULL)
+                {
+                    LogError("Cannot construct the WebSocket request headers");
+                    ws_open_result.result = WS_OPEN_ERROR_CONSTRUCTING_UPGRADE_REQUEST;
+                    indicate_ws_open_complete_error_and_close(uws_client, ws_open_result);
+                }
                 else
                 {
                     /* Codes_SRS_UWS_CLIENT_01_371: [ When `on_underlying_io_open_complete` is called with `IO_OPEN_OK` while uws is OPENING (`uws_client_open_async` was called), uws shall prepare the WebSockets upgrade request. ]*/
@@ -740,18 +813,19 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                     /* Codes_SRS_UWS_CLIENT_01_095: [ The value of this header field MUST be 13. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_096: [ The request MAY include a header field with the name |Sec-WebSocket-Protocol|. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_100: [ The request MAY include a header field with the name |Sec-WebSocket-Extensions|. ]*/
-
+                    /* Codes_SRS_UWS_CLIENT_01_101: [ The request MAY include any other header fields, for example, cookies [RFC6265] and/or authentication-related header fields such as the |Authorization| header field [RFC2616], which are processed according to documents that define them. ] */
                     const char upgrade_request_format[] = "GET %s HTTP/1.1\r\n"
                         "Host: %s:%d\r\n"
                         "Upgrade: websocket\r\n"
                         "Connection: Upgrade\r\n"
                         "Sec-WebSocket-Key: %s\r\n"
-                        "Sec-WebSocket-Version: 13\r\n";
+                        "Sec-WebSocket-Version: 13\r\n"
+                        "%s"; // custom headers
                     const char web_socket_protocol_format[] = "Sec-WebSocket-Protocol: %s";
 
                     const char* base64_nonce_chars = STRING_c_str(base64_nonce);
 
-                    upgrade_request_length = (int)(strlen(upgrade_request_format) + strlen(uws_client->resource_name) + strlen(uws_client->hostname) + strlen(base64_nonce_chars) + 7);
+                    upgrade_request_length = (int)(strlen(upgrade_request_format) + strlen(uws_client->resource_name) + strlen(uws_client->hostname) + strlen(base64_nonce_chars) + strlen(request_headers)+ 7);
                     if (hasProtocol)
                     {
                         // 2 * since each protocol entry is separated from the previous one by ", "    +2 for trailing \r\n
@@ -785,7 +859,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                                 uws_client->resource_name,
                                 uws_client->hostname,
                                 uws_client->port,
-                                base64_nonce_chars);
+                                base64_nonce_chars,
+                                request_headers);
 
                             if (hasProtocol)
                             {
@@ -825,6 +900,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                     }
 
                     STRING_delete(base64_nonce);
+                    free(request_headers);
                 }
 
                 break;
@@ -2182,6 +2258,32 @@ OPTIONHANDLER_HANDLE uws_client_retrieve_options(UWS_CLIENT_HANDLE uws_client)
             }
         }
 
+    }
+
+    return result;
+}
+
+int uws_client_set_request_header(UWS_CLIENT_HANDLE uws_client, const char* name, const char* value)
+{
+    int result;
+
+    if (uws_client == NULL || name == NULL || value == NULL)
+    {
+        // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments `uws_client` or `name` or `value` is NULL `uws_client_set_request_header` shall fail and return a non-zero value. ]  
+        LogError("invalid parameter (uws_client=%p, name=%p, value=%p)", uws_client, name, value);
+        result = __FAILURE__;
+    }
+    // Codes_SRS_UWS_CLIENT_09_003: [ A copy of `name` and `value` shall be stored for later sending in the request message. ]  
+    else if (Map_AddOrUpdate(uws_client->request_headers, name, value) != MAP_OK)
+    {
+        // Codes_SRS_UWS_CLIENT_09_004: [ If `name` or `value` fail to be stored the function shall fail and return a non-zero value. ]  
+        LogError("Failed adding request header %s", name);
+        result = __FAILURE__;
+    }
+    else
+    {
+        // Codes_SRS_UWS_CLIENT_09_005: [ If no failures occur the function shall return zero. ]
+        result = 0;
     }
 
     return result;
