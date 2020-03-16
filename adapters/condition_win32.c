@@ -21,7 +21,7 @@ COND_HANDLE Condition_Init(void)
 {
     // Codes_SRS_CONDITION_18_002: [ Condition_Init shall create and return a CONDITION_HANDLE ]
 
-    CONDITION* cond = (CONDITION*)malloc(sizeof(CONDITION));
+    CONDITION* cond = (CONDITION*)calloc(1, sizeof(CONDITION));
 
     // Codes_SRS_CONDITION_18_008: [ Condition_Init shall return NULL if it fails to allocate the CONDITION_HANDLE ]
     if (cond != NULL)

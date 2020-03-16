@@ -47,7 +47,7 @@ extern STRING_TOKENIZER_HANDLE STRING_TOKENIZER_create_from_char(const char* inp
         result = NULL;
     }
     /* Codes_SRS_STRING_07_002: [STRING_TOKENIZER_create shall allocate a new STRING_TOKENIZER_HANDLE having the content of the STRING_HANDLE copied and current position pointing at the beginning of the string] */
-    else if ((result = (STRING_TOKEN*)malloc(sizeof(STRING_TOKEN))) == NULL)
+    else if ((result = (STRING_TOKEN*)calloc(1, sizeof(STRING_TOKEN))) == NULL)
     {
         LogError("Memory Allocation failed. Cannot allocate STRING_TOKENIZER.");
     }

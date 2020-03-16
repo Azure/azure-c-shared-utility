@@ -216,7 +216,7 @@ CONCRETE_IO_HANDLE wsio_create(void* io_create_parameters)
     else
     {
         /* Codes_SRS_WSIO_01_001: [wsio_create shall create an instance of wsio and return a non-NULL handle to it.] */
-        result = (WSIO_INSTANCE*)malloc(sizeof(WSIO_INSTANCE));
+        result = (WSIO_INSTANCE*)calloc(1, sizeof(WSIO_INSTANCE));
         if (result == NULL)
         {
             /* Codes_SRS_WSIO_01_068: [ If allocating memory for the new wsio instance fails then wsio_create shall return NULL. ]*/

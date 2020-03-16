@@ -20,6 +20,11 @@ static void* my_gballoc_malloc(size_t size)
     return malloc(size);
 }
 
+static void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    return calloc(nmemb, size);
+}
+
 static void* my_gballoc_realloc(void* ptr, size_t size)
 {
     return realloc(ptr, size);
@@ -1489,6 +1494,7 @@ TEST_SUITE_INITIALIZE(TestSuiteInitialize)
     umock_c_init(on_umock_c_error);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 }

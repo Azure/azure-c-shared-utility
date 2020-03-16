@@ -17,6 +17,9 @@
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
 
+static size_t currentcalloc_call = 0;
+static size_t whenShallcalloc_fail = 0;
+
 static size_t currentrealloc_call = 0;
 static size_t whenShallrealloc_fail = 0;
 
@@ -38,6 +41,28 @@ void* my_gballoc_malloc(size_t size)
     else
     {
         result = malloc(size);
+    }
+    return result;
+}
+
+void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    void* result;
+    currentcalloc_call++;
+    if (whenShallcalloc_fail > 0)
+    {
+        if (currentcalloc_call == whenShallcalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = calloc(nmemb, size);
+        }
+    }
+    else
+    {
+        result = calloc(nmemb, size);
     }
     return result;
 }
@@ -104,6 +129,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         umock_c_init(on_umock_c_error);
 
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     }
@@ -127,6 +153,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
 
+        currentcalloc_call = 0;
+        whenShallcalloc_fail = 0;
+
         currentrealloc_call = 0;
         whenShallrealloc_fail = 0;
     }
@@ -141,8 +170,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
     {
         ///arrange
         BUFFER_HANDLE g_hBuffer;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         g_hBuffer = BUFFER_new();
@@ -314,8 +343,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         int nResult;
         BUFFER_HANDLE g_hBuffer;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         STRICT_EXPECTED_CALL(gballoc_realloc(IGNORED_PTR_ARG, ALLOCATION_SIZE))
             .IgnoreArgument(1);
@@ -1409,7 +1438,7 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         (void)BUFFER_build(g_hBuffer, BUFFER_TEST_VALUE, ALLOCATION_SIZE);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG)).IgnoreAllArguments();
         STRICT_EXPECTED_CALL(gballoc_malloc(ALLOCATION_SIZE));
 
         ///act
@@ -1461,8 +1490,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         size_t howBig;
         char c = '3';
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         STRICT_EXPECTED_CALL(gballoc_malloc(1));
 
@@ -1492,7 +1521,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         const unsigned char* data;
         char c = '3';
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         STRICT_EXPECTED_CALL(gballoc_malloc(1));
 
@@ -1518,11 +1548,10 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         char c = '3';
         BUFFER_HANDLE res;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        whenShallmalloc_fail = 1;
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(gballoc_malloc(1));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-
-        whenShallmalloc_fail = 2;
 
         ///act
         res = BUFFER_create((const unsigned char*)&c, 1);
@@ -1542,9 +1571,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         char c = '3';
         BUFFER_HANDLE res;
 
-        whenShallmalloc_fail = 1;
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-            .IgnoreArgument(1);
+        whenShallcalloc_fail = 1;
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         res = BUFFER_create((const unsigned char*)&c, 1);
@@ -1566,7 +1595,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_HANDLE res;
         size_t alloc_size = 32;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         STRICT_EXPECTED_CALL(gballoc_malloc(alloc_size));
 
         //act
@@ -1588,7 +1618,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_HANDLE res;
         size_t alloc_size = 0;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         //act
         res = BUFFER_create_with_size(alloc_size);
@@ -1609,7 +1640,9 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_HANDLE res;
         size_t alloc_size = 32;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG)).SetReturn(NULL);
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments()
+            .SetReturn(NULL);
 
         //act
         res = BUFFER_create_with_size(alloc_size);
@@ -1628,7 +1661,8 @@ BEGIN_TEST_SUITE(Buffer_UnitTests)
         BUFFER_HANDLE res;
         size_t alloc_size = 32;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         STRICT_EXPECTED_CALL(gballoc_malloc(alloc_size)).SetReturn(NULL);
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 

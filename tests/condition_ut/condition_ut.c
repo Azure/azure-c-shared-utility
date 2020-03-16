@@ -24,6 +24,7 @@
 extern "C" {
 #endif
     MOCKABLE_FUNCTION(, void*, gballoc_malloc, size_t, size);
+    MOCKABLE_FUNCTION(, void*, gballoc_calloc, size_t, nmemb, size_t, size);
     MOCKABLE_FUNCTION(, void, gballoc_free, void*, ptr);
 #ifdef __cplusplus
 }
@@ -46,6 +47,7 @@ void real_gballoc_free(void* ptr);
 static TEST_MUTEX_HANDLE g_testByTest;
 
 static bool malloc_will_fail = false;
+static bool calloc_will_fail = false;
 
 TEST_DEFINE_ENUM_TYPE(COND_RESULT, COND_RESULT_VALUES)
 
@@ -60,6 +62,17 @@ void* my_gballoc_malloc(size_t size)
         {
         result = real_gballoc_malloc(size);
         }
+
+    return result;
+}
+
+void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    void* result = NULL;
+    if (calloc_will_fail == false)
+    {
+        result = real_gballoc_calloc(nmemb, size);
+    }
 
     return result;
 }
@@ -100,6 +113,7 @@ TEST_SUITE_INITIALIZE(a)
     umock_c_init(on_umock_c_error);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 }
 
@@ -261,9 +275,9 @@ TEST_FUNCTION(Condition_Init_allocation_fail)
 {
     // arrange
     COND_HANDLE handle = NULL;
-    malloc_will_fail = true;
+    calloc_will_fail = true;
 
-    EXPECTED_CALL(gballoc_malloc(4));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, 4));
 
     // act
     handle = Condition_Init();

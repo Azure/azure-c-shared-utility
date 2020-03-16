@@ -104,7 +104,7 @@ SRW_LOCK_HANDLE srw_lock_create(bool do_statistics, const char* lock_name)
 {
     SRW_LOCK_HANDLE result;
     /*Codes_SRS_SRW_LOCK_02_001: [ srw_lock_create shall allocate memory for SRW_LOCK_HANDLE. ]*/
-    result = malloc(sizeof(SRW_LOCK_HANDLE_DATA));
+    result = calloc(1, sizeof(SRW_LOCK_HANDLE_DATA));
     if (result == NULL)
     {
         /*return as is*/

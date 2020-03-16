@@ -10,6 +10,9 @@
 static size_t currentmalloc_call = 0;
 static size_t whenShallmalloc_fail = 0;
 
+static size_t currentcalloc_call = 0;
+static size_t whenShallcalloc_fail = 0;
+
 static size_t currentrealloc_call = 0;
 static size_t whenShallrealloc_fail = 0;
 
@@ -31,6 +34,28 @@ void* my_gballoc_malloc(size_t size)
     else
     {
         result = malloc(size);
+    }
+    return result;
+}
+
+void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    void* result;
+    currentcalloc_call++;
+    if (whenShallcalloc_fail > 0)
+    {
+        if (currentcalloc_call == whenShallcalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = calloc(nmemb, size);
+        }
+    }
+    else
+    {
+        result = calloc(nmemb, size);
     }
     return result;
 }
@@ -438,6 +463,7 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     REGISTER_UMOCK_ALIAS_TYPE(HTTP_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(const unsigned char*, void*);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     REGISTER_GLOBAL_MOCK_HOOK(STRING_construct, my_STRING_construct);
@@ -491,6 +517,9 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
     currentmalloc_call = 0;
     whenShallmalloc_fail = 0;
+
+    currentcalloc_call = 0;
+    whenShallcalloc_fail = 0;
 
     currentrealloc_call = 0;
     whenShallrealloc_fail = 0;
@@ -612,8 +641,8 @@ TEST_FUNCTION(HTTPAPIEX_Create_succeeds)
 {
     /// arrange
     HTTPAPIEX_HANDLE result;
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(STRING_construct(TEST_HOSTNAME));
 
     STRICT_EXPECTED_CALL(VECTOR_create(IGNORED_NUM_ARG))
@@ -783,9 +812,9 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_malloc_fails)
 {
     /// arrange
     HTTPAPIEX_HANDLE result;
-    whenShallmalloc_fail = currentmalloc_call + 1;
-    STRICT_EXPECTED_CALL(gballoc_malloc(0))
-        .IgnoreArgument(1);
+    whenShallcalloc_fail = currentcalloc_call + 1;
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .IgnoreAllArguments();
 
     /// act
     result = HTTPAPIEX_Create(TEST_HOSTNAME);
@@ -802,9 +831,8 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_STRING_construct_fails)
 {
     /// arrange
     HTTPAPIEX_HANDLE result;
-    STRICT_EXPECTED_CALL(gballoc_malloc(0))
-        .IgnoreArgument(1);
-
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .IgnoreAllArguments();
 
     STRICT_EXPECTED_CALL(STRING_construct(TEST_HOSTNAME))
         .SetReturn(NULL);
@@ -827,8 +855,8 @@ TEST_FUNCTION(HTTPAPIEX_Create_fails_when_VECTOR_create_fails)
 {
     /// arrange
     HTTPAPIEX_HANDLE result;
-    STRICT_EXPECTED_CALL(gballoc_malloc(0))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .IgnoreAllArguments();
 
     STRICT_EXPECTED_CALL(STRING_construct(TEST_HOSTNAME));
 

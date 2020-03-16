@@ -78,7 +78,7 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
         else
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_001: [ http_proxy_io_create shall create a new instance of the HTTP proxy IO. ]*/
-            result = (HTTP_PROXY_IO_INSTANCE*)malloc(sizeof(HTTP_PROXY_IO_INSTANCE));
+            result = (HTTP_PROXY_IO_INSTANCE*)calloc(1, sizeof(HTTP_PROXY_IO_INSTANCE));
             if (result == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_051: [ If allocating memory for the new instance fails, http_proxy_io_create shall fail and return NULL. ]*/
