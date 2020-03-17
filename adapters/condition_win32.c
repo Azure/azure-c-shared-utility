@@ -20,12 +20,12 @@ CONDITION;
 COND_HANDLE Condition_Init(void)
 {
     // Codes_SRS_CONDITION_18_002: [ Condition_Init shall create and return a CONDITION_HANDLE ]
-
-    CONDITION* cond = (CONDITION*)calloc(1, sizeof(CONDITION));
+    CONDITION* cond = (CONDITION*)malloc(sizeof(CONDITION));
 
     // Codes_SRS_CONDITION_18_008: [ Condition_Init shall return NULL if it fails to allocate the CONDITION_HANDLE ]
     if (cond != NULL)
     {
+        (void)memset(cond, 0, sizeof(CONDITION));
         cond->event_handle = CreateEvent(NULL, FALSE, FALSE, NULL);
 
         if (cond->event_handle == NULL)
