@@ -146,7 +146,7 @@ TEST_FUNCTION(Condition_Init_Success)
 {
     //arrange
     COND_HANDLE handle = NULL;
-    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, 4));
+    EXPECTED_CALL(gballoc_malloc(4));
     EXPECTED_CALL(gballoc_free(0));
 
     //act
@@ -181,7 +181,7 @@ TEST_FUNCTION(Condition_Post_Handle_Succeed)
     COND_HANDLE handle = NULL;
     COND_RESULT result;
 
-    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, 4));
+    EXPECTED_CALL(gballoc_malloc(4));
     EXPECTED_CALL(gballoc_free(0));
 
     handle = Condition_Init();
@@ -242,7 +242,7 @@ TEST_FUNCTION(Condition_Wait_LOCK_NULL_Ms_Fail)
     //arrange
     COND_HANDLE handle = NULL;
     COND_RESULT result;
-    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, 4));
+    EXPECTED_CALL(gballoc_malloc(4));
     EXPECTED_CALL(gballoc_free(0));
 
     handle = Condition_Init();
@@ -276,9 +276,9 @@ TEST_FUNCTION(Condition_Init_allocation_fail)
 {
     // arrange
     COND_HANDLE handle = NULL;
-    calloc_will_fail = true;
+    malloc_will_fail = true;
 
-    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, 4));
+    EXPECTED_CALL(gballoc_malloc(4));
 
     // act
     handle = Condition_Init();
