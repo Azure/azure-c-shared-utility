@@ -82,7 +82,7 @@ HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
     else
     {
         /*Codes_SRS_HTTPAPIEX_02_005: [If creating the handle fails for any reason, then HTTAPIEX_Create shall return NULL.] */
-        HTTPAPIEX_HANDLE_DATA* handleData = (HTTPAPIEX_HANDLE_DATA*)malloc(sizeof(HTTPAPIEX_HANDLE_DATA));
+        HTTPAPIEX_HANDLE_DATA* handleData = (HTTPAPIEX_HANDLE_DATA*)calloc(1, sizeof(HTTPAPIEX_HANDLE_DATA));
         if (handleData == NULL)
         {
             LogError("malloc failed.");

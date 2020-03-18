@@ -29,6 +29,9 @@
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
 
+static size_t currentcalloc_call;
+static size_t whenShallcalloc_fail;
+
 void* my_gballoc_malloc(size_t size)
 {
     void* result;
@@ -51,14 +54,31 @@ void* my_gballoc_malloc(size_t size)
     return result;
 }
 
+void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    void* result;
+    currentcalloc_call++;
+    if (whenShallcalloc_fail > 0)
+    {
+        if (currentcalloc_call == whenShallcalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = calloc(nmemb, size);
+        }
+    }
+    else
+    {
+        result = calloc(nmemb, size);
+    }
+    return result;
+}
+
 void my_gballoc_free(void* ptr)
 {
     free(ptr);
-}
-
-void* my_gballoc_calloc(size_t nmemb, size_t size)
-{
-    return calloc(nmemb, size);
 }
 
 #define ENABLE_MOCKS
@@ -423,6 +443,8 @@ TEST_FUNCTION_INITIALIZE(method_init)
 
     currentmalloc_call = 0;
     whenShallmalloc_fail = 0;
+    currentcalloc_call = 0;
+    whenShallcalloc_fail = 0;
     list_head_count = 0;
     singlylinkedlist_add_called = false;
     g_addrinfo_call_fail = false;
@@ -890,7 +912,8 @@ TEST_FUNCTION(socketio_send_returns_1_succeeds)
     EXPECTED_CALL(singlylinkedlist_get_head_item(IGNORED_PTR_ARG));
     EXPECTED_CALL(send(IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_NUM_ARG)).SetReturn(1);
     EXPECTED_CALL(WSAGetLastError()).SetReturn(WSAEWOULDBLOCK);
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .IgnoreAllArguments();
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(singlylinkedlist_add(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 

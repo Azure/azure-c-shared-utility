@@ -50,6 +50,9 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
 
+static size_t currentcalloc_call;
+static size_t whenShallcalloc_fail;
+
 static void* my_gballoc_malloc(size_t size)
 {
     void* result;
@@ -68,6 +71,28 @@ static void* my_gballoc_malloc(size_t size)
     else
     {
         result = malloc(size);
+    }
+    return result;
+}
+
+static void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    void* result;
+    currentcalloc_call++;
+    if (whenShallcalloc_fail > 0)
+    {
+        if (currentcalloc_call == whenShallcalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = calloc(nmemb, size);
+        }
+    }
+    else
+    {
+        result = calloc(nmemb, size);
     }
     return result;
 }
@@ -266,6 +291,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     default_wsio_config.underlying_io_parameters = TEST_UNDERLYING_IO_PARAMETERS;
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_create, TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE);
     REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_remove, my_singlylinkedlist_remove);
@@ -348,7 +374,7 @@ TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds)
     // arrange
     CONCRETE_IO_HANDLE wsio;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
 
@@ -446,7 +472,7 @@ TEST_FUNCTION(when_allocating_memory_fails_wsio_create_fails)
 {
     // arrange
     CONCRETE_IO_HANDLE wsio;
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .SetReturn(NULL);
 
     // act
@@ -463,7 +489,7 @@ TEST_FUNCTION(when_uws_create_fails_then_wsio_create_fails)
     // arrange
     CONCRETE_IO_HANDLE wsio;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1))
         .SetReturn(NULL);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -482,7 +508,7 @@ TEST_FUNCTION(when_singlylinkedlist_create_fails_then_wsio_create_fails)
     // arrange
     CONCRETE_IO_HANDLE wsio;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create())
         .SetReturn(NULL);
@@ -517,7 +543,7 @@ TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds_2)
     wsio_config.underlying_io_interface = TEST_UNDERLYING_IO_INTERFACE;
     wsio_config.underlying_io_parameters = NULL;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, NULL, "another.com", 80, "haga", IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
 
