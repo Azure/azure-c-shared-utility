@@ -3,7 +3,7 @@
 The purpose of this document is to provide guidance on how to port the C Shared utility library to platforms not supported out of the box.
 The C shared utility library is used by C SDKs like IoTHub client SDK and EventHub client SDK.  
 
-The document does not cover the specifics of any particular platform.
+The document does not cover the specifics of any particular platform, nor does this document show you where to disable the WIN32 define so that other platforms can be built.  You will have to find it yourself in order to disable the WIN32 compile switch.
 
 ## References
 
