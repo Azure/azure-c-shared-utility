@@ -28,7 +28,7 @@
 #include "azure_c_shared_utility/httpapi.h"
 
 #define MAX_HOSTNAME     64
-#define TEMP_BUFFER_SIZE 1024
+#define TEMP_BUFFER_SIZE 2048
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_077: [ The HTTPAPI_ExecuteRequest shall wait, at least, 10 seconds for the SSL open process. ]*/
 #define MAX_OPEN_RETRY   1000
