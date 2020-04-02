@@ -38,7 +38,7 @@ static const size_t pem_crlf_value_length = sizeof(pem_crlf_value) - 1;
 static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD crypt_value_in_len, DWORD* crypt_length)
 {
     unsigned char* result = NULL;
-    DWORD result_length;
+    DWORD result_length = 0;
     if (!CryptStringToBinaryA(crypt_value, crypt_value_in_len, CRYPT_STRING_ANY, NULL, &result_length, NULL, NULL))
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
