@@ -117,7 +117,6 @@ int SHA1Reset(SHA1Context *context)
 *          the message.
 *      length: [in]
 *          The length of the message in message_array
-*          Max length can be 64 bits
 *
 *  Returns:
 *      sha Error Code.
