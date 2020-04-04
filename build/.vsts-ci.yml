@@ -50,15 +50,13 @@ jobs:
     condition: always()
 - job: raspberrypi
   variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c"
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c-buster:brown"
   pool: aziotbld-lin01
   displayName: raspberrypi
   steps:
   - script: |
-     if [ -f "jenkins/raspberrypi_c.sh" ]
-     then
-      sudo ./jenkins/raspberrypi_c.sh
-     fi
+     chmod +x jenkins/raspberrypi_c_buster.sh
+     ./jenkins/raspberrypi_c_buster.sh
     displayName: 'build'
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
