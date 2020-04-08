@@ -865,6 +865,9 @@ void tlsio_wolfssl_dowork(CONCRETE_IO_HANDLE tls_io)
 static int process_option(char** destination, const char* name, const char* value)
 {
     int result;
+
+    UNUSED(name);
+
     if (*destination != NULL)
     {
         free(*destination);
