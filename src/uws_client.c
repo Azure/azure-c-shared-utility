@@ -1097,7 +1097,7 @@ static int process_frame_fragment(UWS_CLIENT_INSTANCE *uws_client, size_t length
 
 static void on_underlying_io_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
-    WS_OPEN_RESULT_DETAILED ws_open_result_detailed = { WS_OPEN_OK, 0 };
+    WS_OPEN_RESULT_DETAILED ws_open_result_detailed = { WS_OPEN_OK, 0, NULL };
 
     /* Codes_SRS_UWS_CLIENT_01_415: [ If called with a NULL `context` argument, `on_underlying_io_bytes_received` shall do nothing. ]*/
     if (context != NULL)
@@ -1233,6 +1233,11 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             LogError("Bad status (%d) received in WebSocket Upgrade response", status_code);
                             ws_open_result_detailed.result = WS_OPEN_ERROR_BAD_RESPONSE_STATUS;
                             ws_open_result_detailed.code = status_code;
+
+                            // Include the original http message so the client can determine if it cares to garner data.
+                            // Like for a redirect.
+                            ws_open_result_detailed.buffer = uws_client->stream_buffer;
+                            ws_open_result_detailed.buffSize = uws_client->stream_buffer_count;
                             indicate_ws_open_complete_error_and_close(uws_client, ws_open_result_detailed);
                         }
                         else
