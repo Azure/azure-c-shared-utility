@@ -49,6 +49,8 @@ DEFINE_ENUM(WS_OPEN_RESULT, WS_OPEN_RESULT_VALUES);
 typedef struct _WS_OPEN_RESULT_DETAILED {
     WS_OPEN_RESULT result;
     int code;
+    const unsigned char* buffer;
+    size_t buffSize;
 } WS_OPEN_RESULT_DETAILED;
 
 #define WS_ERROR_VALUES \
