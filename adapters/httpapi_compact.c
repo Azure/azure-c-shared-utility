@@ -332,6 +332,12 @@ static void on_io_close_complete(void* context)
 
 void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
 {
+
+#ifdef WIN32
+#pragma warning(push)
+#pragma warning(disable:6001)
+#endif // WIN32
+
     HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)handle;
 
     /*Codes_SRS_HTTPAPI_COMPACT_21_020: [ If the connection handle is NULL, the HTTPAPI_CloseConnection shall not do anything. ]*/
@@ -397,6 +403,10 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
         }
         free(http_instance);
     }
+    
+#ifdef WIN32
+#pragma warning(pop)
+#endif // WIN32
 }
 
 static void on_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED open_result_detailed)
