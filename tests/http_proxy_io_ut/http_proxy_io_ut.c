@@ -1560,7 +1560,9 @@ TEST_FUNCTION(http_proxy_io_retrieve_options_calls_the_underlying_retrieve_optio
     http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     // act
     result = http_proxy_io_get_interface_description()->concrete_io_retrieveoptions(http_io);
@@ -1597,8 +1599,11 @@ TEST_FUNCTION(when_xio_retrieveoptions_fails_then_http_proxy_io_retrieve_options
     http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE))
         .SetReturn(NULL);
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG));
 
     // act
     result = http_proxy_io_get_interface_description()->concrete_io_retrieveoptions(http_io);
