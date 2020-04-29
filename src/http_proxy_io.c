@@ -923,7 +923,7 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
         else if (xio_setoption(http_proxy_io_instance->underlying_io, option_name, value) != 0)
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_044: [ if xio_setoption fails, http_proxy_io_set_option shall return a non-zero value. ]*/
-            LogError("Unrecognized option");
+            LogError("Unrecognized option %s", option_name);
             result = MU_FAILURE;
         }
         else
@@ -944,7 +944,7 @@ static void* http_proxy_io_clone_option(const char* name, const void* value)
         (name == NULL) || (value == NULL)
         )
     {
-        LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
+        LogError("invalid parameter detected: name=%p, value=%p", name, value);
         result = NULL;
     }
     else
