@@ -74,6 +74,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     TLSIO_VERSION tls_version;
     TLS_CERTIFICATE_VALIDATION_CALLBACK tls_validation_callback;
     void* tls_validation_callback_data;
+    char* hostname;
 } TLS_IO_INSTANCE;
 
 struct CRYPTO_dynlock_value
@@ -1036,6 +1037,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                     }
 
                     tlsInstance->ssl = SSL_new(tlsInstance->ssl_context);
+
                     if (tlsInstance->ssl == NULL)
                     {
                         (void)BIO_free(tlsInstance->in_bio);
@@ -1043,6 +1045,17 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
                         SSL_CTX_free(tlsInstance->ssl_context);
                         tlsInstance->ssl_context = NULL;
                         log_ERR_get_error("Failed creating OpenSSL instance.");
+                        result = MU_FAILURE;
+                    }
+                    else if (SSL_set_tlsext_host_name(tlsInstance->ssl, tlsInstance->hostname) != 1)
+                    {
+                        SSL_free(tlsInstance->ssl);
+                        tlsInstance->ssl = NULL;
+                        (void)BIO_free(tlsInstance->in_bio);
+                        (void)BIO_free(tlsInstance->out_bio);
+                        SSL_CTX_free(tlsInstance->ssl_context);
+                        tlsInstance->ssl_context = NULL;
+                        log_ERR_get_error("Failed setting SSL hostname.");
                         result = MU_FAILURE;
                     }
                     else
@@ -1116,6 +1129,12 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
         {
             LogError("Failed allocating TLSIO instance.");
         }
+        else if (mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname) != 0)
+        {
+            LogError("Failed copying the target hostname.");
+            free(result);
+            result = NULL;
+        }
         else
         {
             SOCKETIO_CONFIG socketio_config;
@@ -1139,6 +1158,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
 
             if (underlying_io_interface == NULL)
             {
+                free(result->hostname);
                 free(result);
                 result = NULL;
                 LogError("Failed getting socket IO interface description.");
@@ -1169,6 +1189,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
                 result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
                 if (result->underlying_io == NULL)
                 {
+                    free(result->hostname);
                     free(result);
                     result = NULL;
                     LogError("Failed xio_create.");
@@ -1211,6 +1232,7 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
             xio_destroy(tls_io_instance->underlying_io);
             tls_io_instance->underlying_io = NULL;
         }
+        free(tls_io_instance->hostname);
         free(tls_io);
     }
 }
