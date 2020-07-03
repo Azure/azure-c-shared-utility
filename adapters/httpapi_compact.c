@@ -222,10 +222,15 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
         {
             LogError("There is no memory to control the http connection");
         }
+        else if (mallocAndStrcpy_s(&http_instance->hostName, hostName) != 0)
+        {
+            LogError("Failed copying hostname");
+            free(http_instance);
+            http_instance = NULL;
+        }
         else
         {
-            mallocAndStrcpy_s(&http_instance->hostName, hostName);
-            tlsio_config.hostname = hostName;
+            tlsio_config.hostname = http_instance->hostName;
             tlsio_config.port = 443;
             tlsio_config.underlying_io_interface = NULL;
             tlsio_config.underlying_io_parameters = NULL;
@@ -236,6 +241,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             if (http_instance->xio_handle == NULL)
             {
                 LogError("Create connection failed");
+                free(http_instance->hostName);
                 free(http_instance);
                 http_instance = NULL;
             }
