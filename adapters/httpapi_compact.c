@@ -1405,7 +1405,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
 
                 if (http_instance->xio_handle == NULL)
                 {
-                    LogError("Fail to create xio handle with proxy configuration");
+                    LogError("Failed to create xio handle with proxy configuration");
                     result = HTTPAPI_ERROR;
                 }
                 else
@@ -1431,6 +1431,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         result = HTTPAPI_INVALID_ARG;
         LogInfo("unknown option %s", optionName);
     }
+
     return result;
 }
 
