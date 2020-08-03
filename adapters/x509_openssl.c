@@ -13,7 +13,7 @@
 
 #ifdef __APPLE__
     #ifndef EVP_PKEY_id
-        #define EVP_PKEY_id(evp_key) evp_key->type
+	#define EVP_PKEY_ID(evp_key) EVP_PKEY_get1_EC_KEY(evp_key)
     #endif // EVP_PKEY_id
 #endif // __APPLE__
 
