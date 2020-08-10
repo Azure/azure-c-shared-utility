@@ -56,6 +56,17 @@ typedef struct TLS_IO_INSTANCE_TAG
 STATIC_VAR_UNUSED const char* const OPTION_WOLFSSL_SET_DEVICE_ID = "SetDeviceId";
 static const size_t SOCKET_READ_LIMIT = 5;
 
+static int mallocAndIntcpy_s(int** destination, const int* src)
+{
+    *destination = (int*) malloc(sizeof(int));
+    if(*destination == NULL)
+    {
+        return ENOMEM;
+    }
+    **destination = *src;
+    return 0; 
+}
+
 /*this function will clone an option given by name and value*/
 static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
 {
@@ -103,6 +114,18 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
                 /*return as is*/
             }
         }
+        else if(strcmp(name, OPTION_WOLFSSL_SET_DEVICE_ID) == 0 )
+        {
+            if (mallocAndIntcpy_s((int**)&result, value) !=0 )
+            {
+                LogError("unable to mallocAndIntcpy_s device id value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
         else
         {
             LogError("not handled option : %s", name);
@@ -124,7 +147,8 @@ static void tlsio_wolfssl_DestroyOption(const char* name, const void* value)
     {
         if ((strcmp(name, OPTION_TRUSTED_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
-            (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0))
+            (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
+            (strcmp(name, OPTION_WOLFSSL_SET_DEVICE_ID) == 0))
         {
             free((void*)value);
         }
@@ -179,6 +203,15 @@ static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls
                 )
             {
                 LogError("unable to save TrustedCerts option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else if (
+                (tls_io_instance->wolfssl_device_id != INVALID_DEVID) &&
+                (OptionHandler_AddOption(result, OPTION_WOLFSSL_SET_DEVICE_ID, &tls_io_instance->wolfssl_device_id) != OPTIONHANDLER_OK)
+                )
+            {
+                LogError("unable to save deviceid option");
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
