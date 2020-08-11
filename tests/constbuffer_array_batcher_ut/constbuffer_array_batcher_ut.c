@@ -547,6 +547,7 @@ TEST_FUNCTION(constbuffer_array_batcher_batch_with_3_arrays_with_1_and_0_and_3_b
     // cleanup
     real_constbuffer_array_dec_ref(test_arrays[0]);
     real_constbuffer_array_dec_ref(test_arrays[1]);
+    real_constbuffer_array_dec_ref(test_arrays[2]);
     real_constbuffer_array_dec_ref(result);
     real_CONSTBUFFER_DecRef(test_buffers[0]);
     real_CONSTBUFFER_DecRef(test_buffers[1]);
