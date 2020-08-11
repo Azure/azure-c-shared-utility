@@ -110,7 +110,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                         }
 
                         result = constbuffer_array_create(all_buffers, total_buffer_count + 1);
-                        for (i = 0; i < current_index; i++)
+                        for (i = 0; i < total_buffer_count + 1; i++)
                         {
                             CONSTBUFFER_DecRef(all_buffers[i]);
                         }
