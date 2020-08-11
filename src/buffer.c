@@ -540,33 +540,41 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
         else
         {
             //put b2 ahead of b1: [b2][b1], return b1
-            if (b2->size ==0)
+            if (b2->size == 0)
             {
                 // do nothing
                 result = 0;
             }
             else
             {
-                // b2->size != 0
-                unsigned char* temp = (unsigned char*)malloc(b1->size + b2->size);
-                if (temp == NULL)
+                if (b1->size + b2->size < b2->size)
                 {
-                    /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
-                    LogError("Failure: allocating temp buffer.");
+                    LogError("Failure: size_t overflow.");
                     result = MU_FAILURE;
                 }
                 else
                 {
-                    /* Codes_SRS_BUFFER_01_004: [ BUFFER_prepend concatenates handle1 onto handle2 without modifying handle1 and shall return zero on success. ]*/
-                    // Append the BUFFER
-                    (void)memcpy(temp, b2->buffer, b2->size);
-                    // start from b1->size to append b1
-                    (void)memcpy(&temp[b2->size], b1->buffer, b1->size);
-                    free(b1->buffer);
-                    b1->buffer = temp;
-                    b1->size += b2->size;
-                    result = 0;
-                }
+                    // b2->size != 0
+                    unsigned char* temp = (unsigned char*)malloc(b1->size + b2->size);
+                    if (temp == NULL)
+                    {
+                        /* Codes_SRS_BUFFER_01_005: [ BUFFER_prepend shall return a non-zero upon value any error that is encountered. ]*/
+                        LogError("Failure: allocating temp buffer.");
+                        result = MU_FAILURE;
+                    }
+                    else
+                    {
+                        /* Codes_SRS_BUFFER_01_004: [ BUFFER_prepend concatenates handle1 onto handle2 without modifying handle1 and shall return zero on success. ]*/
+                        // Append the BUFFER
+                        (void)memcpy(temp, b2->buffer, b2->size);
+                        // start from b1->size to append b1
+                        (void)memcpy(&temp[b2->size], b1->buffer, b1->size);
+                        free(b1->buffer);
+                        b1->buffer = temp;
+                        b1->size += b2->size;
+                        result = 0;
+                    }
+                // }
             }
         }
     }
