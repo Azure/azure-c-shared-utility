@@ -574,7 +574,7 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
                         b1->size += b2->size;
                         result = 0;
                     }
-                // }
+                }
             }
         }
     }
