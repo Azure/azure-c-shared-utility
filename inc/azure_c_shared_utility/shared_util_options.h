@@ -27,9 +27,12 @@ extern "C"
     // Clients should not use OPTION_OPENSSL_CIPHER_SUITE except for very specialized scenarios.
     // They instead should rely on the underlying client TLS stack and service to negotiate an appropriate cipher.
     static STATIC_VAR_UNUSED const char* const OPTION_OPENSSL_CIPHER_SUITE = "CipherSuite";
+    static STATIC_VAR_UNUSED const char* const OPTION_OPENSSL_SIGALGS = "Sigalgs";
 
     static STATIC_VAR_UNUSED const char* const SU_OPTION_X509_CERT = "x509certificate";
     static STATIC_VAR_UNUSED const char* const SU_OPTION_X509_PRIVATE_KEY = "x509privatekey";
+    static STATIC_VAR_UNUSED const char* const SU_OPTION_X509_CRYPTODEV_PRIVATE_KEY = "x509cryptodevprivatekey";
+
 
     static STATIC_VAR_UNUSED const char* const OPTION_X509_ECC_CERT = "x509EccCertificate";
     static STATIC_VAR_UNUSED const char* const OPTION_X509_ECC_KEY = "x509EccAliasKey";
