@@ -344,8 +344,9 @@ LOCAL int openssl_thread_LWIP_CONNECTION(TLS_IO_INSTANCE* p)
                                                         result = __LINE__;
                                                         LogInfo("error return : %d", lwip_net_errno(sock));
                                                         len = (unsigned int) sizeof( int );
-                                                        if (0 != getsockopt (sock, SOL_SOCKET, SO_ERROR, &ret, &len))
+                                                        if (0 != getsockopt (sock, SOL_SOCKET, SO_ERROR, &ret, &len)) {
                                                             LogInfo("SSL error ret : %d", ret);   // socket is in error state
+                                                        }
                                                         break;
                                                     }
 
