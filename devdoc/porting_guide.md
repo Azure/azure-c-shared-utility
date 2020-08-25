@@ -274,6 +274,5 @@ Newly supported devices are likely to use a wide variety of possible build syste
 tree can be prescribed. The [support repository for ESP32](https://github.com/Azure/azure-iot-pal-esp32) is the
 one we recommend considering as a model for creating a new device support repository.
 
-##### Last step: profit!
 
 
