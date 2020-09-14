@@ -42,7 +42,6 @@ x509_openssl_add_credentials loads a x509 certificate and a x509 private key int
 
 **SRS_X509_OPENSSL_02_009: [** Otherwise x509_openssl_add_credentials shall fail and return a non-zero number. **]**
 
-
 ###  x509_openssl_add_certificates
 ```c
 int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates);
@@ -69,6 +68,31 @@ int x509_openssl_add_certificates(SSL_CTX* ssl_ctx, const char* certificates);
 **SRS_X509_OPENSSL_02_018: [** In case of any failure `x509_openssl_add_certificates` shall fail and return a non-zero value. **]**
 
 **SRS_X509_OPENSSL_02_019: [** Otherwise, `x509_openssl_add_certificates` shall succeed and return 0. **]**
+
+###   x509_openssl_add_credentials_cryptodev
+```c
+int x509_openssl_add_credentials_cryptodev(SSL_CTX* ssl_ctx, const char* x509certificate, TLS_CRYPTODEV_PKEY* x509cryptodevprivatekey);
+```
+
+x509_openssl_add_credentials_cryptodev loads a x509 certificate and an x509 private key from a crypto device into a SSL context. 
+
+**SRS_X509_OPENSSL_02_020: [** If any argument is NULL then x509_openssl_add_credentials_cryptodev shall fail and return a non-zero value. **]**
+
+**SRS_X509_OPENSSL_02_021: [** x509_openssl_add_credentials_cryptodev shall use BIO_new_mem_buf to create a memory BIO from the x509 certificate. **]** 
+
+**SRS_X509_OPENSSL_02_022: [** x509_openssl_add_credentials_cryptodev shall use PEM_read_bio_X509 to read the x509 certificate. **]**
+
+**SRS_X509_OPENSSL_02_023: [** x509_openssl_add_credentials_cryptodev shall use RSA_set_method to set method on an RSA private key **]**
+
+**SRS_X509_OPENSSL_02_024: [** x509_openssl_add_credentials_cryptodev shall use EVP_PKEY_set1_RSA to create an RSA private key. **]**
+
+**SRS_X509_OPENSSL_02_025: [** x509_openssl_add_credentials_cryptodev shall use SSL_CTX_use_certificate to load the certicate into the SSL context. **]**
+
+**SRS_X509_OPENSSL_02_026: [** x509_openssl_add_credentials_cryptodev shall use SSL_CTX_use_RSAPrivateKey to load the private key into the SSL context. **]**
+
+**SRS_X509_OPENSSL_02_027: [** If no error occurs, then x509_openssl_add_credentials_cryptodev shall succeed and return 0. **]**
+
+**SRS_X509_OPENSSL_02_028: [** Otherwise x509_openssl_add_credentials_cryptodev shall fail and return a non-zero number. **]**
 
 ###  x509_openssl_add_ecc_credentials
 
