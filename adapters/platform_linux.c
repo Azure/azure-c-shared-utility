@@ -7,6 +7,8 @@
 #include "azure_c_shared_utility/httpapiex.h"
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/tlsio_openssl.h"
+#else
+const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description();
 #endif
 #if USE_CYCLONESSL
 #include "azure_c_shared_utility/tlsio_cyclonessl.h"
