@@ -56,17 +56,6 @@ typedef struct TLS_IO_INSTANCE_TAG
 STATIC_VAR_UNUSED const char* const OPTION_WOLFSSL_SET_DEVICE_ID = "SetDeviceId";
 static const size_t SOCKET_READ_LIMIT = 5;
 
-static int mallocAndIntcpy_s(int** destination, const int* src)
-{
-    *destination = (int*) malloc(sizeof(int));
-    if(*destination == NULL)
-    {
-        return ENOMEM;
-    }
-    **destination = *src;
-    return 0; 
-}
-
 /*this function will clone an option given by name and value*/
 static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
 {
@@ -114,18 +103,23 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
                 /*return as is*/
             }
         }
+        #ifdef INVALID_DEVID
         else if(strcmp(name, OPTION_WOLFSSL_SET_DEVICE_ID) == 0 )
         {
-            if (mallocAndIntcpy_s((int**)&result, value) !=0 )
-            {
-                LogError("unable to mallocAndIntcpy_s device id value");
-                result = NULL;
-            }
-            else
-            {
-                /*return as is*/
-            }
+             int* value_clone; 
+  
+             if ((value_clone = (int*)malloc(sizeof(int))) == NULL) 
+             { 
+                 LogError("unable to clone device id option"); 
+             } 
+             else 
+             { 
+                 *value_clone = *value; 
+             } 
+
+             result = value_clone; 
         }
+        #endif
         else
         {
             LogError("not handled option : %s", name);
@@ -206,6 +200,7 @@ static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
+            #ifdef INVALID_DEVID
             else if (
                 (tls_io_instance->wolfssl_device_id != INVALID_DEVID) &&
                 (OptionHandler_AddOption(result, OPTION_WOLFSSL_SET_DEVICE_ID, &tls_io_instance->wolfssl_device_id) != OPTIONHANDLER_OK)
@@ -215,6 +210,7 @@ static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
+            #endif
             else
             {
                 /*all is fine, all interesting options have been saved*/
