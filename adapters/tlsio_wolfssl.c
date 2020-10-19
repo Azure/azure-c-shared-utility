@@ -108,13 +108,13 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
         {
              int* value_clone; 
   
-             if ((value_clone = (int*)malloc(sizeof(int))) == NULL) 
+             if ((value_clone = malloc(sizeof(int))) == NULL) 
              { 
                  LogError("unable to clone device id option"); 
              } 
              else 
              { 
-                 *value_clone = *value; 
+                 *value_clone = *(int*)value; 
              } 
 
              result = value_clone; 
