@@ -422,7 +422,7 @@ static int on_io_send(WOLFSSL *ssl, char *buf, int sz, void *context)
         LogError("Failed sending bytes through underlying IO");
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         indicate_error(tls_io_instance);
-        result = -1;
+        result = WOLFSSL_CBIO_ERR_WANT_WRITE;
     }
     else
     {
