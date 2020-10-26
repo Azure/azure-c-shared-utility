@@ -566,8 +566,8 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_session_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_session_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_PTR_ARG));
