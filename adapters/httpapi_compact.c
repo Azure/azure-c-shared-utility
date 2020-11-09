@@ -1310,7 +1310,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         }
 #endif // DO_NOT_COPY_TRUSTED_CERTS_STRING
     }
-    else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
+    else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
     {
         int len;
         if (http_instance->x509ClientCertificate)
@@ -1333,7 +1333,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             result = HTTPAPI_OK;
         }
     }
-    else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
+    else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
     {
         int len;
         if (http_instance->x509ClientPrivateKey)
@@ -1476,7 +1476,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         }
 #endif // DO_NOT_COPY_TRUSTED_CERTS_STRING
     }
-    else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0)
+    else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
     {
         certLen = strlen((const char*)value);
         tempCert = (char*)malloc((certLen + 1) * sizeof(char));
@@ -1493,7 +1493,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             result = HTTPAPI_OK;
         }
     }
-    else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0)
+    else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
     {
         certLen = strlen((const char*)value);
         tempCert = (char*)malloc((certLen + 1) * sizeof(char));
