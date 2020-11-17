@@ -184,10 +184,13 @@ int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_
             }
             else
             {
+#pragma warning(push)
+#pragma warning(disable:6387)
                 /* Codes_SRS_BUFFER_07_031: [ ... and copy the contents of source to handle->buffer. ] */
                 (void)memcpy(handle->buffer, source, size);
                 /* Codes_SRS_BUFFER_07_034: [ On success BUFFER_append_build shall return 0 ] */
                 result = 0;
+#pragma warning(pop) // C6387
             }
         }
         else

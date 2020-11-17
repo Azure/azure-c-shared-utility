@@ -246,6 +246,8 @@ static void unchecked_on_send_complete(void* context, IO_SEND_RESULT send_result
 
 static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED open_result_detailed)
 {
+#pragma warning(push)
+#pragma warning(disable:26451)
     IO_OPEN_RESULT open_result = open_result_detailed.result;
     if (context == NULL)
     {
@@ -454,6 +456,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
             break;
         }
     }
+#pragma warning(pop) // C26451
 }
 
 static void on_underlying_io_error(void* context)

@@ -1394,6 +1394,8 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest_With_Streaming(HTTP_HANDLE handle, HTTPAPI
 /*Codes_SRS_HTTPAPI_COMPACT_21_058: [ The HTTPAPI_SetOption shall receive the option as a pair optionName/value. ]*/
 HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, const void* value)
 {
+#pragma warning(push)
+#pragma warning(disable:26451)
     HTTPAPI_RESULT result;
     HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)handle;
 
@@ -1462,7 +1464,6 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         {
             free(http_instance->x509ClientPrivateKey);
         }
-
         len = (int)strlen((char*)value);
         http_instance->x509ClientPrivateKey = (char*)malloc((len + 1) * sizeof(char));
         if (http_instance->x509ClientPrivateKey == NULL)
@@ -1493,6 +1494,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         }
     }
     return result;
+#pragma warning(pop) // C26451
 }
 
 /*Codes_SRS_HTTPAPI_COMPACT_21_065: [ The HTTPAPI_CloneOption shall provide the means to clone the HTTP option. ]*/

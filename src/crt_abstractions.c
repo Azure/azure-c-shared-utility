@@ -14,6 +14,8 @@
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
+#pragma warning(push)
+#pragma warning(disable:26451)
 // VS 2008 does not have INFINITY and all the nice goodies...
 #if defined (TIZENRT) || defined (WINCE)
 #define DEFINE_INFINITY 1
@@ -541,6 +543,7 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
 
         if (result == FST_NUMBER)
         {
+
             /* Add ullInteger to ullFraction. */
             ullFraction += (ullInteger * (unsigned long long)(pow(10, (double)fractionSize)));
             (*fraction) = ((double)ullFraction / (pow(10.0f, (double)(fractionSize + integerSize - 1))));
@@ -549,7 +552,6 @@ static FLOAT_STRING_TYPE splitFloatString(const char* nptr, char** endptr, int *
             (*exponential) += integerSize - 1;
         }
     }
-
     return result;
 }
 
@@ -820,3 +822,4 @@ int size_tToString(char* destination, size_t destinationSize, size_t value)
     }
     return result;
 }
+#pragma warning(pop) // C26451
