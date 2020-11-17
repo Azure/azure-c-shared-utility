@@ -557,7 +557,10 @@ void uws_client_destroy(UWS_CLIENT_HANDLE uws_client)
             /* Codes_SRS_UWS_CLIENT_01_437: [ `uws_client_destroy` shall free the protocols array allocated in `uws_client_create`. ]*/
             for (i = 0; i < uws_client->protocol_count; i++)
             {
+#pragma warning(push)
+#pragma warning(disable:6001)
                 free(uws_client->protocols[i].protocol);
+#pragma warning(pop) // C6001
             }
 
             free(uws_client->protocols);
@@ -845,7 +848,10 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT_DETAILE
                     }
                     else
                     {
+#pragma warning(push)
+#pragma warning(disable:26451)
                         upgrade_request = (char*)malloc(upgrade_request_length + 1);
+#pragma warning(pop) // C26451
                         if (upgrade_request == NULL)
                         {
                             /* Codes_SRS_UWS_CLIENT_01_406: [ If not enough memory can be allocated to construct the WebSocket upgrade request, uws shall report that the open failed by calling the `on_ws_open_complete` callback passed to `uws_client_open_async` with `WS_OPEN_ERROR_NOT_ENOUGH_MEMORY`. ]*/

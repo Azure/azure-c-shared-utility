@@ -44,9 +44,12 @@ void singlylinkedlist_destroy(SINGLYLINKEDLIST_HANDLE list)
 
         while (list_instance->head != NULL)
         {
+#pragma warning(push)
+#pragma warning(disable:6001)
             LIST_ITEM_INSTANCE* current_item = list_instance->head;
             list_instance->head = (LIST_ITEM_INSTANCE*)current_item->next;
             free(current_item);
+#pragma warning(pop) // C6001
         }
 
         /* Codes_SRS_LIST_01_003: [singlylinkedlist_destroy shall free all resources associated with the list identified by the handle argument.] */

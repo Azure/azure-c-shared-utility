@@ -152,11 +152,14 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
             result = (STRING*)malloc(sizeof(STRING));
             if (result != NULL)
             {
+#pragma warning(push)
+#pragma warning(disable:26451)
                 result->s = (char*)malloc(length+1);
                 if (result->s != NULL)
                 {
                     va_start(arg_list, format);
                     if (vsnprintf(result->s, length+1, format, arg_list) < 0)
+#pragma warning(pop) // C26451
                     {
                         /* Codes_SRS_STRING_07_040: [If any error is encountered STRING_construct_sprintf shall return NULL.] */
                         free(result->s);
