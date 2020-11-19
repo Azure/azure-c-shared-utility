@@ -117,41 +117,51 @@ int SHA1Reset(SHA1Context *context)
 *          the message.
 *      length: [in]
 *          The length of the message in message_array
+*          Max length can be 64 bits
 *
 *  Returns:
 *      sha Error Code.
 *
 */
-int SHA1Input(SHA1Context *context,
-    const uint8_t *message_array, unsigned length)
+int SHA1Input(SHA1Context *context, const uint8_t *message_array, unsigned int length)
 {
+    int result;
     uint32_t addTemp;
     if (!length)
-        return shaSuccess;
-
-    if (!context || !message_array)
-        return shaNull;
-
-    if (context->Computed) {
-        context->Corrupted = shaStateError;
-        return shaStateError;
+    {
+        result = shaSuccess;
     }
-
-    if (context->Corrupted)
-        return context->Corrupted;
-
-    while (length-- && !context->Corrupted) {
-        context->Message_Block[context->Message_Block_Index++] =
-            (*message_array & 0xFF);
-
-        if (!SHA1AddLength(context, 8) &&
-            (context->Message_Block_Index == SHA1_Message_Block_Size))
-            SHA1ProcessMessageBlock(context);
-
-        message_array++;
+    else if (length > SHA1_Message_Block_Size)
+    {
+        result = shaInputTooLong;
     }
+    else if (!context || !message_array)
+    {
+        result = shaNull;
+    }
+    else if (context->Computed) 
+    {
+        result = context->Corrupted = shaStateError;
+    }
+    else if (context->Corrupted)
+    {
+        result = context->Corrupted;
+    }
+    else
+    {
+        while (length-- && !context->Corrupted)
+        {
+            context->Message_Block[context->Message_Block_Index++] = (*message_array & 0xFF);
 
-    return shaSuccess;
+            if (!SHA1AddLength(context, 8) && (context->Message_Block_Index == SHA1_Message_Block_Size))
+            {
+                SHA1ProcessMessageBlock(context);
+            }
+            message_array++;
+        }
+        result = shaSuccess;
+    }
+    return result;
 }
 
 /*
