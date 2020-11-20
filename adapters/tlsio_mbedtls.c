@@ -441,6 +441,7 @@ static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
     {
         // mbedTLS cleanup...
         mbedtls_ssl_free(&tls_io_instance->ssl);
+        mbedtls_ssl_session_free(&tls_io_instance->ssn);
         mbedtls_ssl_config_free(&tls_io_instance->config);
         mbedtls_x509_crt_free(&tls_io_instance->trusted_certificates_parsed);
         mbedtls_x509_crt_free(&tls_io_instance->owncert);
