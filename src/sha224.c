@@ -226,10 +226,6 @@ int SHA256Input(SHA256Context *context, const uint8_t *message_array, unsigned i
     {
         result = shaSuccess;
     }
-    else if (length > SHA256_Message_Block_Size)
-    {
-        result = shaInputTooLong;
-    }
     else if (!context || !message_array)
     {
         result = shaNull;

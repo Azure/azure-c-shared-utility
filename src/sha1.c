@@ -131,10 +131,6 @@ int SHA1Input(SHA1Context *context, const uint8_t *message_array, unsigned int l
     {
         result = shaSuccess;
     }
-    else if (length > SHA1_Message_Block_Size)
-    {
-        result = shaInputTooLong;
-    }
     else if (!context || !message_array)
     {
         result = shaNull;
