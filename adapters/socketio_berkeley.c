@@ -932,7 +932,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             {
                 signal(SIGPIPE, SIG_IGN);
 
-                ssize_t send_result = send(socket_io_instance->socket, buffer, size, 0);
+                ssize_t send_result = send(socket_io_instance->socket, buffer, size, MSG_NOSIGNAL);
                 if ((size_t)send_result != size)
                 {
                     if (send_result == SOCKET_SEND_FAILURE && errno != EAGAIN)
@@ -993,7 +993,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     break;
                 }
 
-                ssize_t send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
+                ssize_t send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, MSG_NOSIGNAL);
                 if ((send_result < 0) || ((size_t)send_result != pending_socket_io->size))
                 {
                     if (send_result == INVALID_SOCKET)
@@ -1045,7 +1045,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 ssize_t received = 0;
                 do
                 {
-                    received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, XIO_RECEIVE_BUFFER_SIZE, 0);
+                    received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, XIO_RECEIVE_BUFFER_SIZE, MSG_NOSIGNAL);
                     if (received > 0)
                     {
                         if (socket_io_instance->on_bytes_received != NULL)
