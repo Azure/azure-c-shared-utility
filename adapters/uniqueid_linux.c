@@ -4,13 +4,27 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <uuid/uuid.h>
+#include <sys/random.h>
 
 #include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/uniqueid.h"
 #include "azure_c_shared_utility/xlogging.h"
 
 MU_DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
+
+// UUID fields as specified in RFC 4122
+struct uuid {
+    uint32_t    time_low;
+    uint16_t    time_mid;
+    uint16_t    time_hi_and_version;
+    uint16_t    clock_seq_and_variant;
+    uint8_t node[6];
+};
+
+// lowercase uuid format expected by azure iot sdk
+static const char *uuid_format =
+    "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x";
+
 
 UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
 {
@@ -25,13 +39,36 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
     }
     else
     {
-        uuid_t uuidVal;
-        uuid_generate(uuidVal);
 
-        /* Codes_SRS_UNIQUEID_07_001: [UniqueId_Generate shall create a unique Id 36 character long string.] */
-        memset(uid, 0, len);
-        uuid_unparse(uuidVal, uid);
-        result = UNIQUEID_OK;
+        // generate version 4 uuid
+        struct uuid unique_id;
+
+        // get random bytes
+        ssize_t bytes_got = getrandom(&unique_id, sizeof(unique_id), 0);
+        if (bytes_got != sizeof(unique_id)) {
+            LogError("Failed to obtain random numbers from getrandom.");
+            result = UNIQUEID_ERROR;
+        } else {
+            // format as version 4 (random) uuid variant 2
+            unique_id.clock_seq_and_variant = (unique_id.clock_seq_and_variant & 0x3FFF) | 0x8000;
+            unique_id.time_hi_and_version = (unique_id.time_hi_and_version & 0x0FFF) | 0x4000;
+
+            /* Codes_SRS_UNIQUEID_07_001: [UniqueId_Generate shall create a unique Id 36 character long string.] */
+            // write out unique_id as string
+            memset(uid, 0, len);
+            int chars_written = snprintf(uid, len, uuid_format,
+                unique_id.time_low, unique_id.time_mid, unique_id.time_hi_and_version,
+                unique_id.clock_seq_and_variant >> 8, unique_id.clock_seq_and_variant & 0xFF,
+                unique_id.node[0], unique_id.node[1], unique_id.node[2],
+                unique_id.node[3], unique_id.node[4], unique_id.node[5]);
+
+            if (chars_written != 36) {
+                LogError("Failed to convert binary uuid to string format.");
+                result = UNIQUEID_ERROR;
+            } else {
+                result = UNIQUEID_OK;
+            }
+        }
     }
     return result;
 }
