@@ -425,7 +425,7 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
     if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
     {
         CFStreamStatus read_status = CFReadStreamGetStatus(tls_io_instance->sockRead);
-        if (read_status == kCFStreamStatusAtEnd)
+        if (read_status == kCFStreamStatusAtEnd || read_status == kCFStreamStatusError)
         {
             enter_tlsio_error_state(tls_io_instance);
         }
