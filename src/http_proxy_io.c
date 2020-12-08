@@ -13,6 +13,8 @@
 #include "azure_c_shared_utility/http_proxy_io.h"
 #include "azure_c_shared_utility/azure_base64.h"
 
+static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
+
 typedef enum HTTP_PROXY_IO_STATE_TAG
 {
     HTTP_PROXY_IO_STATE_CLOSED,
@@ -78,7 +80,7 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
         else
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_001: [ http_proxy_io_create shall create a new instance of the HTTP proxy IO. ]*/
-            result = (HTTP_PROXY_IO_INSTANCE*)malloc(sizeof(HTTP_PROXY_IO_INSTANCE));
+            result = (HTTP_PROXY_IO_INSTANCE*)calloc(1, sizeof(HTTP_PROXY_IO_INSTANCE));
             if (result == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_051: [ If allocating memory for the new instance fails, http_proxy_io_create shall fail and return NULL. ]*/
@@ -896,7 +898,7 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
         /* Codes_SRS_HTTP_PROXY_IO_01_040: [ If any of the arguments http_proxy_io or option_name is NULL, http_proxy_io_set_option shall return a non-zero value. ]*/
         LogError("Bad arguments: http_proxy_io = %p, option_name = %p",
             http_proxy_io, option_name);
-        result = __LINE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -904,13 +906,25 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
 
         /* Codes_SRS_HTTP_PROXY_IO_01_045: [ None. ]*/
 
+        if (strcmp(option_name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
+        {
+            if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, (void*)http_proxy_io_instance->underlying_io) != OPTIONHANDLER_OK)
+            {
+                LogError("failed feeding options to underlying I/O instance");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
         /* Codes_SRS_HTTP_PROXY_IO_01_043: [ If the option_name argument indicates an option that is not handled by http_proxy_io_set_option, then xio_setoption shall be called on the underlying IO created in http_proxy_io_create, passing the option name and value to it. ]*/
         /* Codes_SRS_HTTP_PROXY_IO_01_056: [ The value argument shall be allowed to be NULL. ]*/
-        if (xio_setoption(http_proxy_io_instance->underlying_io, option_name, value) != 0)
+        else if (xio_setoption(http_proxy_io_instance->underlying_io, option_name, value) != 0)
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_044: [ if xio_setoption fails, http_proxy_io_set_option shall return a non-zero value. ]*/
-            LogError("Unrecognized option");
-            result = __LINE__;
+            LogError("Unrecognized option %s", option_name);
+            result = MU_FAILURE;
         }
         else
         {
@@ -920,6 +934,56 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
     }
 
     return result;
+}
+
+/*this function will clone an option given by name and value*/
+static void* http_proxy_io_clone_option(const char* name, const void* value)
+{
+    void* result;
+    if (
+        (name == NULL) || (value == NULL)
+        )
+    {
+        LogError("invalid parameter detected: name=%p, value=%p", name, value);
+        result = NULL;
+    }
+    else
+    {
+        if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
+        {
+            result = (void*)value;
+        }
+        else
+        {
+            LogError("not handled option : %s", name);
+            result = NULL;
+        }
+    }
+
+    return result;
+}
+
+/*this function destroys an option previously created*/
+static void http_proxy_io_destroy_option(const char* name, const void* value)
+{
+    /*since all options for this layer are actually string copies., disposing of one is just calling free*/
+    if (
+        (name == NULL) || (value == NULL)
+        )
+    {
+        LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
+    }
+    else
+    {
+        if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
+        {
+            OptionHandler_Destroy((OPTIONHANDLER_HANDLE)value);
+        }
+        else
+        {
+            LogError("not handled option : %s", name);
+        }
+    }
 }
 
 static OPTIONHANDLER_HANDLE http_proxy_io_retrieve_options(CONCRETE_IO_HANDLE http_proxy_io)
@@ -936,12 +1000,30 @@ static OPTIONHANDLER_HANDLE http_proxy_io_retrieve_options(CONCRETE_IO_HANDLE ht
     {
         HTTP_PROXY_IO_INSTANCE* http_proxy_io_instance = (HTTP_PROXY_IO_INSTANCE*)http_proxy_io;
 
-        /* Codes_SRS_HTTP_PROXY_IO_01_046: [ http_proxy_io_retrieve_options shall return an OPTIONHANDLER_HANDLE obtained by calling xio_retrieveoptions on the underlying IO created in http_proxy_io_create. ]*/
-        result = xio_retrieveoptions(http_proxy_io_instance->underlying_io);
+        result = OptionHandler_Create(http_proxy_io_clone_option, http_proxy_io_destroy_option, http_proxy_io_set_option);
+
         if (result == NULL)
         {
-            /* Codes_SRS_HTTP_PROXY_IO_01_048: [ If xio_retrieveoptions fails, http_proxy_io_retrieve_options shall return NULL. ]*/
-            LogError("unable to create option handler");
+            LogError("OptionHandler_Create failed");
+        }
+        else
+        {
+            OPTIONHANDLER_HANDLE underlying_io_options;
+
+            /* Codes_SRS_HTTP_PROXY_IO_01_046: [ http_proxy_io_retrieve_options shall return an OPTIONHANDLER_HANDLE obtained by calling xio_retrieveoptions on the underlying IO created in http_proxy_io_create. ]*/
+            if ((underlying_io_options = xio_retrieveoptions(http_proxy_io_instance->underlying_io)) == NULL ||
+                OptionHandler_AddOption(result, OPTION_UNDERLYING_IO_OPTIONS, underlying_io_options) != OPTIONHANDLER_OK)
+            {
+                /* Codes_SRS_HTTP_PROXY_IO_01_048: [ If xio_retrieveoptions fails, http_proxy_io_retrieve_options shall return NULL. ]*/
+                LogError("unable to save underlying_io options");
+                OptionHandler_Destroy(underlying_io_options);
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else
+            {
+                // All is fine.
+            }
         }
     }
     return result;

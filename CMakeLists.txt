@@ -535,10 +535,10 @@ endif()
 
 if(${use_mbedtls})
     if (WIN32)
-        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} 
-            $ENV{mbedtlsLibDir}/mbedtls 
-            $ENV{mbedtlsLibDir}/mbedx509 
-            $ENV{mbedtlsLibDir}/mbedcrypto
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ws2_32
+            $ENV{mbedtlsLibDir}/mbedtls.lib 
+            $ENV{mbedtlsLibDir}/mbedx509.lib 
+            $ENV{mbedtlsLibDir}/mbedcrypto.lib
         )
         include_directories("$ENV{mbedtlsDir}/include")
     else()

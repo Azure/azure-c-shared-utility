@@ -30,6 +30,11 @@ extern "C"
         return malloc(size);
     }
 
+    void* real_calloc(size_t nmemb, size_t size)
+    {
+        return calloc(nmemb, size);
+    }
+
     void* real_realloc(void* ptr, size_t size)
     {
         return realloc(ptr, size);
@@ -305,6 +310,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, result);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, real_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, real_calloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, real_realloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, real_free);
     REGISTER_GLOBAL_MOCK_HOOK(mallocAndStrcpy_s, real_mallocAndStrcpy_s);
@@ -381,7 +387,8 @@ TEST_FUNCTION(http_proxy_io_create_succeeds)
     http_proxy_io_config.username = "test_user";
     http_proxy_io_config.password = "shhhh";
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "a_proxy"))
@@ -419,7 +426,8 @@ TEST_FUNCTION(http_proxy_io_create_with_NULL_username_and_password_succeeds)
     http_proxy_io_config.username = NULL;
     http_proxy_io_config.password = NULL;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .IgnoreAllArguments();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "a_proxy"))
@@ -553,7 +561,8 @@ TEST_FUNCTION(when_a_call_made_by_http_proxy_io_create_fails_then_http_proxy_io_
     int negativeTestsInitResult = umock_c_negative_tests_init();
     ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .IgnoreAllArguments()
         .SetFailReturn(NULL);
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
         .IgnoreArgument_destination()
@@ -1551,7 +1560,9 @@ TEST_FUNCTION(http_proxy_io_retrieve_options_calls_the_underlying_retrieve_optio
     http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     // act
     result = http_proxy_io_get_interface_description()->concrete_io_retrieveoptions(http_io);
@@ -1588,8 +1599,11 @@ TEST_FUNCTION(when_xio_retrieveoptions_fails_then_http_proxy_io_retrieve_options
     http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE))
         .SetReturn(NULL);
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG));
 
     // act
     result = http_proxy_io_get_interface_description()->concrete_io_retrieveoptions(http_io);

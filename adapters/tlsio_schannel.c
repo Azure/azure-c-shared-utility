@@ -810,7 +810,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         LPVOID srcText = NULL;
                         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)srcText, 0, NULL) > 0)
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
                         {
                             LogError("[%#x] %s", status, (LPTSTR)srcText);
                             LocalFree(srcText);
@@ -972,7 +972,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         LPVOID srcText = NULL;
                         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)srcText, 0, NULL) > 0)
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
                         {
                             LogError("[%#x] %s", status, (LPTSTR)srcText);
                             LocalFree(srcText);
@@ -1296,7 +1296,7 @@ int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t si
     if (tls_io_instance->tlsio_state == TLSIO_STATE_RENEGOTIATE)
     {
         /* add to pending list */
-        PENDING_SEND* new_pending_send = (PENDING_SEND*)malloc(sizeof(PENDING_SEND));
+        PENDING_SEND* new_pending_send = (PENDING_SEND*)calloc(1, sizeof(PENDING_SEND));
         if (new_pending_send == NULL)
         {
             LogError("Cannot allocate memory for pending IO");

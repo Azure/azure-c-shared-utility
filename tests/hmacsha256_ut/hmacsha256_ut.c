@@ -16,6 +16,11 @@ void* real_malloc(size_t size)
     return malloc(size);
 }
 
+void* real_calloc(size_t nmemb, size_t size)
+{
+    return calloc(nmemb, size);
+}
+
 void* real_realloc(void* ptr, size_t size)
 {
     return realloc(ptr, size);
@@ -55,6 +60,7 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     umock_c_init(on_umock_c_error);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, real_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, real_calloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, real_free);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, real_realloc);
 }

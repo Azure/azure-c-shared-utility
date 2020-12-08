@@ -258,7 +258,7 @@ static CONCRETE_IO_HANDLE tlsio_appleios_create(void* io_create_parameters)
                     result->sockWrite = NULL;
                     result->hostname = NULL;
                     result->pending_transmission_list = NULL;
-                    tlsio_options_initialize(&result->options, TLSIO_OPTION_BIT_NONE);
+                    tlsio_options_initialize(&result->options, TLSIO_OPTION_BIT_TRUSTED_CERTS);
                     /* Codes_SRS_TLSIO_30_016: [ tlsio_create shall make a copy of the hostname member of io_create_parameters to allow deletion of hostname immediately after the call. ]*/
                     if (NULL == (result->hostname = CFStringCreateWithCString(NULL, tls_io_config->hostname, kCFStringEncodingUTF8)))
                     {
@@ -521,7 +521,14 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
     CFStreamCreatePairWithSocketToHost(NULL, tls_io_instance->hostname, tls_io_instance->port, &tls_io_instance->sockRead, &tls_io_instance->sockWrite);
     if (tls_io_instance->sockRead != NULL && tls_io_instance->sockWrite != NULL)
     {
-        if (CFReadStreamSetProperty(tls_io_instance->sockRead, kCFStreamPropertySSLSettings, kCFStreamSocketSecurityLevelNegotiatedSSL))
+        
+        CFStringRef keys[1] = {kCFStreamPropertySocketSecurityLevel};
+        CFStringRef values[1] = {kCFStreamSocketSecurityLevelNegotiatedSSL};
+
+        CFDictionaryRef tls_io_dictionary = CFDictionaryCreate(NULL , (void *)keys , (void *)values , 1,  NULL , NULL);
+        
+        if (CFReadStreamSetProperty(tls_io_instance->sockRead, kCFStreamPropertySSLSettings, tls_io_dictionary))
+
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING_WAITING_SSL;
         }
@@ -530,6 +537,8 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
             LogError("Failed to set socket properties");
             enter_open_error_state(tls_io_instance);
         }
+        
+        CFRelease(tls_io_dictionary);
     }
     else
     {

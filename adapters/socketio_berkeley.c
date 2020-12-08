@@ -351,6 +351,8 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             }
             else
             {
+                // Async connect will return -1.
+                result = 0;
                 if (socket_io_instance->on_io_open_complete != NULL)
                 {
                     socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
@@ -372,7 +374,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     {
         if (result == 0)
         {
-            initiate_socket_connection(socket_io_instance);
+            result = initiate_socket_connection(socket_io_instance);
         }
     }
 
@@ -944,7 +946,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                         /* queue data */
                         size_t bytes_sent = (send_result < 0 ? 0 : send_result);
 
-                        if (add_pending_io(socket_io_instance, buffer + bytes_sent, size - bytes_sent, on_send_complete, callback_context) != 0)
+                        if (add_pending_io(socket_io_instance, (const unsigned char*)buffer + bytes_sent, size - bytes_sent, on_send_complete, callback_context) != 0)
                         {
                             LogError("Failure: add_pending_io failed.");
                             result = MU_FAILURE;

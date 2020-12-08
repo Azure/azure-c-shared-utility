@@ -103,6 +103,23 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
                 /*return as is*/
             }
         }
+        #ifdef INVALID_DEVID
+        else if(strcmp(name, OPTION_WOLFSSL_SET_DEVICE_ID) == 0 )
+        {
+             int* value_clone; 
+  
+             if ((value_clone = malloc(sizeof(int))) == NULL) 
+             { 
+                 LogError("unable to clone device id option"); 
+             } 
+             else 
+             { 
+                 *value_clone = *(int*)value; 
+             } 
+
+             result = value_clone; 
+        }
+        #endif
         else
         {
             LogError("not handled option : %s", name);
@@ -124,7 +141,8 @@ static void tlsio_wolfssl_DestroyOption(const char* name, const void* value)
     {
         if ((strcmp(name, OPTION_TRUSTED_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
-            (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0))
+            (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
+            (strcmp(name, OPTION_WOLFSSL_SET_DEVICE_ID) == 0))
         {
             free((void*)value);
         }
@@ -182,6 +200,17 @@ static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
+            #ifdef INVALID_DEVID
+            else if (
+                (tls_io_instance->wolfssl_device_id != INVALID_DEVID) &&
+                (OptionHandler_AddOption(result, OPTION_WOLFSSL_SET_DEVICE_ID, &tls_io_instance->wolfssl_device_id) != OPTIONHANDLER_OK)
+                )
+            {
+                LogError("unable to save deviceid option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            #endif
             else
             {
                 /*all is fine, all interesting options have been saved*/
@@ -422,7 +451,7 @@ static int on_io_send(WOLFSSL *ssl, char *buf, int sz, void *context)
         LogError("Failed sending bytes through underlying IO");
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         indicate_error(tls_io_instance);
-        result = 0;
+        result = WOLFSSL_CBIO_ERR_GENERAL;
     }
     else
     {

@@ -18,7 +18,7 @@ typedef struct BUFFER_TAG
 /* Codes_SRS_BUFFER_07_001: [BUFFER_new shall allocate a BUFFER_HANDLE that will contain a NULL unsigned char*.] */
 BUFFER_HANDLE BUFFER_new(void)
 {
-    BUFFER* temp = (BUFFER*)malloc(sizeof(BUFFER));
+    BUFFER* temp = (BUFFER*)calloc(1, sizeof(BUFFER));
     /* Codes_SRS_BUFFER_07_002: [BUFFER_new shall return NULL on any error that occurs.] */
     if (temp != NULL)
     {
@@ -64,7 +64,7 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
     else
     {
         /*Codes_SRS_BUFFER_02_002: [Otherwise, BUFFER_create shall allocate memory to hold size bytes and shall copy from source size bytes into the newly allocated memory.] */
-        result = (BUFFER*)malloc(sizeof(BUFFER));
+        result = (BUFFER*)calloc(1, sizeof(BUFFER));
         if (result == NULL)
         {
             /*Codes_SRS_BUFFER_02_003: [If allocating memory fails, then BUFFER_create shall return NULL.] */
@@ -94,7 +94,7 @@ BUFFER_HANDLE BUFFER_create(const unsigned char* source, size_t size)
 BUFFER_HANDLE BUFFER_create_with_size(size_t buff_size)
 {
     BUFFER* result;
-    result = (BUFFER*)malloc(sizeof(BUFFER));
+    result = (BUFFER*)calloc(1, sizeof(BUFFER));
     if (result != NULL)
     {
         if (buff_size == 0)
@@ -540,10 +540,15 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
         else
         {
             //put b2 ahead of b1: [b2][b1], return b1
-            if (b2->size ==0)
+            if (b2->size == 0)
             {
                 // do nothing
                 result = 0;
+            }
+            else if (b1->size + b2->size < b2->size)
+            {
+                LogError("Failure: size_t overflow.");
+                result = MU_FAILURE;
             }
             else
             {
@@ -642,7 +647,7 @@ BUFFER_HANDLE BUFFER_clone(BUFFER_HANDLE handle)
     else
     {
         BUFFER* suppliedBuff = (BUFFER*)handle;
-        BUFFER* b = (BUFFER*)malloc(sizeof(BUFFER));
+        BUFFER* b = (BUFFER*)calloc(1, sizeof(BUFFER));
         if (b != NULL)
         {
             if (BUFFER_safemalloc(b, suppliedBuff->size) != 0)
