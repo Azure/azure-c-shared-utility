@@ -939,7 +939,7 @@ static int enable_domain_check(TLS_IO_INSTANCE* tlsInstance)
 
     if (!tlsInstance->ignore_host_name_check)
     {
-#if (OPENSSL_VERSION_NUMBER < 0x10020000L)
+#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
 #error "OpenSSL v1.0.2 or above required. See https://wiki.openssl.org/index.php/Hostname_validation for details."
 #endif
         X509_VERIFY_PARAM *param = SSL_get0_param(tlsInstance->ssl);
