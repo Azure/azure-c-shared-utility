@@ -1385,7 +1385,7 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
         {
             result = 0;
         }
-        else if (strcmp("ignore_server_name_check", optionName) == 0)
+        else if (strcmp("ignore_host_name_check", optionName) == 0)
         {
             bool* server_name_check = (bool*)value;
             tls_io_instance->ignore_server_name_check = *server_name_check;

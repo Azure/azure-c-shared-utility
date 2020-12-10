@@ -51,6 +51,8 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* x509certificate;
     char* x509privatekey;
     int wolfssl_device_id;
+    char* hostname;
+    bool ignore_host_name_check;
 } TLS_IO_INSTANCE;
 
 STATIC_VAR_UNUSED const char* const OPTION_WOLFSSL_SET_DEVICE_ID = "SetDeviceId";
@@ -259,7 +261,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         res = wolfSSL_connect(tls_io_instance->ssl);
         if (res != SSL_SUCCESS)
         {
-            LogError("WolfSSL connect failed");
+            // Error codes explained in https://www.wolfssl.com/docs/wolfssl-manual/appendix-c/
+            LogError("WolfSSL connect failed (%d)", wolfSSL_get_error(tls_io_instance->ssl, res));
             indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
             tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         }
@@ -533,10 +536,31 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
     return result;
 }
 
+static int enable_domain_check(TLS_IO_INSTANCE* tls_io_instance)
+{
+    int result = 0;
+
+    if (!tls_io_instance->ignore_host_name_check)
+    {
+        if (wolfSSL_check_domain_name(tls_io_instance->ssl, tls_io_instance->hostname) != WOLFSSL_SUCCESS)
+        {
+            result = __FAILURE__;
+        }
+    }
+
+    return result;
+}
+
 static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
 {
     int result;
-    if (add_certificate_to_store(tls_io_instance) != 0)
+
+    if (enable_domain_check(tls_io_instance))
+    {
+        LogError("Failed to configure domain name verification");
+        result = __FAILURE__;
+    }
+    else if (add_certificate_to_store(tls_io_instance) != 0)
     {
         LogError("Failed to add certificates to store");
         result = __FAILURE__;
@@ -606,6 +630,12 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
                 free(result);
                 result = NULL;
             }
+            else if (mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname) != 0)
+            {
+                LogError("Failed copying the target hostname.");
+                free(result);
+                result = NULL;
+            }
             else
             {
                 SOCKETIO_CONFIG socketio_config;
@@ -631,6 +661,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
                 {
                     LogError("Failed getting socket IO interface description.");
                     wolfSSL_CTX_free(result->ssl_context);
+                    free(result->hostname);
                     free(result);
                     result = NULL;
                 }
@@ -641,6 +672,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
                     {
                         LogError("Failure connecting to underlying socket_io");
                         wolfSSL_CTX_free(result->ssl_context);
+                        free(result->hostname);
                         free(result);
                         result = NULL;
                     }
@@ -648,6 +680,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
                     {
                         LogError("Failure connecting to underlying socket_io");
                         wolfSSL_CTX_free(result->ssl_context);
+                        free(result->hostname);
                         free(result);
                         result = NULL;
                     }
@@ -690,6 +723,7 @@ void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io)
         tls_io_instance->ssl_context = NULL;
 
         xio_destroy(tls_io_instance->socket_io);
+        free(tls_io_instance->hostname);
         free(tls_io);
     }
 }
@@ -928,6 +962,12 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             }
         }
 #endif
+        else if (strcmp("ignore_host_name_check", optionName) == 0)
+        {
+            bool* server_name_check = (bool*)value;
+            tls_io_instance->ignore_host_name_check = *server_name_check;
+            result = 0;
+        }
         else
         {
             if (tls_io_instance->socket_io == NULL)
