@@ -301,6 +301,10 @@ int x509_openssl_add_credentials(
         {
             result = x509_openssl_add_engine_key(ssl_ctx, x509privatekey, engine);
         }
+        else
+        {
+            result = 0;
+        }
 
         if (result == 0)
         {
