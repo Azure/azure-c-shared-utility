@@ -565,6 +565,8 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
     #else
             size_t calls_cannot_fail[] = { 2, 5, 9, 10, 11, 12, 13, 14, 15 };
     #endif
+
+    size_t calls_cannot_fail_size = sizeof(calls_cannot_fail) / sizeof(calls_cannot_fail[0]);
 #endif
         //act
         int result;
