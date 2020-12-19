@@ -539,50 +539,39 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L)
     #ifdef __APPLE__
-            size_t calls_cannot_fail[] = { 4, 8, 9, 10, 11, 12, 13, 14, 15 };
-    #else
-            size_t calls_cannot_fail_rsa[] = { 2, 5, 6, 7, 11, 12, 14, 15, 16 };
-            size_t calls_cannot_fail_ecc[] = { 2, 4, 5, 9, 10, 12, 13, 14 };
-            size_t calls_cannot_fail_engine[] = { 4, 9, 10, 12, 13, 14 };
-
-            size_t* calls_cannot_fail;
-            size_t calls_cannot_fail_size;
-
-            if (!use_engine)
-            {
-                calls_cannot_fail = is_rsa ? calls_cannot_fail_rsa : calls_cannot_fail_ecc;
-                calls_cannot_fail_size = is_rsa ? sizeof(calls_cannot_fail_rsa) / sizeof(calls_cannot_fail_rsa[0]) : sizeof(calls_cannot_fail_ecc) / sizeof(calls_cannot_fail_ecc[0]);
-            }
-            else
-            {
-                calls_cannot_fail = calls_cannot_fail_engine;
-                calls_cannot_fail_size = sizeof(calls_cannot_fail_engine) / sizeof(calls_cannot_fail_engine[0]);
-            }
+        size_t calls_cannot_fail_rsa[] = { 4, 5, 6, 10, 12, 13, 14 };
+        size_t calls_cannot_fail_ecc[] = { 3, 4, 8, 10, 11, 12} ;
+        size_t calls_cannot_fail_engine[] = { 4, 9, 11, 12, 13 };
+#else
+        size_t calls_cannot_fail_rsa[] = { 2, 5, 6, 7, 11, 12, 14, 15, 16 };
+        size_t calls_cannot_fail_ecc[] = { 2, 4, 5, 9, 10, 12, 13, 14 };
+        size_t calls_cannot_fail_engine[] = { 4, 9, 10, 12, 13, 14 };
     #endif
 #else
     #ifdef __APPLE__
-            size_t calls_cannot_fail[] = { 4, 8, 9, 10, 11, 12, 13, 14 };
-            size_t calls_cannot_fail_size = sizeof(calls_cannot_fail) / sizeof(calls_cannot_fail[0]);
+        size_t calls_cannot_fail_rsa[] = { 4, 5, 6, 10, 12, 13, 14 };
+        size_t calls_cannot_fail_ecc[] = { 3, 4, 8, 10, 11, 12 };
+        size_t calls_cannot_fail_engine[] = {4, 9, 11, 12, 13};
     #else
-            // Ubuntu 16
-            size_t calls_cannot_fail_rsa[] = { 2, 5, 6, 7, 11, 13, 14, 15, 16 };
-            size_t calls_cannot_fail_ecc[] = { 2, 4, 5, 9, 11, 12, 13, 14 };
-            size_t calls_cannot_fail_engine[] = { 4, 9, 11, 12, 13, 14 };
-
-            size_t* calls_cannot_fail;
-            size_t calls_cannot_fail_size;
-
-            if (!use_engine)
-            {
-                calls_cannot_fail = is_rsa ? calls_cannot_fail_rsa : calls_cannot_fail_ecc;
-                calls_cannot_fail_size = is_rsa ? sizeof(calls_cannot_fail_rsa) / sizeof(calls_cannot_fail_rsa[0]) : sizeof(calls_cannot_fail_ecc) / sizeof(calls_cannot_fail_ecc[0]);            }
-            else
-            {
-                calls_cannot_fail = calls_cannot_fail_engine;
-                calls_cannot_fail_size = sizeof(calls_cannot_fail_engine) / sizeof(calls_cannot_fail_engine[0]);
-            }
+        size_t calls_cannot_fail_rsa[] = { 2, 5, 6, 7, 11, 13, 14, 15, 16 };
+        size_t calls_cannot_fail_ecc[] = { 2, 4, 5, 9, 11, 12, 13, 14 };
+        size_t calls_cannot_fail_engine[] = { 4, 9, 11, 12, 13, 14 };
     #endif
 #endif
+        size_t *calls_cannot_fail;
+        size_t calls_cannot_fail_size;
+
+        if (!use_engine)
+        {
+            calls_cannot_fail = is_rsa ? calls_cannot_fail_rsa : calls_cannot_fail_ecc;
+            calls_cannot_fail_size = is_rsa ? sizeof(calls_cannot_fail_rsa) / sizeof(calls_cannot_fail_rsa[0]) : sizeof(calls_cannot_fail_ecc) / sizeof(calls_cannot_fail_ecc[0]);
+        }
+        else
+        {
+            calls_cannot_fail = calls_cannot_fail_engine;
+            calls_cannot_fail_size = sizeof(calls_cannot_fail_engine) / sizeof(calls_cannot_fail_engine[0]);
+        }
+
         //act
         int result;
         size_t count = umock_c_negative_tests_call_count();
