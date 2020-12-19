@@ -562,11 +562,26 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 #else
     #ifdef __APPLE__
             size_t calls_cannot_fail[] = { 4, 8, 9, 10, 11, 12, 13, 14 };
+            size_t calls_cannot_fail_size = sizeof(calls_cannot_fail) / sizeof(calls_cannot_fail[0]);
     #else
-            size_t calls_cannot_fail[] = { 2, 5, 9, 10, 11, 12, 13, 14, 15 };
-    #endif
+            // Ubuntu 16
+            size_t calls_cannot_fail_rsa[] = { 2, 5, 6, 7, 11, 13, 14, 15, 16 };
+            size_t calls_cannot_fail_ecc[] = { 2, 4, 5, 9, 11, 12, 13, 14 };
+            size_t calls_cannot_fail_engine[] = { 4, 9, 11, 12, 13, 14 };
 
-    size_t calls_cannot_fail_size = sizeof(calls_cannot_fail) / sizeof(calls_cannot_fail[0]);
+            size_t* calls_cannot_fail;
+            size_t calls_cannot_fail_size;
+
+            if (!use_engine)
+            {
+                calls_cannot_fail = is_rsa ? calls_cannot_fail_rsa : calls_cannot_fail_ecc;
+                calls_cannot_fail_size = is_rsa ? sizeof(calls_cannot_fail_rsa) / sizeof(calls_cannot_fail_rsa[0]) : sizeof(calls_cannot_fail_ecc) / sizeof(calls_cannot_fail_ecc[0]);            }
+            else
+            {
+                calls_cannot_fail = calls_cannot_fail_engine;
+                calls_cannot_fail_size = sizeof(calls_cannot_fail_engine) / sizeof(calls_cannot_fail_engine[0]);
+            }
+    #endif
 #endif
         //act
         int result;
