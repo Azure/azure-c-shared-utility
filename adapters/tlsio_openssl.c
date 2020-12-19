@@ -212,7 +212,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
 
                 if ((value_clone = (int*)malloc(sizeof(int))) == NULL)
                 {
-                    LogError("Failed clonning tls_version option");
+                    LogError("Failed cloning tls_version option");
                 }
                 else
                 {
@@ -248,7 +248,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
 
             if ((value_clone = (OPTION_OPENSSL_KEY_TYPE*)malloc(sizeof(OPTION_OPENSSL_KEY_TYPE))) == NULL)
             {
-                LogError("Failed clonning cert or private key option");
+                LogError("Failed cloning cert or private key option");
             }
             else
             {

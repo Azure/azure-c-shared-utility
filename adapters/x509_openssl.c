@@ -226,14 +226,14 @@ int x509_openssl_add_engine_key(SSL_CTX* ssl_ctx, const char* x509privatekey_id,
     // Engine functional reference is short-lived, only within this function.
     if (!ENGINE_init(engine))
     {
-        log_ERR_get_error("unable to initialize engine.");
+        log_ERR_get_error("unable to initialize ENGINE.");
         result = MU_FAILURE;
     }
     else
     {
         if (!ENGINE_set_default(engine, ENGINE_METHOD_ALL))
         {
-            log_ERR_get_error("unable to configure engine.");
+            log_ERR_get_error("unable to configure ENGINE.");
             result = MU_FAILURE;
         }
         else
@@ -242,14 +242,14 @@ int x509_openssl_add_engine_key(SSL_CTX* ssl_ctx, const char* x509privatekey_id,
 
             if (evp_key == NULL)
             {
-                log_ERR_get_error("failure loading private key from ENGINE");
+                log_ERR_get_error("unable to load private key from ENGINE.");
                 result = MU_FAILURE;
             }
             else
             {
                 if (load_ecc_key(ssl_ctx, evp_key) != 0)
                 {
-                    LogError("failure loading private key cert");
+                    LogError("unable to configure private key from ENGINE.");
                     result = MU_FAILURE;
                 }
                 else
@@ -261,9 +261,9 @@ int x509_openssl_add_engine_key(SSL_CTX* ssl_ctx, const char* x509privatekey_id,
             }
         }
 
-        if (!ENGINE_finish(engine))  // Releaase functional reference.
+        if (!ENGINE_finish(engine))  // Release functional reference.
         {
-            log_ERR_get_error("failed to release OpenSSL Engine functional reference.");
+            log_ERR_get_error("unable to release ENGINE functional reference.");
             result = MU_FAILURE;
         }
     }
