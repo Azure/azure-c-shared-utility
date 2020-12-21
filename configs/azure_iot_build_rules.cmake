@@ -13,8 +13,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 option(run_valgrind "set run_valgrind to ON if tests are to be run under valgrind/helgrind/drd. Default is OFF" OFF)
-option(compileOption_C "passes a string to the command line of the C compiler" OFF)
-option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
+set(compileOption_C "" CACHE STRING "passes a string to the command line of the C compiler")
+set(compileOption_CXX "" CACHE STRING "passes a string to the command line of the C++ compiler")
 
 # These are the include folders. (assumes that this file is in a subdirectory of c-utility)
 get_filename_component(SHARED_UTIL_FOLDER ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
@@ -110,15 +110,14 @@ if (NOT DEFINED ARCHITECTURE OR ARCHITECTURE STREQUAL "")
 endif()
 message(STATUS "target architecture: ${ARCHITECTURE}")
 
-#if any compiler has a command line switch called "OFF" then it will need special care
-if(NOT "${compileOption_C}" STREQUAL "OFF")
+# if any compiler has a command line switch called "OFF" then it will need special care
+if (NOT "${compileOption_C}" STREQUAL "")
     set(CMAKE_C_FLAGS "${compileOption_C} ${CMAKE_C_FLAGS}")
 endif()
 
-if(NOT "${compileOption_CXX}" STREQUAL "OFF")
+if (NOT "${compileOption_CXX}" STREQUAL "")
     set(CMAKE_CXX_FLAGS "${compileOption_CXX} ${CMAKE_CXX_FLAGS}")
 endif()
-
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" CXX_FLAG_CXX11)
