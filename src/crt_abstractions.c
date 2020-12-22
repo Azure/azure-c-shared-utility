@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 #include <limits.h>
 #include <float.h>
@@ -790,6 +791,57 @@ int unsignedIntToString(char* destination, size_t destinationSize, unsigned int 
 /*return 0 when everything went ok*/
 /*Codes_SRS_CRT_ABSTRACTIONS_02_001: [unsignedIntToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize.] */
 int size_tToString(char* destination, size_t destinationSize, size_t value)
+{
+    int result;
+    size_t pos;
+    /*the below loop gets the number in reverse order*/
+    /*Codes_SRS_CRT_ABSTRACTIONS_02_003: [If destination is NULL then unsignedIntToString shall fail.] */
+    /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
+    if (
+        (destination == NULL) ||
+        (destinationSize < 2) /*because the smallest number is '0\0' which requires 2 characters*/
+        )
+    {
+        result = MU_FAILURE;
+    }
+    else
+    {
+        pos = 0;
+        do
+        {
+            destination[pos++] = '0' + (value % 10);
+            value /= 10;
+        } while ((value > 0) && (pos < (destinationSize - 1)));
+
+        if (value == 0)
+        {
+            size_t w;
+            destination[pos] = '\0';
+            /*all converted and they fit*/
+            for (w = 0; w <= (pos - 1) >> 1; w++)
+            {
+                char temp;
+                temp = destination[w];
+                destination[w] = destination[pos - 1 - w];
+                destination[pos - 1 - w] = temp;
+            }
+            /*Codes_SRS_CRT_ABSTRACTIONS_02_004: [If the conversion has been successfull then unsignedIntToString shall return 0.] */
+            result = 0;
+        }
+        else
+        {
+            /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
+            result = MU_FAILURE;
+        }
+    }
+    return result;
+}
+
+/*takes "value" and transforms it into a decimal string*/
+/*10 => "10"*/
+/*return 0 when everything went ok*/
+/*Codes_SRS_CRT_ABSTRACTIONS_02_001: [unsignedIntToString shall convert the parameter value to its decimal representation as a string in the buffer indicated by parameter destination having the size indicated by parameter destinationSize.] */
+int uint64_tToString(char* destination, size_t destinationSize, uint64_t value)
 {
     int result;
     size_t pos;
