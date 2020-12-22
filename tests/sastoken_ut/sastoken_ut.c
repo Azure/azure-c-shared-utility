@@ -741,7 +741,8 @@ TEST_FUNCTION(SASToken_validate_not_expired_pass)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-TEST_FUNCTION(SASToken_validate_not_expired_large_pass)
+// Testing for Y2K38.
+TEST_FUNCTION(SASToken_validate_not_expired_large_int_pass)
 {
     // arrange
     const char* TEST_INVALID_SE = "SharedAccessSignature=SharedAccessSignature sig=TESTSIG&sr=TESTSR&se=" TEST_EXPIRY_LARGE_STRING;
@@ -1824,7 +1825,8 @@ TEST_FUNCTION(SASToken_CreateString_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-TEST_FUNCTION(SASToken_CreateString_far_future_succeeds)
+// Testing for Y2K38.
+TEST_FUNCTION(SASToken_CreateString_large_int_succeeds)
 {
     // arrange
     STRING_HANDLE handle;
