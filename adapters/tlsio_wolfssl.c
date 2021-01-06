@@ -476,7 +476,7 @@ static int on_handshake_done(WOLFSSL* ssl, void* context)
     if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE &&
         tls_io_instance->tlsio_state != TLSIO_STATE_OPEN) //Renegotiation
     {
-        LogInfo("on_handshake_done called when not in IN_HANDSHAKE state");
+        LogInfo("on_handshake_done called in wrong state: %d", tls_io_instance->tlsio_state);
     }
     else if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE) // Do not do if in renegotiation
     {
