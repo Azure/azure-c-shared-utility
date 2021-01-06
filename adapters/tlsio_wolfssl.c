@@ -108,18 +108,18 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
         #ifdef INVALID_DEVID
         else if(strcmp(name, OPTION_WOLFSSL_SET_DEVICE_ID) == 0 )
         {
-             int* value_clone; 
-  
-             if ((value_clone = malloc(sizeof(int))) == NULL) 
-             { 
-                 LogError("unable to clone device id option"); 
-             } 
-             else 
-             { 
-                 *value_clone = *(int*)value; 
-             } 
+             int* value_clone;
 
-             result = value_clone; 
+             if ((value_clone = malloc(sizeof(int))) == NULL)
+             {
+                 LogError("unable to clone device id option");
+             }
+             else
+             {
+                 *value_clone = *(int*)value;
+             }
+
+             result = value_clone;
         }
         #endif
         else
@@ -389,7 +389,8 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
         while (tls_io_instance->socket_io_read_byte_count == 0 && socket_reads < SOCKET_READ_LIMIT)
         {
             xio_dowork(tls_io_instance->socket_io);
-            if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE)
+            if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE &&
+                tls_io_instance->tlsio_state != TLSIO_STATE_OPEN) // Renegotiation
             {
                 break;
             }
@@ -428,7 +429,11 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
         }
         else if ( (result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN))
         {
-            result = WOLFSSL_CBIO_ERR_WANT_READ;
+            // Othersie if Server Hello not complete during renegotiation, do not return error.
+            if ( wolfSSL_get_state(tls_io_instance->ssl) >= 8) // SERVER_HELLODONE_COMPLETE
+            {
+                result = WOLFSSL_CBIO_ERR_WANT_READ;
+            }
         }
         else if ((result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING || tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN))
         {
@@ -468,11 +473,12 @@ static int on_handshake_done(WOLFSSL* ssl, void* context)
 {
     AZURE_UNREFERENCED_PARAMETER(ssl);
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
-    if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE)
+    if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE &&
+        tls_io_instance->tlsio_state != TLSIO_STATE_OPEN) //Renegotiation
     {
         LogInfo("on_handshake_done called when not in IN_HANDSHAKE state");
     }
-    else
+    else if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE) // Do not do if in renegotiation
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
         indicate_open_complete(tls_io_instance, IO_OPEN_OK);
@@ -518,13 +524,6 @@ static int x509_wolfssl_add_credentials(WOLFSSL* ssl, char* x509certificate, cha
         LogError("unable to load x509 client private key");
         result = MU_FAILURE;
     }
-#ifdef HAVE_SECURE_RENEGOTIATION
-    else if (wolfSSL_UseSecureRenegotiation(ssl) != SSL_SUCCESS)
-    {
-        LogError("unable to enable secure renegotiation");
-        result = MU_FAILURE;
-    }
-#endif
     else
     {
         result = 0;
@@ -561,6 +560,14 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
         wolfSSL_SetHsDoneCb(tls_io_instance->ssl, on_handshake_done, tls_io_instance);
         wolfSSL_SetIOWriteCtx(tls_io_instance->ssl, tls_io_instance);
         wolfSSL_SetIOReadCtx(tls_io_instance->ssl, tls_io_instance);
+
+#ifdef HAVE_SECURE_RENEGOTIATION
+        if(wolfSSL_UseSecureRenegotiation(tls_io_instance->ssl) != SSL_SUCCESS)
+        {
+            LogError("unable to enable secure renegotiation");
+            return MU_FAILURE;
+        }
+#endif
 
         tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
         result = 0;
@@ -899,6 +906,10 @@ int tlsio_wolfssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
             {
                 result = 0;
             }
+
+            // remove on send complete and callback context
+            memset((void*)&tls_io_instance->on_send_complete, 0, sizeof(tls_io_instance->on_send_complete));
+            memset((void*)&tls_io_instance->on_send_complete_callback_context, 0, sizeof(tls_io_instance->on_send_complete_callback_context));
         }
     }
 
