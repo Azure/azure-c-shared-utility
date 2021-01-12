@@ -5,10 +5,12 @@
 #include <cstdlib>
 #include <cstddef>
 #include <ctime>
+#include <cstdint>
 #else
 #include <stdlib.h>
 #include <stddef.h>
 #include <time.h>
+#include <stdint.h>
 #endif
 
 static void* my_gballoc_malloc(size_t size)
@@ -26,6 +28,7 @@ static void my_gballoc_free(void* ptr)
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
 #include "umock_c/umock_c_negative_tests.h"
+#include "umock_c/umocktypes_stdint.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
@@ -62,7 +65,7 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 #define TEST_RESPONSE_CONTENT (BUFFER_HANDLE)0x59
 #define TEST_CONST_CHAR_STAR_NULL (const char*)NULL
 #define TEST_SASTOKEN_HANDLE (STRING_HANDLE)0x60
-#define TEST_EXPIRY ((size_t)7200)
+#define TEST_EXPIRY ((uint64_t)7200)
 #define TEST_TIME_T ((time_t)-1)
 
 static const char* TEST_KEY = "key";
@@ -96,7 +99,7 @@ static void my_STRING_delete(STRING_HANDLE handle)
     my_gballoc_free(handle);
 }
 
-static STRING_HANDLE my_SASToken_CreateString(const char* key, const char* scope, const char* keyName, size_t expiry)
+static STRING_HANDLE my_SASToken_CreateString(const char* key, const char* scope, const char* keyName, uint64_t expiry)
 {
     (void)key, (void)scope, (void)keyName, (void)expiry;
     return (STRING_HANDLE)my_gballoc_malloc(1);
@@ -199,6 +202,9 @@ TEST_SUITE_INITIALIZE(TestClassInitialize)
     ASSERT_IS_NOT_NULL(g_testByTest);
 
     umock_c_init(on_umock_c_error);
+
+    result = umocktypes_stdint_register_types();
+    ASSERT_ARE_EQUAL(int, 0, result, "umocktypes_stdint_register_types");
 
     result = umocktypes_charptr_register_types();
     ASSERT_ARE_EQUAL(int, 0, result);
