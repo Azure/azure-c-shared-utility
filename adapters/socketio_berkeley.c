@@ -15,6 +15,10 @@
 #undef SOCKETIO_BERKELEY_UNDEF_BSD_SOURCE
 #endif
 
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 #include <signal.h>
 #include <stdlib.h>
 #include <stddef.h>
