@@ -607,7 +607,7 @@ static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
         result = MU_FAILURE;
     }
 #ifdef INVALID_DEVID
-    else if (tls_io_instance->wolfssl_device_id != INVALID_DEVID && wolfSSL_CTX_SetDevId(tls_io_instance->ssl_context, tls_io_instance->wolfssl_device_id) && wolfSSL_SetDevId(tls_io_instance->ssl, tls_io_instance->wolfssl_device_id) != WOLFSSL_SUCCESS)
+    else if (tls_io_instance->wolfssl_device_id != INVALID_DEVID && wolfSSL_SetDevId(tls_io_instance->ssl, tls_io_instance->wolfssl_device_id) != WOLFSSL_SUCCESS)
     {
         LogError("Failure setting device id");
         result = MU_FAILURE;
@@ -979,12 +979,7 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         else if (strcmp(OPTION_WOLFSSL_SET_DEVICE_ID, optionName) == 0)
         {
             int device_id = *((int *)value);
-            if (wolfSSL_CTX_SetDevId(tls_io_instance->ssl_context, device_id) != WOLFSSL_SUCCESS)
-            {
-                LogError("Failure setting device id on ctx\n");
-                result = MU_FAILURE;
-            }
-            else if (tls_io_instance->ssl != NULL && wolfSSL_SetDevId(tls_io_instance->ssl, device_id) != WOLFSSL_SUCCESS)
+            if (tls_io_instance->ssl != NULL && wolfSSL_SetDevId(tls_io_instance->ssl, device_id) != WOLFSSL_SUCCESS)
             {
                 LogError("Failure setting device id on ssl");
                 result = MU_FAILURE;
