@@ -606,13 +606,6 @@ static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
         LogError("unable to use x509 authentication");
         result = MU_FAILURE;
     }
-#ifdef INVALID_DEVID
-    else if (tls_io_instance->wolfssl_device_id != INVALID_DEVID && wolfSSL_SetDevId(tls_io_instance->ssl, tls_io_instance->wolfssl_device_id) != WOLFSSL_SUCCESS)
-    {
-        LogError("Failure setting device id");
-        result = MU_FAILURE;
-    }
-#endif
     else
     {
         result = 0;
