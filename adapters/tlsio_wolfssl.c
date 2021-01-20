@@ -108,18 +108,18 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
         #ifdef INVALID_DEVID
         else if(strcmp(name, OPTION_WOLFSSL_SET_DEVICE_ID) == 0 )
         {
-             int* value_clone; 
-  
-             if ((value_clone = malloc(sizeof(int))) == NULL) 
-             { 
-                 LogError("unable to clone device id option"); 
-             } 
-             else 
-             { 
-                 *value_clone = *(int*)value; 
-             } 
+             int* value_clone;
 
-             result = value_clone; 
+             if ((value_clone = malloc(sizeof(int))) == NULL)
+             {
+                 LogError("unable to clone device id option");
+             }
+             else
+             {
+                 *value_clone = *(int*)value;
+             }
+
+             result = value_clone;
         }
         #endif
         else
@@ -606,13 +606,6 @@ static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
         LogError("unable to use x509 authentication");
         result = MU_FAILURE;
     }
-#ifdef INVALID_DEVID
-    else if (tls_io_instance->wolfssl_device_id != INVALID_DEVID && wolfSSL_SetDevId(tls_io_instance->ssl, tls_io_instance->wolfssl_device_id) != WOLFSSL_SUCCESS)
-    {
-        LogError("Failure setting device id");
-        result = MU_FAILURE;
-    }
-#endif
     else
     {
         result = 0;
@@ -982,21 +975,14 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         else if (strcmp(OPTION_WOLFSSL_SET_DEVICE_ID, optionName) == 0)
         {
             int device_id = *((int *)value);
-            if (tls_io_instance->ssl != NULL)
+            if (tls_io_instance->ssl != NULL && wolfSSL_SetDevId(tls_io_instance->ssl, device_id) != WOLFSSL_SUCCESS)
             {
-                if (tls_io_instance->ssl != NULL && wolfSSL_SetDevId(tls_io_instance->ssl, device_id) != WOLFSSL_SUCCESS)
-                {
-                    LogError("Failure setting device id on ssl");
-                    result = MU_FAILURE;
-                }
-                else
-                {
-                    result = 0;
-                }
+                LogError("Failure setting device id on ssl");
+                result = MU_FAILURE;
             }
             else
             {
-                // Save the id till we create the ssl object
+                // Save the device Id even if ssl object not yet created.
                 tls_io_instance->wolfssl_device_id = device_id;
                 result = 0;
             }
