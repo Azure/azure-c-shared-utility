@@ -429,11 +429,15 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
         }
         else if ( (result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN))
         {
-            if ( wolfSSL_get_state(tls_io_instance->ssl) >= 8) // SERVER_HELLODONE_COMPLETE
+#ifdef HAVE_SECURE_RENEGOTIATION
+            if (wolfSSL_SSL_renegotiate_pending(tls_io_instance->ssl) == 0) // SERVER_HELLODONE_COMPLETE
             {
                 result = WOLFSSL_CBIO_ERR_WANT_READ;
             }
-            // Otherwise if Server Hello not complete during renegotiation, do not return error.
+            // If Server Hello not complete during renegotiation, do not return error.
+#else
+            result = WOLFSSL_CBIO_ERR_WANT_READ;
+#endif
         }
         else if ((result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING || tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN))
         {
@@ -933,7 +937,7 @@ static int process_option(char** destination, const char* name, const char* valu
 {
 
     (void) name;
-    
+
     int result;
     if (*destination != NULL)
     {
