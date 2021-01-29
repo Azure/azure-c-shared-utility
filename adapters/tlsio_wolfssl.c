@@ -567,7 +567,7 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
         result = 0;
 
 #ifdef HAVE_SECURE_RENEGOTIATION
-        if(wolfSSL_UseSecureRenegotiation(tls_io_instance->ssl) != SSL_SUCCESS)
+        if (wolfSSL_UseSecureRenegotiation(tls_io_instance->ssl) != SSL_SUCCESS)
         {
             LogError("unable to enable secure renegotiation");
             result = MU_FAILURE;
@@ -903,8 +903,8 @@ int tlsio_wolfssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
             }
 
             // remove on send complete and callback context
-            memset((void*)&tls_io_instance->on_send_complete, 0, sizeof(tls_io_instance->on_send_complete));
-            memset((void*)&tls_io_instance->on_send_complete_callback_context, 0, sizeof(tls_io_instance->on_send_complete_callback_context));
+            tls_io_instance->on_send_complete = NULL;
+            tls_io_instance->on_send_complete_callback_context = NULL;
         }
     }
 
