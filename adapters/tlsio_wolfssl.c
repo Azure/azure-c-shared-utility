@@ -428,7 +428,15 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
         }
         else if ( (result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN))
         {
+#ifdef HAVE_SECURE_RENEGOTIATION
+            if (wolfSSL_SSL_renegotiate_pending(tls_io_instance->ssl) == 0) // SERVER_HELLODONE_COMPLETE
+            {
+                result = WOLFSSL_CBIO_ERR_WANT_READ;
+            }
+            // If Server Hello not complete during renegotiation, do not return error.
+#else
             result = WOLFSSL_CBIO_ERR_WANT_READ;
+#endif
         }
         else if ((result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING || tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN))
         {
@@ -518,13 +526,6 @@ static int x509_wolfssl_add_credentials(WOLFSSL* ssl, char* x509certificate, cha
         LogError("unable to load x509 client private key");
         result = MU_FAILURE;
     }
-#ifdef HAVE_SECURE_RENEGOTIATION
-    else if (wolfSSL_UseSecureRenegotiation(ssl) != SSL_SUCCESS)
-    {
-        LogError("unable to enable secure renegotiation");
-        result = MU_FAILURE;
-    }
-#endif
     else
     {
         result = 0;
@@ -564,6 +565,14 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
 
         tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
         result = 0;
+
+#ifdef HAVE_SECURE_RENEGOTIATION
+        if (wolfSSL_UseSecureRenegotiation(tls_io_instance->ssl) != SSL_SUCCESS)
+        {
+            LogError("unable to enable secure renegotiation");
+            result = MU_FAILURE;
+        }
+#endif
     }
     return result;
 }
@@ -892,6 +901,10 @@ int tlsio_wolfssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
             {
                 result = 0;
             }
+
+            // remove on send complete and callback context
+            tls_io_instance->on_send_complete = NULL;
+            tls_io_instance->on_send_complete_callback_context = NULL;
         }
     }
 
@@ -922,7 +935,7 @@ static int process_option(char** destination, const char* name, const char* valu
 {
 
     (void) name;
-    
+
     int result;
     if (*destination != NULL)
     {
