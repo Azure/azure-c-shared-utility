@@ -389,8 +389,7 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
         while (tls_io_instance->socket_io_read_byte_count == 0 && socket_reads < SOCKET_READ_LIMIT)
         {
             xio_dowork(tls_io_instance->socket_io);
-            if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE &&
-                tls_io_instance->tlsio_state != TLSIO_STATE_OPEN) // Renegotiation
+            if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE)
             {
                 break;
             }
@@ -477,12 +476,11 @@ static int on_handshake_done(WOLFSSL* ssl, void* context)
 {
     AZURE_UNREFERENCED_PARAMETER(ssl);
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
-    if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE &&
-        tls_io_instance->tlsio_state != TLSIO_STATE_OPEN) //Renegotiation
+    if (tls_io_instance->tlsio_state != TLSIO_STATE_IN_HANDSHAKE)
     {
-        LogInfo("on_handshake_done called in wrong state: %d", tls_io_instance->tlsio_state);
+        LogInfo("on_handshake_done called when not in IN_HANDSHAKE state");
     }
-    else if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE) // Do not do if in renegotiation
+    else
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
         indicate_open_complete(tls_io_instance, IO_OPEN_OK);
@@ -565,16 +563,16 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
         wolfSSL_SetIOWriteCtx(tls_io_instance->ssl, tls_io_instance);
         wolfSSL_SetIOReadCtx(tls_io_instance->ssl, tls_io_instance);
 
+        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+        result = 0;
+
 #ifdef HAVE_SECURE_RENEGOTIATION
         if(wolfSSL_UseSecureRenegotiation(tls_io_instance->ssl) != SSL_SUCCESS)
         {
             LogError("unable to enable secure renegotiation");
-            return MU_FAILURE;
+            result = MU_FAILURE;
         }
 #endif
-
-        tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
-        result = 0;
     }
     return result;
 }
