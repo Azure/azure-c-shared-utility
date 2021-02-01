@@ -768,7 +768,7 @@ void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io)
 
 int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
-    int result = 0;
+    int result;
 
     if (tls_io == NULL)
     {
@@ -808,6 +808,10 @@ int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
                 LogError("Cannot open the underlying IO.");
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
             }
         }
     }
