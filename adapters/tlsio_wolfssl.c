@@ -911,16 +911,14 @@ void tlsio_wolfssl_dowork(CONCRETE_IO_HANDLE tls_io)
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-
-        if ((tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN) &&
-            (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR))
+        if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE ||
+            tls_io_instance->tlsio_state == TLSIO_STATE_OPEN ||
+            tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING)
         {
-            if (tls_io_instance->tlsio_state != TLSIO_STATE_OPENING_UNDERLYING_IO) //Proxy used
-            {
-                decode_ssl_received_bytes(tls_io_instance);
-            }
-            xio_dowork(tls_io_instance->socket_io);
+            decode_ssl_received_bytes(tls_io_instance);
         }
+
+        xio_dowork(tls_io_instance->socket_io);
     }
 }
 
