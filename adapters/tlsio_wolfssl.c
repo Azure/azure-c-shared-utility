@@ -811,16 +811,7 @@ int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             }
             else
             {
-                // The state can get changed in the on_underlying_io_open_complete
-                if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
-                {
-                    LogError("Failed to connect to server.  The certificates may not be correct.");
-                    result = MU_FAILURE;
-                }
-                else
-                {
-                    result = 0;
-                }
+                result = 0;
             }
         }
     }
@@ -920,13 +911,14 @@ void tlsio_wolfssl_dowork(CONCRETE_IO_HANDLE tls_io)
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-
-        if ((tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN) &&
-            (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR))
+        if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE ||
+            tls_io_instance->tlsio_state == TLSIO_STATE_OPEN ||
+            tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING)
         {
             decode_ssl_received_bytes(tls_io_instance);
-            xio_dowork(tls_io_instance->socket_io);
         }
+
+        xio_dowork(tls_io_instance->socket_io);
     }
 }
 
