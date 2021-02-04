@@ -608,6 +608,10 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
 
             result = set_keepalive(socket_io_instance, &keepAlive);
         }
+        else if (strcmp(optionName, "tcp_nodelay") == 0)
+        {
+            result = setsockopt(socket_io_instance->socket, IPPROTO_TCP, TCP_NODELAY, value, sizeof(int));
+        }
         else
         {
             result = __FAILURE__;
