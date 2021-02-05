@@ -809,10 +809,10 @@ int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 result = MU_FAILURE;
             }
-            else
-            {
-                result = 0;
-            }
+            //else
+            //{
+               // result = 0;
+            //}
         }
     }
 
