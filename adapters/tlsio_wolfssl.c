@@ -766,6 +766,18 @@ void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io)
     }
 }
 
+int test_function(void * ctx)
+{
+    int result;
+
+    if (ctx == NULL)
+    {
+        result = 1;
+    }
+
+    return result;
+}
+
 int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
     int result;
@@ -809,10 +821,10 @@ int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
                 tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
                 result = MU_FAILURE;
             }
-            //else
-            //{
-               // result = 0;
-            //}
+            else
+            {
+                result = 0;
+            }
         }
     }
 
