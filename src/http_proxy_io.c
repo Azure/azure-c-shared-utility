@@ -145,7 +145,15 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
                             else
                             {
                                 /* Codes_SRS_HTTP_PROXY_IO_01_010: [ - io_interface_description shall be set to the result of socketio_get_interface_description. ]*/
-                                const IO_INTERFACE_DESCRIPTION* underlying_io_interface = socketio_get_interface_description();
+                                const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+                                if (http_proxy_io_config->is_tls_proxy)
+                                {
+                                    underlying_io_interface = socketio_get_interface_description();
+                                }
+                                else
+                                {
+                                    underlying_io_interface = platform_get_default_tlsio();
+                                }
                                 if (underlying_io_interface == NULL)
                                 {
                                     /* Codes_SRS_HTTP_PROXY_IO_01_050: [ If socketio_get_interface_description fails, http_proxy_io_create shall fail and return NULL. ]*/
@@ -160,15 +168,26 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
                                 }
                                 else
                                 {
-                                    SOCKETIO_CONFIG socket_io_config;
+                                    if (http_proxy_io_config->is_tls_proxy)
+                                    {
+                                        TLSIO_CONFIG tls_io_config;
+                                        tls_io_config.hostname = http_proxy_io_config->proxy_hostname;
+                                        tls_io_config.port = http_proxy_io_config->proxy_port;
 
-                                    /* Codes_SRS_HTTP_PROXY_IO_01_011: [ - xio_create_parameters shall be set to a SOCKETIO_CONFIG* where hostname is set to the proxy_hostname member of io_create_parameters and port is set to the proxy_port member of io_create_parameters. ]*/
-                                    socket_io_config.hostname = http_proxy_io_config->proxy_hostname;
-                                    socket_io_config.port = http_proxy_io_config->proxy_port;
-                                    socket_io_config.accepted_socket = NULL;
+                                        result->underlying_io = xio_create(underlying_io_interface, &tls_io_config);
+                                    }
+                                    else
+                                    {
+                                        SOCKETIO_CONFIG socket_io_config;
 
-                                    /* Codes_SRS_HTTP_PROXY_IO_01_009: [ http_proxy_io_create shall create a new socket IO by calling xio_create with the arguments: ]*/
-                                    result->underlying_io = xio_create(underlying_io_interface, &socket_io_config);
+                                        /* Codes_SRS_HTTP_PROXY_IO_01_011: [ - xio_create_parameters shall be set to a SOCKETIO_CONFIG* where hostname is set to the proxy_hostname member of io_create_parameters and port is set to the proxy_port member of io_create_parameters. ]*/
+                                        socket_io_config.hostname = http_proxy_io_config->proxy_hostname;
+                                        socket_io_config.port = http_proxy_io_config->proxy_port;
+                                        socket_io_config.accepted_socket = NULL;
+
+                                        /* Codes_SRS_HTTP_PROXY_IO_01_009: [ http_proxy_io_create shall create a new socket IO by calling xio_create with the arguments: ]*/
+                                        result->underlying_io = xio_create(underlying_io_interface, &socket_io_config);
+                                    }
                                     if (result->underlying_io == NULL)
                                     {
                                         /* Codes_SRS_HTTP_PROXY_IO_01_012: [ If xio_create fails, http_proxy_io_create shall fail and return NULL. ]*/
@@ -355,7 +374,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                 }
 
                 if (http_proxy_io_instance->hostname == NULL ||
-                    (http_proxy_io_instance->username != NULL && encoded_auth_string == NULL))
+-                   (http_proxy_io_instance->username != NULL && encoded_auth_string == NULL))
                 {
                     LogError("Cannot create authorization header");
                 }

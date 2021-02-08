@@ -19,6 +19,7 @@ typedef struct HTTP_PROXY_IO_CONFIG_TAG
     int proxy_port;
     const char* username;
     const char* password;
+    bool is_tls_proxy;
 } HTTP_PROXY_IO_CONFIG;
 
 MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, http_proxy_io_get_interface_description);
