@@ -191,6 +191,7 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
 
         if (socket_io_instance->tcp_socket_connection != NULL)
         {
+            tcpsocketconnection_close(socket_io_instance->tcp_socket_connection);
             tcpsocketconnection_destroy(socket_io_instance->tcp_socket_connection);
         }
 
@@ -226,11 +227,13 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
     }
     else
     {
-        if (socket_io_instance->tcp_socket_connection == NULL)
+        if (socket_io_instance->tcp_socket_connection != NULL)
         {
-            socket_io_instance->tcp_socket_connection = tcpsocketconnection_create();
+            tcpsocketconnection_close(socket_io_instance->tcp_socket_connection);
+            tcpsocketconnection_destroy(socket_io_instance->tcp_socket_connection);
         }
 
+        socket_io_instance->tcp_socket_connection = tcpsocketconnection_create();
         if (socket_io_instance->tcp_socket_connection == NULL)
         {
             result = MU_FAILURE;
@@ -287,7 +290,12 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
         }
         else
         {
-            tcpsocketconnection_close(socket_io_instance->tcp_socket_connection);
+            if (socket_io_instance->tcp_socket_connection != NULL)
+            {
+                tcpsocketconnection_close(socket_io_instance->tcp_socket_connection);
+                tcpsocketconnection_destroy(socket_io_instance->tcp_socket_connection);
+                socket_io_instance->tcp_socket_connection = NULL;
+            }
             socket_io_instance->io_state = IO_STATE_CLOSED;
 
             if (on_io_close_complete != NULL)
