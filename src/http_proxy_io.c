@@ -148,11 +148,11 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
                                 const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
                                 if (http_proxy_io_config->is_tls_proxy)
                                 {
-                                    underlying_io_interface = socketio_get_interface_description();
+                                    underlying_io_interface = platform_get_default_tlsio();
                                 }
                                 else
                                 {
-                                    underlying_io_interface = platform_get_default_tlsio();
+                                    underlying_io_interface = socketio_get_interface_description();
                                 }
                                 if (underlying_io_interface == NULL)
                                 {
