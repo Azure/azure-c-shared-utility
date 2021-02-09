@@ -736,7 +736,7 @@ TEST_FUNCTION(http_proxy_io_open_opens_the_underlying_tls_IO)
     CONCRETE_IO_HANDLE http_io;
     int result;
 
-    http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
+    http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_use_tls_config);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
