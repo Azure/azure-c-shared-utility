@@ -58,6 +58,8 @@ extern "C"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/socketio.h"
+#include "azure_c_shared_utility/tlsio.h"
+#include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/azure_base64.h"
 
@@ -191,6 +193,84 @@ static void umocktypes_free_const_SOCKETIO_CONFIG_ptr(SOCKETIO_CONFIG** value)
     real_free(*value);
 }
 
+static char* umocktypes_stringify_const_TLSIO_CONFIG_ptr(const TLSIO_CONFIG** value)
+{
+    char* result = NULL;
+    char temp_buffer[1024];
+    int length;
+    length = sprintf(temp_buffer, "{ hostname = %s, port = %d }",
+        (*value)->hostname,
+        (*value)->port);
+
+    if (length > 0)
+    {
+        result = (char*)real_malloc(strlen(temp_buffer) + 1);
+        if (result != NULL)
+        {
+            (void)memcpy(result, temp_buffer, strlen(temp_buffer) + 1);
+        }
+    }
+
+    return result;
+}
+
+static int umocktypes_are_equal_const_TLSIO_CONFIG_ptr(const TLSIO_CONFIG** left, const TLSIO_CONFIG** right)
+{
+    int result;
+
+    if ((left == NULL) ||
+        (right == NULL))
+    {
+        result = -1;
+    }
+    else
+    {
+        result = (*left)->port == (*right)->port;
+        if ((*right)->hostname == NULL)
+        {
+            result = result && ((*left)->hostname == (*right)->hostname);
+        }
+        else
+        {
+            result = result && (strcmp((*left)->hostname, (*right)->hostname) == 0);
+        }
+    }
+
+    return result;
+}
+
+static int umocktypes_copy_const_TLSIO_CONFIG_ptr(TLSIO_CONFIG** destination, const TLSIO_CONFIG** source)
+{
+    int result;
+
+    *destination = (TLSIO_CONFIG*)real_malloc(sizeof(TLSIO_CONFIG));
+    if (*destination == NULL)
+    {
+        result = __LINE__;
+    }
+    else
+    {
+        if (copy_string((char**)&(*destination)->hostname, (*source)->hostname) != 0)
+        {
+            result = __LINE__;
+        }
+        else
+        {
+            (*destination)->port = (*source)->port;
+
+            result = 0;
+        }
+    }
+
+    return result;
+}
+
+static void umocktypes_free_const_TLSIO_CONFIG_ptr(TLSIO_CONFIG** value)
+{
+    real_free((void*)(*value)->hostname);
+    real_free(*value);
+}
+
 #include "azure_c_shared_utility/http_proxy_io.h"
 
 #ifdef __cplusplus
@@ -248,7 +328,7 @@ static const HTTP_PROXY_IO_CONFIG default_http_proxy_io_config = {
     "a_proxy",
     4444,
     "test_user",
-    "shhhh"
+    "shhhh",
 };
 
 static const HTTP_PROXY_IO_CONFIG default_http_proxy_io_use_tls_config = {
@@ -257,8 +337,8 @@ static const HTTP_PROXY_IO_CONFIG default_http_proxy_io_use_tls_config = {
     "a_proxy",
     4444,
     "test_user",
-    "shhhh"
-    true,
+    "shhhh",
+    false,
 };
 
 static const HTTP_PROXY_IO_CONFIG http_proxy_io_config_no_username = {
@@ -345,11 +425,13 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
     REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
     REGISTER_TYPE(const SOCKETIO_CONFIG*, const_SOCKETIO_CONFIG_ptr);
+    REGISTER_TYPE(const TLSIO_CONFIG*, const_TLSIO_CONFIG_ptr);
     REGISTER_UMOCK_ALIAS_TYPE(pfCloneOption, void*);
     REGISTER_UMOCK_ALIAS_TYPE(pfDestroyOption, void*);
     REGISTER_UMOCK_ALIAS_TYPE(pfSetOption, void*);
     REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(SOCKETIO_CONFIG*, const SOCKETIO_CONFIG*);
+    REGISTER_UMOCK_ALIAS_TYPE(TLSIO_CONFIG*, const TLSIO_CONFIG*);
     REGISTER_UMOCK_ALIAS_TYPE(XIO_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_IO_OPEN_COMPLETE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_BYTES_RECEIVED, void*);
@@ -443,7 +525,7 @@ TEST_FUNCTION(http_proxy_io_use_tls_create_succeeds)
     http_proxy_io_config.proxy_port = 4444;
     http_proxy_io_config.username = "test_user";
     http_proxy_io_config.password = "shhhh";
-    http_proxy_io_config.use_tls_proxy = true;
+    http_proxy_io_config.not_use_tls_proxy = false;
 
     EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .IgnoreAllArguments();

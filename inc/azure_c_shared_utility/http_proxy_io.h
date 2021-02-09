@@ -4,6 +4,11 @@
 #ifndef HTTP_PROXY_IO_H
 #define HTTP_PROXY_IO_H
 
+#ifdef __cplusplus
+#else
+#include "stdbool.h"
+#endif /* __cplusplus */
+
 #include "azure_c_shared_utility/xio.h"
 #include "umock_c/umock_c_prod.h"
 
@@ -19,7 +24,7 @@ typedef struct HTTP_PROXY_IO_CONFIG_TAG
     int proxy_port;
     const char* username;
     const char* password;
-    bool use_tls_proxy;
+    bool not_use_tls_proxy;
 } HTTP_PROXY_IO_CONFIG;
 
 MOCKABLE_FUNCTION(, const IO_INTERFACE_DESCRIPTION*, http_proxy_io_get_interface_description);
