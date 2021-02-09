@@ -68,6 +68,7 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 #define TEST_SOCKETIO_INTERFACE_DESCRIPTION     (const IO_INTERFACE_DESCRIPTION*)0x4242
 #define TEST_IO_HANDLE                          (XIO_HANDLE)0x4243
 #define TEST_STRING_HANDLE                      (STRING_HANDLE)0x4244
+#define TEST_TLSIO_INTERFACE_DESCRIPTION        (const IO_INTERFACE_DESCRIPTION*)0x4245
 
 MOCK_FUNCTION_WITH_CODE(, void, test_on_io_open_complete, void*, context, IO_OPEN_RESULT, open_result)
 MOCK_FUNCTION_END();
@@ -250,6 +251,16 @@ static const HTTP_PROXY_IO_CONFIG default_http_proxy_io_config = {
     "shhhh"
 };
 
+static const HTTP_PROXY_IO_CONFIG default_http_proxy_io_use_tls_config = {
+    "test_host",
+    443,
+    "a_proxy",
+    4444,
+    "test_user",
+    "shhhh"
+    true,
+};
+
 static const HTTP_PROXY_IO_CONFIG http_proxy_io_config_no_username = {
     "test_host",
     443,
@@ -281,6 +292,13 @@ static const SOCKETIO_CONFIG socketio_config =
 {
     "a_proxy",
     4444,
+    NULL
+};
+
+static const TLSIO_CONFIG tlsio_config = {
+    "a_proxy",
+    4444,
+    NULL,
     NULL
 };
 
@@ -319,6 +337,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(xio_close, my_xio_close);
     REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_Create, TEST_OPTION_HANDLER);
     REGISTER_GLOBAL_MOCK_RETURN(socketio_get_interface_description, TEST_SOCKETIO_INTERFACE_DESCRIPTION);
+    REGISTER_GLOBAL_MOCK_RETURN(platform_get_default_tlsio, TEST_TLSIO_INTERFACE_DESCRIPTION);
     REGISTER_GLOBAL_MOCK_RETURN(xio_create, TEST_IO_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(xio_retrieveoptions, TEST_OPTION_HANDLER);
     REGISTER_GLOBAL_MOCK_RETURN(Azure_Base64_Encode_Bytes, TEST_STRING_HANDLE);
@@ -400,6 +419,45 @@ TEST_FUNCTION(http_proxy_io_create_succeeds)
     STRICT_EXPECTED_CALL(socketio_get_interface_description());
     STRICT_EXPECTED_CALL(xio_create(TEST_SOCKETIO_INTERFACE_DESCRIPTION, &socketio_config))
         .ValidateArgumentValue_io_create_parameters_AsType(UMOCK_TYPE(SOCKETIO_CONFIG*));
+
+    // act
+    http_io = http_proxy_io_get_interface_description()->concrete_io_create(&http_proxy_io_config);
+
+    // assert
+    ASSERT_IS_NOT_NULL(http_io);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+TEST_FUNCTION(http_proxy_io_use_tls_create_succeeds)
+{
+    // arrange
+    HTTP_PROXY_IO_CONFIG http_proxy_io_config;
+    CONCRETE_IO_HANDLE http_io;
+
+    http_proxy_io_config.hostname = "test_host";
+    http_proxy_io_config.port = 443;
+    http_proxy_io_config.proxy_hostname = "a_proxy";
+    http_proxy_io_config.proxy_port = 4444;
+    http_proxy_io_config.username = "test_user";
+    http_proxy_io_config.password = "shhhh";
+    http_proxy_io_config.use_tls_proxy = true;
+
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+        .IgnoreAllArguments();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_host"))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "a_proxy"))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "test_user"))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "shhhh"))
+        .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(platform_get_default_tlsio());
+    STRICT_EXPECTED_CALL(xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, &tlsio_config))
+        .ValidateArgumentValue_io_create_parameters_AsType(UMOCK_TYPE(TLSIO_CONFIG*));
 
     // act
     http_io = http_proxy_io_get_interface_description()->concrete_io_create(&http_proxy_io_config);
@@ -645,6 +703,34 @@ TEST_FUNCTION(http_proxy_io_destroy_with_NULL_does_nothing)
 /* Tests_SRS_HTTP_PROXY_IO_01_017: [ http_proxy_io_open shall open the HTTP proxy IO and on success it shall return 0. ]*/
 /* Tests_SRS_HTTP_PROXY_IO_01_019: [ http_proxy_io_open shall open the underlying IO by calling xio_open on the underlying IO handle created in http_proxy_io_create, while passing to it the callbacks on_underlying_io_open_complete, on_underlying_io_bytes_received and on_underlying_io_error. ]*/
 TEST_FUNCTION(http_proxy_io_open_opens_the_underlying_IO)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    int result;
+
+    http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreArgument_on_io_open_complete()
+        .IgnoreArgument_on_io_open_complete_context()
+        .IgnoreArgument_on_bytes_received()
+        .IgnoreArgument_on_bytes_received_context()
+        .IgnoreArgument_on_io_error()
+        .IgnoreArgument_on_io_error_context();
+
+    // act
+    result = http_proxy_io_get_interface_description()->concrete_io_open(http_io, test_on_io_open_complete, http_io, test_on_bytes_received, http_io, test_on_io_error, http_io);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+TEST_FUNCTION(http_proxy_io_open_opens_the_underlying_tls_IO)
 {
     // arrange
     CONCRETE_IO_HANDLE http_io;
