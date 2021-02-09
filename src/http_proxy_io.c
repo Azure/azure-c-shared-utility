@@ -9,6 +9,8 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/socketio.h"
+#include "azure_c_shared_utility/tlsio.h"
+#include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/http_proxy_io.h"
 #include "azure_c_shared_utility/azure_base64.h"
@@ -146,7 +148,7 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
                             {
                                 /* Codes_SRS_HTTP_PROXY_IO_01_010: [ - io_interface_description shall be set to the result of socketio_get_interface_description. ]*/
                                 const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
-                                if (http_proxy_io_config->is_tls_proxy)
+                                if (http_proxy_io_config->use_tls_proxy)
                                 {
                                     underlying_io_interface = platform_get_default_tlsio();
                                 }
@@ -168,7 +170,7 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
                                 }
                                 else
                                 {
-                                    if (http_proxy_io_config->is_tls_proxy)
+                                    if (http_proxy_io_config->use_tls_proxy)
                                     {
                                         TLSIO_CONFIG tls_io_config;
                                         tls_io_config.hostname = http_proxy_io_config->proxy_hostname;
