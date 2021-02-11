@@ -331,16 +331,6 @@ static const HTTP_PROXY_IO_CONFIG default_http_proxy_io_config = {
     "shhhh",
 };
 
-static const HTTP_PROXY_IO_CONFIG default_http_proxy_io_use_tls_config = {
-    "test_host",
-    443,
-    "a_proxy",
-    4444,
-    "test_user",
-    "shhhh",
-    false,
-};
-
 static const HTTP_PROXY_IO_CONFIG http_proxy_io_config_no_username = {
     "test_host",
     443,
@@ -525,7 +515,6 @@ TEST_FUNCTION(http_proxy_io_use_tls_create_succeeds)
     http_proxy_io_config.proxy_port = 4444;
     http_proxy_io_config.username = "test_user";
     http_proxy_io_config.password = "shhhh";
-    http_proxy_io_config.not_use_tls_proxy = false;
 
     EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .IgnoreAllArguments();
@@ -537,13 +526,23 @@ TEST_FUNCTION(http_proxy_io_use_tls_create_succeeds)
         .IgnoreArgument_destination();
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, "shhhh"))
         .IgnoreArgument_destination();
+    STRICT_EXPECTED_CALL(socketio_get_interface_description());
+    STRICT_EXPECTED_CALL(xio_create(TEST_SOCKETIO_INTERFACE_DESCRIPTION, &socketio_config))
+        .ValidateArgumentValue_io_create_parameters_AsType(UMOCK_TYPE(SOCKETIO_CONFIG*));
+    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreArgument_xio()
+        .IgnoreArgument_on_io_close_complete()
+        .IgnoreArgument_callback_context();
+    STRICT_EXPECTED_CALL(xio_destroy(IGNORED_PTR_ARG))
+        .IgnoreArgument_xio();
     STRICT_EXPECTED_CALL(platform_get_default_tlsio());
     STRICT_EXPECTED_CALL(xio_create(TEST_TLSIO_INTERFACE_DESCRIPTION, &tlsio_config))
         .ValidateArgumentValue_io_create_parameters_AsType(UMOCK_TYPE(TLSIO_CONFIG*));
 
     // act
     http_io = http_proxy_io_get_interface_description()->concrete_io_create(&http_proxy_io_config);
-
+    bool use_tls_io = true;
+    http_proxy_io_get_interface_description()->concrete_io_setoption(http_io, "use_tls_io", &use_tls_io);
     // assert
     ASSERT_IS_NOT_NULL(http_io);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -818,7 +817,9 @@ TEST_FUNCTION(http_proxy_io_open_opens_the_underlying_tls_IO)
     CONCRETE_IO_HANDLE http_io;
     int result;
 
-    http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_use_tls_config);
+    http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
+    bool use_tls_io = true;
+    http_proxy_io_get_interface_description()->concrete_io_setoption(http_io, "use_tls_io", &use_tls_io);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))

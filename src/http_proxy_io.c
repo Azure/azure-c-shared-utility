@@ -16,6 +16,7 @@
 #include "azure_c_shared_utility/azure_base64.h"
 
 static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
+static const char* const OPTION_USE_TLS_IO = "use_tls_io";
 
 typedef enum HTTP_PROXY_IO_STATE_TAG
 {
@@ -47,6 +48,7 @@ typedef struct HTTP_PROXY_IO_INSTANCE_TAG
     XIO_HANDLE underlying_io;
     unsigned char* receive_buffer;
     size_t receive_buffer_size;
+    bool use_tls_io;
 } HTTP_PROXY_IO_INSTANCE;
 
 static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
@@ -147,15 +149,7 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
                             else
                             {
                                 /* Codes_SRS_HTTP_PROXY_IO_01_010: [ - io_interface_description shall be set to the result of socketio_get_interface_description. ]*/
-                                const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
-                                if (!http_proxy_io_config->not_use_tls_proxy)
-                                {
-                                    underlying_io_interface = platform_get_default_tlsio();
-                                }
-                                else
-                                {
-                                    underlying_io_interface = socketio_get_interface_description();
-                                }
+                                const IO_INTERFACE_DESCRIPTION* underlying_io_interface = socketio_get_interface_description();
                                 if (underlying_io_interface == NULL)
                                 {
                                     /* Codes_SRS_HTTP_PROXY_IO_01_050: [ If socketio_get_interface_description fails, http_proxy_io_create shall fail and return NULL. ]*/
@@ -170,26 +164,15 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
                                 }
                                 else
                                 {
-                                    if (!http_proxy_io_config->not_use_tls_proxy)
-                                    {
-                                        TLSIO_CONFIG tls_io_config;
-                                        tls_io_config.hostname = http_proxy_io_config->proxy_hostname;
-                                        tls_io_config.port = http_proxy_io_config->proxy_port;
+                                    SOCKETIO_CONFIG socket_io_config;
 
-                                        result->underlying_io = xio_create(underlying_io_interface, &tls_io_config);
-                                    }
-                                    else
-                                    {
-                                        SOCKETIO_CONFIG socket_io_config;
+                                    /* Codes_SRS_HTTP_PROXY_IO_01_011: [ - xio_create_parameters shall be set to a SOCKETIO_CONFIG* where hostname is set to the proxy_hostname member of io_create_parameters and port is set to the proxy_port member of io_create_parameters. ]*/
+                                    socket_io_config.hostname = http_proxy_io_config->proxy_hostname;
+                                    socket_io_config.port = http_proxy_io_config->proxy_port;
+                                    socket_io_config.accepted_socket = NULL;
 
-                                        /* Codes_SRS_HTTP_PROXY_IO_01_011: [ - xio_create_parameters shall be set to a SOCKETIO_CONFIG* where hostname is set to the proxy_hostname member of io_create_parameters and port is set to the proxy_port member of io_create_parameters. ]*/
-                                        socket_io_config.hostname = http_proxy_io_config->proxy_hostname;
-                                        socket_io_config.port = http_proxy_io_config->proxy_port;
-                                        socket_io_config.accepted_socket = NULL;
-
-                                        /* Codes_SRS_HTTP_PROXY_IO_01_009: [ http_proxy_io_create shall create a new socket IO by calling xio_create with the arguments: ]*/
-                                        result->underlying_io = xio_create(underlying_io_interface, &socket_io_config);
-                                    }
+                                    /* Codes_SRS_HTTP_PROXY_IO_01_009: [ http_proxy_io_create shall create a new socket IO by calling xio_create with the arguments: ]*/
+                                    result->underlying_io = xio_create(underlying_io_interface, &socket_io_config);
                                     if (result->underlying_io == NULL)
                                     {
                                         /* Codes_SRS_HTTP_PROXY_IO_01_012: [ If xio_create fails, http_proxy_io_create shall fail and return NULL. ]*/
@@ -398,7 +381,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
 
                     /* Codes_SRS_HTTP_PROXY_IO_01_059: [ - If username and password have been specified in the arguments passed to http_proxy_io_create, then the header Proxy-Authorization shall be added to the request. ]*/
 
-                    connect_request_length = (int)(strlen(request_format)+(strlen(http_proxy_io_instance->hostname)*2)+strlen(auth_string_payload)+10);
+                    connect_request_length = (int)(strlen(request_format) + (strlen(http_proxy_io_instance->hostname) * 2) + strlen(auth_string_payload) + 10);
                     if (http_proxy_io_instance->username != NULL)
                     {
                         connect_request_length += (int)strlen(proxy_basic);
@@ -932,6 +915,30 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
             if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, (void*)http_proxy_io_instance->underlying_io) != OPTIONHANDLER_OK)
             {
                 LogError("failed feeding options to underlying I/O instance");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        else if (strcmp(option_name, OPTION_USE_TLS_IO) == 0)
+        {
+            (void)xio_close(http_proxy_io_instance->underlying_io, NULL, NULL);
+            xio_destroy(http_proxy_io_instance->underlying_io);
+            http_proxy_io_instance->use_tls_io = true;
+            const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
+            underlying_io_interface = platform_get_default_tlsio();
+
+            TLSIO_CONFIG tls_io_config;
+            tls_io_config.hostname = http_proxy_io_instance->proxy_hostname;
+            tls_io_config.port = http_proxy_io_instance->proxy_port;
+            http_proxy_io_instance->underlying_io = xio_create(underlying_io_interface, &tls_io_config);
+
+            if (http_proxy_io_instance->underlying_io == NULL)
+            {
+                http_proxy_io_destroy(http_proxy_io);
+                LogError("failed creating undeyling tlsio instance");
                 result = MU_FAILURE;
             }
             else
