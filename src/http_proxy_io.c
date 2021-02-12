@@ -16,7 +16,7 @@
 #include "azure_c_shared_utility/azure_base64.h"
 
 static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
-static const char* const OPTION_USE_TLS_IO = "use_tls_io";
+static const char* const OPTION_USE_TLS_HTTP_PROXY = "use_tls_http_proxy";
 
 typedef enum HTTP_PROXY_IO_STATE_TAG
 {
@@ -48,7 +48,7 @@ typedef struct HTTP_PROXY_IO_INSTANCE_TAG
     XIO_HANDLE underlying_io;
     unsigned char* receive_buffer;
     size_t receive_buffer_size;
-    bool use_tls_io;
+    bool use_tls_http_proxy;
 } HTTP_PROXY_IO_INSTANCE;
 
 static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
@@ -305,7 +305,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     char* plain_auth_string_bytes;
 
                     /* Codes_SRS_HTTP_PROXY_IO_01_060: [ - The value of Proxy-Authorization shall be the constructed according to RFC 2617. ]*/
-                    int plain_auth_string_length = (int)(strlen(http_proxy_io_instance->username)+1);
+                    int plain_auth_string_length = (int)(strlen(http_proxy_io_instance->username) + 1);
                     if (http_proxy_io_instance->password != NULL)
                     {
                         plain_auth_string_length += (int)strlen(http_proxy_io_instance->password);
@@ -922,29 +922,22 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
                 result = 0;
             }
         }
-        else if (strcmp(option_name, OPTION_USE_TLS_IO) == 0)
+        else if (strcmp(option_name, OPTION_USE_TLS_HTTP_PROXY) == 0)
         {
             (void)xio_close(http_proxy_io_instance->underlying_io, NULL, NULL);
             xio_destroy(http_proxy_io_instance->underlying_io);
-            http_proxy_io_instance->use_tls_io = true;
+            http_proxy_io_instance->use_tls_http_proxy = true;
             const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
             underlying_io_interface = platform_get_default_tlsio();
 
             TLSIO_CONFIG tls_io_config;
             tls_io_config.hostname = http_proxy_io_instance->proxy_hostname;
             tls_io_config.port = http_proxy_io_instance->proxy_port;
+            tls_io_config.underlying_io_interface = NULL;
+            tls_io_config.underlying_io_parameters = NULL;
             http_proxy_io_instance->underlying_io = xio_create(underlying_io_interface, &tls_io_config);
 
-            if (http_proxy_io_instance->underlying_io == NULL)
-            {
-                http_proxy_io_destroy(http_proxy_io);
-                LogError("failed creating undeyling tlsio instance");
-                result = MU_FAILURE;
-            }
-            else
-            {
-                result = 0;
-            }
+            result = 0;
         }
         /* Codes_SRS_HTTP_PROXY_IO_01_043: [ If the option_name argument indicates an option that is not handled by http_proxy_io_set_option, then xio_setoption shall be called on the underlying IO created in http_proxy_io_create, passing the option name and value to it. ]*/
         /* Codes_SRS_HTTP_PROXY_IO_01_056: [ The value argument shall be allowed to be NULL. ]*/
@@ -977,7 +970,7 @@ static void* http_proxy_io_clone_option(const char* name, const void* value)
     }
     else
     {
-        if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
+        if ((strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0) || (strcmp(name, OPTION_USE_TLS_HTTP_PROXY) == 0))
         {
             result = (void*)value;
         }
