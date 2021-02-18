@@ -10,8 +10,8 @@
 #include "azure_c_shared_utility/platform.h"
 
 
-#define PROXY_HOSTNAME "<<<proxy server hostname>>>"
-#define PROXY_PORT 443
+#define PROXY_HOSTNAME "127.0.0.1"
+#define PROXY_PORT 8899
 #define PROXY_SERVER_CERTIFICATE_DATA "<<<server ssl certificate data which is used by the client to authentcate the identity of the proxy server>>>"
 #define PROXY_CLIENT_CERTIFICATE_DATA "<<<client side certificate data which is used by the proxy server to authenticate the identity of the client>>>"
 #define PROXY_CLIENT_PRIVATE_KEY_DATA "<<<client side private key which is used in the process of proxy server authenticating the client>>>"
@@ -93,11 +93,11 @@ int main(int argc, char** argv)
             bool use_tls_http_proxy = true;
             xio_setoption(http_proxy_io, "use_tls_http_proxy", &use_tls_http_proxy);
             const char* sever_ssl_cert = PROXY_SERVER_CERTIFICATE_DATA;
-            const char* client_side_cert = PROXY_CLIENT_CERTIFICATE_DATA;
-            const char* client_side_private_key = PROXY_CLIENT_PRIVATE_KEY_DATA;
+            //const char* client_side_cert = PROXY_CLIENT_CERTIFICATE_DATA;
+            //const char* client_side_private_key = PROXY_CLIENT_PRIVATE_KEY_DATA;
             xio_setoption(http_proxy_io, "TrustedCerts", sever_ssl_cert);
-            xio_setoption(http_proxy_io, "x509certificate", client_side_cert);
-            xio_setoption(http_proxy_io, "x509privatekey", client_side_private_key);
+            //xio_setoption(http_proxy_io, "x509certificate", client_side_cert);
+            //xio_setoption(http_proxy_io, "x509privatekey", client_side_private_key);
 
             if (http_proxy_io == NULL)
             {
