@@ -13,16 +13,16 @@
 MU_DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
 
 // UUID fields as specified in RFC 4122
-struct uuid {
+typedef struct UUID_TAG {
     uint32_t    time_low;
     uint16_t    time_mid;
     uint16_t    time_hi_and_version;
     uint16_t    clock_seq_and_variant;
-    uint8_t node[6];
-};
+    uint8_t     node[6];
+} UUID;
 
 // lowercase uuid format expected by azure iot sdk
-static const char *uuid_format =
+static const char* uuid_format =
     "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x";
 
 
@@ -41,14 +41,16 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
     {
 
         // generate version 4 uuid
-        struct uuid unique_id;
+        UUID unique_id;
 
         // get random bytes
-        ssize_t bytes_got = getrandom(&unique_id, sizeof(unique_id), 0);
+        ssize_t bytes_got = getrandom(&unique_id, sizeof(unique_id), GRND_NONBLOCK);
         if (bytes_got != sizeof(unique_id)) {
             LogError("Failed to obtain random numbers from getrandom.");
             result = UNIQUEID_ERROR;
-        } else {
+        }
+        else
+        {
             // format as version 4 (random) uuid variant 2
             unique_id.clock_seq_and_variant = (unique_id.clock_seq_and_variant & 0x3FFF) | 0x8000;
             unique_id.time_hi_and_version = (unique_id.time_hi_and_version & 0x0FFF) | 0x4000;
