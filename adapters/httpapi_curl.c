@@ -257,7 +257,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
         /*trying to set the x509 per device certificate*/
         if (
             (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
-            (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey) != 0)
+            (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey, KEY_TYPE_DEFAULT, NULL) != 0)
            )
         {
             LogError("unable to x509_openssl_add_credentials");
