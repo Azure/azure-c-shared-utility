@@ -94,7 +94,7 @@ static void enter_open_error_state(TLS_IO_INSTANCE* tls_io_instance)
     // save instance variables in case the framework destroys this object before we exit
     ON_IO_OPEN_COMPLETE on_open_complete = tls_io_instance->on_open_complete;
     void* on_open_complete_context = tls_io_instance->on_open_complete_context;
-    enter_tlsio_error_state(tls_io_instance);   
+    enter_tlsio_error_state(tls_io_instance);
     IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_ERROR, __FAILURE__ };
     on_open_complete(on_open_complete_context, error_result);
 }
@@ -153,13 +153,13 @@ static void internal_close(TLS_IO_INSTANCE* tls_io_instance)
             CFWriteStreamClose(tls_io_instance->sockWrite);
         }
     }
-    
+
     if (tls_io_instance->sockRead != NULL)
     {
         CFRelease(tls_io_instance->sockRead);
         tls_io_instance->sockRead = NULL;
     }
-    
+
     // If the reader is NULL then the writer should be too but let's be thorough
     if (tls_io_instance->sockWrite != NULL)
     {
@@ -259,7 +259,7 @@ static CONCRETE_IO_HANDLE tlsio_appleios_create(void* io_create_parameters)
                     result->sockWrite = NULL;
                     result->hostname = NULL;
                     result->pending_transmission_list = NULL;
-                    tlsio_options_initialize(&result->options, TLSIO_OPTION_BIT_NONE);
+                    tlsio_options_initialize(&result->options, TLSIO_OPTION_BIT_TRUSTED_CERTS);
                     /* Codes_SRS_TLSIO_30_016: [ tlsio_create shall make a copy of the hostname member of io_create_parameters to allow deletion of hostname immediately after the call. ]*/
                     if (NULL == (result->hostname = CFStringCreateWithCString(NULL, tls_io_config->hostname, kCFStringEncodingUTF8)))
                     {
@@ -563,14 +563,23 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
             else
             {
                 // The write returned non-success. It may be busy, or it may be broken
-                CFErrorRef write_error = CFWriteStreamCopyError(tls_io_instance->sockWrite);
-                if (write_error != NULL && CFErrorGetCode(write_error) != errSSLWouldBlock)
+                CFIndex write_error_code = errSSLWouldBlock;
+                {
+                    CFErrorRef write_error = CFWriteStreamCopyError(tls_io_instance->sockWrite);
+                    if (write_error != NULL)
+                    {
+                        write_error_code = CFErrorGetCode(write_error);
+                        CFRelease(write_error);
+                    }
+                }
+
+                if (write_error_code != errSSLWouldBlock)
                 {
                     /* Codes_SRS_TLSIO_30_002: [ The phrase "destroy the failed message" means that the adapter shall remove the message from the queue and destroy it after calling the message's on_send_complete along with its associated callback_context and IO_SEND_ERROR. ]*/
                     /* Codes_SRS_TLSIO_30_005: [ When the adapter enters TLSIO_STATE_EXT_ERROR it shall call the  on_io_error function and pass the on_io_error_context that were supplied in  tlsio_open . ]*/
                     /* Codes_SRS_TLSIO_30_095: [ If the send process fails before sending all of the bytes in an enqueued message, tlsio_dowork shall destroy the failed message and enter TLSIO_STATE_EX_ERROR. ]*/
                     // This is an unexpected error, and we need to bail out. Probably lost internet connection.
-                    LogInfo("Hard error from CFWriteStreamWrite: %d", CFErrorGetCode(write_error));
+                    LogInfo("Hard error from CFWriteStreamWrite: %ld", write_error_code);
                     process_and_destroy_head_message(tls_io_instance, IO_SEND_ERROR);
                 }
                 else
@@ -599,10 +608,14 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
     CFStreamCreatePairWithSocketToHost(NULL, tls_io_instance->hostname, tls_io_instance->port, &tls_io_instance->sockRead, &tls_io_instance->sockWrite);
     if (tls_io_instance->sockRead != NULL && tls_io_instance->sockWrite != NULL)
     {
-        const void* keys[] = { kCFStreamSSLLevel };
-        const void* values[] = { kCFStreamSocketSecurityLevelNegotiatedSSL };
-        CFDictionaryRef sslSettingsDict = CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-        if (CFReadStreamSetProperty(tls_io_instance->sockRead, kCFStreamPropertySSLSettings, sslSettingsDict))
+        
+        CFStringRef keys[1] = {kCFStreamPropertySocketSecurityLevel};
+        CFStringRef values[1] = {kCFStreamSocketSecurityLevelNegotiatedSSL};
+
+        CFDictionaryRef tls_io_dictionary = CFDictionaryCreate(NULL , (void *)keys , (void *)values , 1,  NULL , NULL);
+        
+        if (CFReadStreamSetProperty(tls_io_instance->sockRead, kCFStreamPropertySSLSettings, tls_io_dictionary))
+
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING_WAITING_SSL;
         }
@@ -611,7 +624,8 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
             LogError("Failed to set socket properties");
             enter_open_error_state(tls_io_instance);
         }
-        CFRelease(sslSettingsDict);
+
+        CFRelease(tls_io_dictionary);
     }
     else
     {
@@ -623,7 +637,7 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
 static void dowork_poll_open_ssl(TLS_IO_INSTANCE* tls_io_instance)
 {
     if (CFReadStreamOpen(tls_io_instance->sockRead) && CFWriteStreamOpen(tls_io_instance->sockWrite))
-    {   
+    {
         /* Codes_SRS_TLSIO_30_080: [ The tlsio_dowork shall establish a TLS connection using the hostName and port provided during tlsio_open. ]*/
         // Connect succeeded
         tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
@@ -635,9 +649,20 @@ static void dowork_poll_open_ssl(TLS_IO_INSTANCE* tls_io_instance)
     else
     {
         CFErrorRef readError = CFReadStreamCopyError(tls_io_instance->sockRead);
-        CFErrorRef writeError = CFWriteStreamCopyError(tls_io_instance->sockWrite);
-        
-        LogInfo("Error opening streams - read error=%d;write error=%d", CFErrorGetCode(readError), CFErrorGetCode(writeError));
+        if (readError != NULL)
+        {
+            CFErrorRef writeError = CFWriteStreamCopyError(tls_io_instance->sockWrite);
+            if (writeError != NULL)
+            {
+                LogInfo("Error opening streams - read error=%ld;write error=%ld", CFErrorGetCode(readError), CFErrorGetCode(writeError));
+                CFRelease(writeError);
+            }
+            else
+            {
+                LogInfo("Error opening streams - read error=%ld", CFErrorGetCode(readError));
+            }
+            CFRelease(readError);
+        }
         enter_open_error_state(tls_io_instance);
     }
 }
