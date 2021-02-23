@@ -73,6 +73,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     const char* x509_private_key;
     TLSIO_VERSION tls_version;
     bool disable_crl_check;
+    bool continue_on_crl_download_failure;
     bool disable_default_verify_paths;
     TLS_CERTIFICATE_VALIDATION_CALLBACK tls_validation_callback;
     void* tls_validation_callback_data;
@@ -202,7 +203,8 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
             }
         }
         else if (strcmp(name, OPTION_DISABLE_CRL_CHECK) == 0 ||
-            strcmp(name, OPTION_DISABLE_DEFAULT_VERIFY_PATHS) == 0)
+            strcmp(name, OPTION_DISABLE_DEFAULT_VERIFY_PATHS) == 0 ||
+            strcmp(name, OPTION_CONTINUE_ON_CRL_DOWNLOAD_FAILURE) == 0)
         {
             bool bool_value = *(bool*)value;
             bool* value_clone = (bool*)malloc(sizeof(bool));
@@ -341,6 +343,16 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
                 if (OptionHandler_AddOption(result, OPTION_DISABLE_CRL_CHECK, &tls_io_instance->disable_crl_check) != OPTIONHANDLER_OK)
                 {
                     LogError("unable to save %s option", OPTION_DISABLE_CRL_CHECK);
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+            }
+            else if (tls_io_instance->continue_on_crl_download_failure)
+            {
+                // Only add this option if not the default (false)
+                if (OptionHandler_AddOption(result, OPTION_CONTINUE_ON_CRL_DOWNLOAD_FAILURE, &tls_io_instance->continue_on_crl_download_failure) != OPTIONHANDLER_OK)
+                {
+                    LogError("unable to save %s option", OPTION_CONTINUE_ON_CRL_DOWNLOAD_FAILURE);
                     OptionHandler_Destroy(result);
                     result = NULL;
                 }
@@ -1585,7 +1597,7 @@ static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
     sk_DIST_POINT_pop_free(crldp, DIST_POINT_free);
     if (!crl)
     {
-        LogError("Unable to retrieve CRL, CRL check will fail.\n");
+        LogError("Unable to retrieve CRL, CRL check may fail.\n");
         sk_X509_CRL_free(crls);
         return NULL;
     }
@@ -1606,6 +1618,21 @@ static STACK_OF(X509_CRL) *crls_http_cb(X509_STORE_CTX *ctx, X509_NAME *nm)
 
     return crls;
 }
+
+static int allow_CRL_fetch_error(int status, X509_STORE_CTX *ctx)
+{
+    if(X509_V_ERR_UNABLE_TO_GET_CRL == X509_STORE_CTX_get_error(ctx))
+    {
+        LogInfo("Ignoring CRL Downlaod failure\n");
+        return 1;
+    }
+    else
+    {
+        LogError("Error %d was unexpected\n", X509_STORE_CTX_get_error(ctx));
+        return status;
+    }
+}
+
 
 #if defined(WIN32)
 static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
@@ -1821,8 +1848,14 @@ static int setup_crl_check(TLS_IO_INSTANCE* tls_io_instance)
     }
     else
     {
+        LogInfo("CRL check enabled.\n");
         X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
         X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
+        if(tls_io_instance->continue_on_crl_download_failure)
+        {
+            LogInfo("CRL download failures will be ignored.\n");
+            X509_STORE_set_verify_cb(store, allow_CRL_fetch_error);
+        }
     }
 
     return 0;
@@ -2238,6 +2271,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
 
                     result->tls_version = OPTION_TLS_VERSION_1_0;
                     result->disable_crl_check = false;
+                    result->continue_on_crl_download_failure = false;
                     result->disable_default_verify_paths = false;
 
                     result->underlying_io = xio_create(underlying_io_interface, io_interface_parameters);
@@ -2659,6 +2693,19 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             else
             {
                 tls_io_instance->disable_crl_check = *(const bool*)value;
+                result = 0;
+            }
+        }
+        else if (strcmp(OPTION_CONTINUE_ON_CRL_DOWNLOAD_FAILURE, optionName) == 0)
+        {
+            if (tls_io_instance->ssl_context != NULL)
+            {
+                LogError("Unable to set the %s option after the TLS connection is established", optionName);
+                result = __FAILURE__;
+            }
+            else
+            {
+                tls_io_instance->continue_on_crl_download_failure = *(const bool*)value;
                 result = 0;
             }
         }

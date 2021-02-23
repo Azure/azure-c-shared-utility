@@ -25,6 +25,7 @@ extern "C"
     static STATIC_VAR_UNUSED const char* const OPTION_TRUSTED_CERT = "TrustedCerts";
 
     static STATIC_VAR_UNUSED const char* const OPTION_DISABLE_CRL_CHECK = "DisableCrlCheck";
+    static STATIC_VAR_UNUSED const char* const OPTION_CONTINUE_ON_CRL_DOWNLOAD_FAILURE = "ContinueOnCrlDownloadFailure";
     static STATIC_VAR_UNUSED const char* const OPTION_DISABLE_DEFAULT_VERIFY_PATHS = "DisableDefaultVerifyPath";
 
     static STATIC_VAR_UNUSED const char* const SU_OPTION_X509_CERT = "x509certificate";
