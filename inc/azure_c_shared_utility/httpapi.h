@@ -17,7 +17,7 @@
  *
  *             Applications should not directly invoke functions in this header because this layer does
  *             not follow the standard allocation/copying rules of the rest of the SDK.  When passed
- *             a memory buffer, this layer points directly to the memory and does not make a copy.
+ *             a memory buffer, this layer points directly to the memory and does not make a copy or use reference counting.
  *             This means there can be a crash if the caller free()'s the data but this layer needs it.
  *             The httpapiex.h layer follows the conventions throughout the rest of the SDK and is 
  *             therefore safer and less likely to cause unexpected problems for callers.
