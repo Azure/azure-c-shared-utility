@@ -354,8 +354,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     encoded_auth_string = NULL;
                 }
 
-                if ((http_proxy_io_instance->username != NULL) &&
-                    (encoded_auth_string == NULL))
+                if (http_proxy_io_instance->hostname == NULL ||
+                    (http_proxy_io_instance->username != NULL && encoded_auth_string == NULL))
                 {
                     LogError("Cannot create authorization header");
                 }
