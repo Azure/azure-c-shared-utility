@@ -904,6 +904,26 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 }
             }
         }
+        else if (strcmp(OPTION_NETWORK_INTERFACE_UPLOAD_TO_BLOB, optionName) == 0)
+        {
+            const char *interfaceName = (const char*)value;
+            if (interfaceName != NULL && interfaceName[0] != '\0')
+            {
+                if (curl_easy_setopt(httpHandleData->curl, CURLOPT_INTERFACE, interfaceName) != CURLE_OK)
+                {
+                    LogError("unable to curl_easy_setopt");
+                    result = HTTPAPI_ERROR;
+                }
+                else
+                {
+                    result = HTTPAPI_OK;
+                }
+            }
+            else
+            {
+                result = HTTPAPI_OK;
+            }
+        }
         else
         {
             result = HTTPAPI_INVALID_ARG;
@@ -1025,6 +1045,19 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             {
                 *temp = *(const long*)value;
                 *savedValue = temp;
+                result = HTTPAPI_OK;
+            }
+        }
+        else if (strcmp(OPTION_NETWORK_INTERFACE_UPLOAD_TO_BLOB, optionName) == 0)
+        {
+            if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
+            {
+                LogError("unable to clone the interface name");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                /*return OK when the interface name has been cloned successfully*/
                 result = HTTPAPI_OK;
             }
         }
