@@ -911,7 +911,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             {
                 if (curl_easy_setopt(httpHandleData->curl, CURLOPT_INTERFACE, interfaceName) != CURLE_OK)
                 {
-                    LogError("unable to curl_easy_setopt");
+                    LogError("unable to curl_easy_setopt for CURLOPT_INTERFACE");
                     result = HTTPAPI_ERROR;
                 }
                 else
