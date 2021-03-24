@@ -921,7 +921,8 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             }
             else
             {
-                result = HTTPAPI_OK;
+                LogError("unable to curl_easy_setopt for CURLOPT_INTERFACE option as option-value is invalid/empty");
+                result = HTTPAPI_ERROR;
             }
         }
         else
