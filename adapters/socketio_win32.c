@@ -362,12 +362,6 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     destroy_socket_io_instance(result);
                     result = NULL;
                 }
-                else if ((result->addrInfo->ai_addr = calloc(1, sizeof(struct sockaddr_in))) == NULL)
-                {
-                    LogError("Failure allocating ai_addr");
-                    destroy_socket_io_instance(result);
-                    result = NULL;
-                }
                 else
                 {
                     result->port = socket_io_config->port;
