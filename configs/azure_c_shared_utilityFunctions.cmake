@@ -623,7 +623,34 @@ function(build_c_test_longhaul_test test_name test_c_files test_h_files)
 
     add_executable(${test_name} ${test_c_files} ${test_h_files} ${samples_cert_file})
 
-    add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
+    set(PARSING_VALGRIND_SUPPRESSIONS_FILE OFF)
+    set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER)
+    foreach(f ${ARGN})
+        set(skip_to_next FALSE)
+        if(${f} STREQUAL "VALGRIND_SUPPRESSIONS_FILE")
+            SET(PARSING_VALGRIND_SUPPRESSIONS_FILE ON)
+            set(skip_to_next TRUE)
+        endif()
+
+        if(NOT skip_to_next)
+            if(PARSING_VALGRIND_SUPPRESSIONS_FILE)
+                set(VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER "--suppressions=${f}")
+            endif()
+        endif()
+    endforeach()
+
+    if(${run_valgrind})
+        find_program(VALGRIND_FOUND NAMES valgrind)
+        if(${VALGRIND_FOUND} STREQUAL VALGRIND_FOUND-NOTFOUND)
+            message(WARNING "run_valgrind was TRUE, but valgrind was not found - there will be no tests run under valgrind")
+        else()
+            add_test(NAME ${test_name}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${test_name}>)
+        endif()
+    else()
+        add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
+    endif()
+
+
     set_tests_properties(${test_name} PROPERTIES TIMEOUT 1296000)
 
     target_link_libraries(${test_name}
