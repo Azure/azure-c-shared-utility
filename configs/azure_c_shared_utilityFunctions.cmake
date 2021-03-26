@@ -644,12 +644,12 @@ function(build_c_test_longhaul_test test_name test_c_files test_h_files)
         if(${VALGRIND_FOUND} STREQUAL VALGRIND_FOUND-NOTFOUND)
             message(WARNING "run_valgrind was TRUE, but valgrind was not found - there will be no tests run under valgrind")
         else()
+            add_test(NAME ${test_name}_valgrind COMMAND valgrind                 --gen-suppressions=all --num-callers=100 --error-exitcode=1 --leak-check=full --track-origins=yes ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${test_name}_exe>)
             add_test(NAME ${test_name}_helgrind COMMAND valgrind --tool=helgrind --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${test_name}>)
         endif()
     else()
         add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
     endif()
-
 
     set_tests_properties(${test_name} PROPERTIES TIMEOUT 1296000)
 
