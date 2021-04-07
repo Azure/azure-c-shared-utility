@@ -135,6 +135,15 @@ MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_get_error, WOLFSSL*, ssl, int,
 MOCK_FUNCTION_END(SSL_SUCCESS)
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_check_domain_name, WOLFSSL*, ssl, const char*, dn)
 MOCK_FUNCTION_END(SSL_SUCCESS)
+MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_Debugging_ON)
+MOCK_FUNCTION_END(SSL_SUCCESS)
+
+typedef void (*wolfSSL_Logging_cb)(const int logLevel,
+                                   const char *const logMessage);
+
+MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_SetLoggingCb, wolfSSL_Logging_cb, log_function)
+MOCK_FUNCTION_END(SSL_SUCCESS)
+
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
