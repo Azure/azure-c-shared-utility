@@ -626,7 +626,6 @@ int tlsio_wolfssl_init(void)
 {
     (void)wolfSSL_library_init();
     wolfSSL_load_error_strings();
-
     return 0;
 }
 
@@ -946,6 +945,18 @@ static int process_option(char** destination, const char* name, const char* valu
     return result;
 }
 
+static void logging_callback(const int logLevel, const char *const logMessage)
+{
+    if (logLevel == ERROR_LOG)
+    {
+        LogError("tlsio_wolfssl: %s", logMessage);
+    }
+    else
+    {
+        LogInfo("tlsio_wolfssl: %s", logMessage);
+    }
+}
+
 int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
 {
     int result;
@@ -997,6 +1008,12 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         {
             bool* server_name_check = (bool*)value;
             tls_io_instance->ignore_host_name_check = *server_name_check;
+            result = 0;
+        }
+        else if (strcmp("debugLog", optionName) == 0)
+        {
+            (void)wolfSSL_Debugging_ON();
+            (void)wolfSSL_SetLoggingCb(&logging_callback);
             result = 0;
         }
         else

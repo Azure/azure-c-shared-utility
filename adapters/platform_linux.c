@@ -42,6 +42,11 @@ int platform_init(void)
     {
         result = tlsio_openssl_init();
     }
+#elif USE_WOLFSSL
+    if (result == 0)
+    {
+        result = tlsio_wolfssl_init();
+    }
 #endif
     return result;
 }
@@ -91,5 +96,7 @@ void platform_deinit(void)
 #endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();
+#elif USE_WOLFSSL
+    tlsio_wolfssl_deinit();
 #endif
 }
