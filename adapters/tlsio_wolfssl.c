@@ -1018,21 +1018,20 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             bool* enable_debug_logging = (bool*)value;
             if (enable_debug_logging)
             {
-
-            }
-            if (!wolfSSL_Debugging_ON())
-            {
-                LogError("wolfSSL_Debugging_ON failed.");
-                result = MU_FAILURE;
-            }
-            else if (!wolfSSL_SetLoggingCb(&logging_callback))
-            {
-                LogError("wolfSSL_SetLoggingCb failed.");
-                result = MU_FAILURE;
-            }
-            else
-            {
-                result = 0;
+                if (!wolfSSL_Debugging_ON())
+                {
+                    LogError("wolfSSL_Debugging_ON failed.");
+                    result = MU_FAILURE;
+                }
+                else if (!wolfSSL_SetLoggingCb(&logging_callback))
+                {
+                    LogError("wolfSSL_SetLoggingCb failed.");
+                    result = MU_FAILURE;
+                }
+                else
+                {
+                    result = 0;
+                }
             }
         }
 #endif // LIBWOLFSSL_VERSION_HEX >= 0x04000000
