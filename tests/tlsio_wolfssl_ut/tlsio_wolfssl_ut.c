@@ -137,10 +137,6 @@ MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_check_domain_name, WOLFSSL*, s
 MOCK_FUNCTION_END(SSL_SUCCESS)
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_Debugging_ON)
 MOCK_FUNCTION_END(SSL_SUCCESS)
-
-typedef void (*wolfSSL_Logging_cb)(const int logLevel,
-                                   const char *const logMessage);
-
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_SetLoggingCb, wolfSSL_Logging_cb, log_function)
 MOCK_FUNCTION_END(SSL_SUCCESS)
 
@@ -206,6 +202,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(XIO_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(CallbackIORecv, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(wolfSSL_Logging_cb, void*);
     REGISTER_UMOCK_ALIAS_TYPE(HandShakeDoneCb, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_IO_OPEN_COMPLETE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_BYTES_RECEIVED, void*);
@@ -814,6 +811,29 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_device_id_fail)
     tlsio_wolfssl_destroy(io_handle);
 }
 #endif
+
+TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_succeed)
+{
+    //arrange
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(wolfSSL_Debugging_ON()).SetReturn(0);
+    STRICT_EXPECTED_CALL(wolfSSL_SetLoggingCb(IGNORED_PTR_ARG)).SetReturn(0);
+
+    //act
+    int debugLogEnable = true;
+    int test_result = tlsio_wolfssl_setoption(io_handle, "debugLog", &debugLogEnable);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, 0, test_result);
+
+    //clean
+    tlsio_wolfssl_destroy(io_handle);
+}
 
 TEST_FUNCTION(tlsio_wolfssl_on_underlying_io_bytes_received_ctx_NULL_succeess)
 {
