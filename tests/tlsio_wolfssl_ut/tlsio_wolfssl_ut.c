@@ -135,11 +135,13 @@ MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_get_error, WOLFSSL*, ssl, int,
 MOCK_FUNCTION_END(SSL_SUCCESS)
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_check_domain_name, WOLFSSL*, ssl, const char*, dn)
 MOCK_FUNCTION_END(SSL_SUCCESS)
+
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_Debugging_ON)
 MOCK_FUNCTION_END(SSL_SUCCESS)
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_SetLoggingCb, wolfSSL_Logging_cb, log_function)
 MOCK_FUNCTION_END(SSL_SUCCESS)
-
+#endif
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -202,7 +204,9 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(XIO_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(CallbackIORecv, void*);
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
     REGISTER_UMOCK_ALIAS_TYPE(wolfSSL_Logging_cb, void*);
+#endif
     REGISTER_UMOCK_ALIAS_TYPE(HandShakeDoneCb, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_IO_OPEN_COMPLETE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_BYTES_RECEIVED, void*);
@@ -812,6 +816,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_device_id_fail)
 }
 #endif
 
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
 TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_succeed)
 {
     //arrange
@@ -834,6 +839,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_succeed)
     //clean
     tlsio_wolfssl_destroy(io_handle);
 }
+#endif
 
 TEST_FUNCTION(tlsio_wolfssl_on_underlying_io_bytes_received_ctx_NULL_succeess)
 {
