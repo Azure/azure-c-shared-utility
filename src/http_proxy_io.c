@@ -14,9 +14,13 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/http_proxy_io.h"
 #include "azure_c_shared_utility/azure_base64.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 
 static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
 static const char* const OPTION_USE_TLS_HTTP_PROXY = "use_tls_http_proxy";
+static const char* const OPTION_TLS_PROXY_HOST_TRUSTED_CERT = "tls_proxy_host_TrustedCerts";
+static const char* const OPTION_TLS_PROXY_HOST_X509_CERT = "tls_proxy_host_x509certificate";
+static const char* const OPTION_TLS_PROXY_HOST_X509_PRIVATE_KEY = "tls_proxy_host_x509privatekey";
 
 typedef enum HTTP_PROXY_IO_STATE_TAG
 {
@@ -687,6 +691,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         /* Codes_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the on_open_complete callback shall be triggered with IO_OPEN_OK, passing also the on_open_complete_context argument as context. ]*/
                         http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, IO_OPEN_OK);
 
+
                         if (length_remaining > 0)
                         {
                             /* Codes_SRS_HTTP_PROXY_IO_01_072: [ Any bytes that are extra (not consumed by the CONNECT response), shall be indicated as received by calling the on_bytes_received callback and passing the on_bytes_received_context as context argument. ]*/
@@ -936,8 +941,75 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
             tls_io_config.underlying_io_interface = NULL;
             tls_io_config.underlying_io_parameters = NULL;
             http_proxy_io_instance->underlying_io = xio_create(underlying_io_interface, &tls_io_config);
-
-            result = 0;
+            if (http_proxy_io_instance->underlying_io == NULL)
+            {
+                LogError("xio_create failed");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        else if (strcmp(option_name, OPTION_TLS_PROXY_HOST_TRUSTED_CERT) == 0)
+        {
+            if (!http_proxy_io_instance->use_tls_http_proxy)
+            {
+                LogError("Invalid option %s", option_name);
+                result = MU_FAILURE;
+            }
+            else
+            {
+                if (xio_setoption(http_proxy_io_instance->underlying_io, OPTION_TRUSTED_CERT, value) != 0)
+                {
+                    LogError("Setting option %s failed", option_name);
+                    result = MU_FAILURE;
+                }
+                else
+                {
+                    result = 0;
+                }
+            }
+        }
+        else if (strcmp(option_name, OPTION_TLS_PROXY_HOST_X509_CERT) == 0)
+        {
+            if (!http_proxy_io_instance->use_tls_http_proxy)
+            {
+                LogError("Invalid option %s", option_name);
+                result = MU_FAILURE;
+            }
+            else
+            {
+                if (xio_setoption(http_proxy_io_instance->underlying_io, SU_OPTION_X509_CERT, value) != 0)
+                {
+                    LogError("Setting option %s failed", option_name);
+                    result = MU_FAILURE;
+                }
+                else
+                {
+                    result = 0;
+                }
+            }
+        }
+        else if (strcmp(option_name, OPTION_TLS_PROXY_HOST_X509_PRIVATE_KEY) == 0)
+        {
+            if (!http_proxy_io_instance->use_tls_http_proxy)
+            {
+                LogError("Invalid option %s", option_name);
+                result = MU_FAILURE;
+            }
+            else
+            {
+                if (xio_setoption(http_proxy_io_instance->underlying_io, SU_OPTION_X509_PRIVATE_KEY, value) != 0)
+                {
+                    LogError("Setting option %s failed", option_name);
+                    result = MU_FAILURE;
+                }
+                else
+                {
+                    result = 0;
+                }
+            }
         }
         /* Codes_SRS_HTTP_PROXY_IO_01_043: [ If the option_name argument indicates an option that is not handled by http_proxy_io_set_option, then xio_setoption shall be called on the underlying IO created in http_proxy_io_create, passing the option name and value to it. ]*/
         /* Codes_SRS_HTTP_PROXY_IO_01_056: [ The value argument shall be allowed to be NULL. ]*/

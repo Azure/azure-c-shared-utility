@@ -3,18 +3,25 @@
 
 #include "stdio.h"
 #include "stdbool.h"
+#include "stdlib.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/http_proxy_io.h"
 #include "azure_c_shared_utility/platform.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 
 
 #define PROXY_HOSTNAME "127.0.0.1"
-#define PROXY_PORT 8899
-#define PROXY_SERVER_CERTIFICATE_DATA "<<<server ssl certificate data which is used by the client to authentcate the identity of the proxy server>>>"
-#define PROXY_CLIENT_CERTIFICATE_DATA "<<<client side certificate data which is used by the proxy server to authenticate the identity of the client>>>"
-#define PROXY_CLIENT_PRIVATE_KEY_DATA "<<<client side private key which is used in the process of proxy server authenticating the client>>>"
+#define PROXY_PORT 443
+
+#define FILE_PATH_OF_CERTIFICATE_OF_PROXY_SERVER "<proxy server cert file path in .pem format>"
+#define FILE_PATH_OF_CERTIFICATE_OF_PROXY_CLIENT_AUTH "<proxy client cert file path in .pem format>"
+#define FILE_PATH_OF_PRIVATE_KEY_OF_PROXY_CLIENT_AUTH "<proxy client private key file path in .pem format>"
+
+#define FILE_PATH_OF_CERTIFICATE_OF_HOST_SERVER "<host cert file path in .pem format>"
+#define FILE_PATH_OF_CERTIFICATE_OF_HOSR_CLIENT_AUTH "<host client cert file path in .pem format>"
+#define FILE_PATH_OF_PRIVATE_KEY_OF_HOSR_CLIENT_AUTH "<host client private key file path in .pem format>"
 
 
 // A simple sample callback.
@@ -31,12 +38,12 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 
     if (open_result == IO_OPEN_OK)
     {
-        XIO_HANDLE httpproxyio = (XIO_HANDLE)context;
+        XIO_HANDLE tlsio = (XIO_HANDLE)context;
         const char to_send[] = "GET / HTTP/1.1\r\n"
-            "Host: www.google.com\r\n"
+            "Host: www.microsoft.com\r\n"
             "\r\n";
         (void)printf("Sending bytes ...\r\n");
-        if (xio_send(httpproxyio, to_send, sizeof(to_send), on_send_complete, NULL) != 0)
+        if (xio_send(tlsio, to_send, sizeof(to_send), on_send_complete, NULL) != 0)
         {
             (void)printf("Send failed\r\n");
         }
@@ -50,6 +57,7 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 static void on_io_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
     (void)context, (void)buffer;
+    printf("%s\n", buffer);
     (void)printf("Received %lu bytes\r\n", (unsigned long)size);
 }
 
@@ -59,12 +67,40 @@ static void on_io_error(void* context)
     (void)printf("IO reported an error\r\n");
 }
 
+static char* read_data_from_file(const char* file_path)
+{
+    FILE *fp;
+    long lSize;
+    char *buffer;
+
+    fp = fopen(file_path, "rb");
+    if (!fp) perror("blah.txt"), exit(1);
+
+    fseek(fp, 0L, SEEK_END);
+    lSize = ftell(fp);
+    rewind(fp);
+
+    /* allocate memory for entire content */
+    buffer = calloc(1, lSize + 1);
+    if (!buffer) fclose(fp), fputs("memory alloc fails", stderr), exit(1);
+
+    /* copy the file into the buffer */
+    if (1 != fread(buffer, lSize, 1, fp))
+        fclose(fp), free(buffer), fputs("entire read fails", stderr), exit(1);
+
+    fclose(fp);
+    return buffer;
+}
+
 int main(int argc, char** argv)
 {
     int result;
 
     (void)argc, (void)argv;
-
+    char* proxy_host_cert_data = NULL;
+    char* host_cert_data = NULL;
+    proxy_host_cert_data = read_data_from_file(FILE_PATH_OF_CERTIFICATE_OF_PROXY_SERVER);
+    host_cert_data = read_data_from_file(FILE_PATH_OF_CERTIFICATE_OF_HOST_SERVER);
     if (platform_init() != 0)
     {
         (void)printf("Cannot initialize platform.");
@@ -81,34 +117,28 @@ int main(int argc, char** argv)
         }
         else
         {
-            HTTP_PROXY_IO_CONFIG proxy_io_config = { "www.google.com", 443, PROXY_HOSTNAME, PROXY_PORT, NULL, NULL };
-            TLSIO_CONFIG tlsio_config = { "www.google.com", 443, NULL, NULL};
+            HTTP_PROXY_IO_CONFIG proxy_io_config = { "https://www.microsoft.com/", 443, PROXY_HOSTNAME, PROXY_PORT, NULL, NULL };
+
             XIO_HANDLE tlsio;
-            XIO_HANDLE http_proxy_io;
-    
+
+            TLSIO_CONFIG tlsio_config = { "https://www.microsoft.com/", 443, NULL, NULL };
+            tlsio_config.underlying_io_parameters = &proxy_io_config;
+            tlsio_config.underlying_io_interface = proxyio_interface;
             tlsio = xio_create(tlsio_interface, &tlsio_config);
-            http_proxy_io = xio_create(proxyio_interface, &proxy_io_config);
+            xio_setoption(tlsio, "use_tls_http_proxy", proxy_host_cert_data);
+            xio_setoption(tlsio, "tls_proxy_host_TrustedCerts", proxy_host_cert_data);
+            xio_setoption(tlsio, "TrustedCerts", host_cert_data);
 
-            // configure underlying tlsio, set certificates
-            bool use_tls_http_proxy = true;
-            xio_setoption(http_proxy_io, "use_tls_http_proxy", &use_tls_http_proxy);
-            const char* sever_ssl_cert = PROXY_SERVER_CERTIFICATE_DATA;
-            //const char* client_side_cert = PROXY_CLIENT_CERTIFICATE_DATA;
-            //const char* client_side_private_key = PROXY_CLIENT_PRIVATE_KEY_DATA;
-            xio_setoption(http_proxy_io, "TrustedCerts", sever_ssl_cert);
-            //xio_setoption(http_proxy_io, "x509certificate", client_side_cert);
-            //xio_setoption(http_proxy_io, "x509privatekey", client_side_private_key);
-
-            if (http_proxy_io == NULL)
+            if (tlsio == NULL)
             {
-                (void)printf("Error creating HTTP PROXY IO.");
+                (void)printf("Error creatingTLS IO.");
                 result = MU_FAILURE;
             }
             else
             {
-                if (xio_open(http_proxy_io, on_io_open_complete, http_proxy_io, on_io_bytes_received, http_proxy_io, on_io_error, http_proxy_io) != 0)
+                if (xio_open(tlsio, on_io_open_complete, tlsio, on_io_bytes_received, tlsio, on_io_error, tlsio) != 0)
                 {
-                    (void)printf("Error opening HTTP PROXY IO.");
+                    (void)printf("Error opening tlsio.");
                     result = MU_FAILURE;
                 }
                 else
@@ -116,16 +146,25 @@ int main(int argc, char** argv)
                     unsigned char done = 0;
                     while (!done)
                     {
-                        xio_dowork(http_proxy_io);
+                        xio_dowork(tlsio);
                     }
 
                     result = 0;
                 }
 
-                xio_destroy(http_proxy_io);
+                xio_destroy(tlsio);
             }
         }
 
+        if (proxy_host_cert_data != NULL)
+        {
+            free(proxy_host_cert_data);
+        }
+
+        if (host_cert_data != NULL)
+        {
+            free(host_cert_data);
+        }
         platform_deinit();
     }
 
