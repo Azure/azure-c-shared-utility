@@ -4,5 +4,5 @@
 cmake_minimum_required(VERSION 2.8.11)
 
 set(shared_util_base_path ../../..)
-set(mbed_project_base "http_proxy_use_tlsio_connect" CACHE STRING "The item being built")
+set(mbed_project_base "http_proxy_tlsio_connect" CACHE STRING "The item being built")
 include (${shared_util_base_path}/tools/mbed_build_scripts/mbedbldtemplate.txt)

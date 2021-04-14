@@ -1,7 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-set(http_proxy_use_tlsio_connect_c_files
+set(http_proxy_tlsio_connect_c_files
     main.c
 )
 
@@ -11,9 +11,9 @@ IF(WIN32)
     add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
 ENDIF(WIN32)
 
-add_executable(http_proxy_use_tlsio_connect ${http_proxy_use_tlsio_connect_c_files})
+add_executable(http_proxy_tlsio_connect ${http_proxy_tlsio_connect_c_files})
 
-target_link_libraries(http_proxy_use_tlsio_connect
+target_link_libraries(http_proxy_tlsio_connect
     aziotsharedutil
 )
 
@@ -22,8 +22,8 @@ if(${use_openssl} AND WIN32)
 	file(COPY ${CRYPTO_DLL} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
-set_target_properties(http_proxy_use_tlsio_connect
+set_target_properties(http_proxy_tlsio_connect
     PROPERTIES
     FOLDER "azure_c_shared_utility_samples")
 
-compileTargetAsC99(http_proxy_use_tlsio_connect)
+compileTargetAsC99(http_proxy_tlsio_connect)
