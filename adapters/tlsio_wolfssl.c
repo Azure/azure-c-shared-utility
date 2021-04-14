@@ -626,7 +626,6 @@ int tlsio_wolfssl_init(void)
 {
     (void)wolfSSL_library_init();
     wolfSSL_load_error_strings();
-
     return 0;
 }
 
@@ -946,6 +945,20 @@ static int process_option(char** destination, const char* name, const char* valu
     return result;
 }
 
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
+static void logging_callback(const int logLevel, const char *const logMessage)
+{
+    if (logLevel == ERROR_LOG)
+    {
+        LogError("tlsio_wolfssl: %s", logMessage);
+    }
+    else
+    {
+        LogInfo("tlsio_wolfssl: %s", logMessage);
+    }
+}
+#endif // LIBWOLFSSL_VERSION_HEX >= 0x04000000
+
 int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
 {
     int result;
@@ -999,6 +1012,29 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             tls_io_instance->ignore_host_name_check = *server_name_check;
             result = 0;
         }
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
+        else if (strcmp("debug_log", optionName) == 0)
+        {
+            bool* enable_debug_logging = (bool*)value;
+            if (enable_debug_logging)
+            {
+                if (!wolfSSL_Debugging_ON())
+                {
+                    LogError("wolfSSL_Debugging_ON failed.");
+                    result = MU_FAILURE;
+                }
+                else if (!wolfSSL_SetLoggingCb(&logging_callback))
+                {
+                    LogError("wolfSSL_SetLoggingCb failed.");
+                    result = MU_FAILURE;
+                }
+                else
+                {
+                    result = 0;
+                }
+            }
+        }
+#endif // LIBWOLFSSL_VERSION_HEX >= 0x04000000
         else
         {
             if (tls_io_instance->socket_io == NULL)
