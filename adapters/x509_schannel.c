@@ -596,14 +596,14 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
         }
         else if (PolicyStatus.dwError != 0)
         {
+            LogError("CertVerifyCertificateChainPolicy sets certificateStatus = 0x%08x", PolicyStatus.dwError);
+            result = MU_FAILURE;
             /*
             TODO: the top level tlsio would trigger error here on windows, traceback is as following:
             Error: Time:Wed Apr 14 13:12:05 2021 File:D:\Projects\azure-c-shared-utility\adapters\x509_schannel.c Func:_x509_verify_certificate_in_chain Line:600 CertVerifyCertificateChainPolicy sets certificateStatus = 0x800b0109
             Error: Time:Wed Apr 14 13:12:05 2021 File:D:\Projects\azure-c-shared-utility\adapters\tlsio_schannel.c Func:_verify_custom_certificate_if_needed Line:441 Failed to verify trusted certificate in chain
             Error: Time:Wed Apr 14 13:12:05 2021 File:D:\Projects\azure-c-shared-utility\adapters\tlsio_schannel.c Func:_on_underlying_io_bytes_received Line:700 Unable to verify server certificate against custom server trusted certificate
             */
-            LogError("CertVerifyCertificateChainPolicy sets certificateStatus = 0x%08x", PolicyStatus.dwError);
-            result = MU_FAILURE;
         }
         else
         {

@@ -18,9 +18,10 @@
 
 static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
 static const char* const OPTION_USE_TLS_HTTP_PROXY = "use_tls_http_proxy";
-static const char* const OPTION_TLS_PROXY_HOST_TRUSTED_CERT = "tls_proxy_host_TrustedCerts";
-static const char* const OPTION_TLS_PROXY_HOST_X509_CERT = "tls_proxy_host_x509certificate";
-static const char* const OPTION_TLS_PROXY_HOST_X509_PRIVATE_KEY = "tls_proxy_host_x509privatekey";
+static const char* const OPTION_TLS_PROXY_HOST_TRUSTED_CERT = "proxy_tls_proxy_host_TrustedCerts";
+static const char* const OPTION_TLS_PROXY_HOST_X509_CERT = "proxy_tls_proxy_host_x509certificate";
+static const char* const OPTION_TLS_PROXY_HOST_X509_PRIVATE_KEY = "proxy_tls_proxy_host_x509privatekey";
+static const char* const OPTION_TLS_HOST_TRUSTED_CERT = "proxy_tls_host_TrustedCerts";
 
 typedef enum HTTP_PROXY_IO_STATE_TAG
 {
@@ -53,6 +54,8 @@ typedef struct HTTP_PROXY_IO_INSTANCE_TAG
     unsigned char* receive_buffer;
     size_t receive_buffer_size;
     bool use_tls_http_proxy;
+    // Certificate to check host server certificate chains to
+    char* host_trustedCertificate;
 } HTTP_PROXY_IO_INSTANCE;
 
 static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
@@ -689,6 +692,16 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         /* Codes_SRS_HTTP_PROXY_IO_01_073: [ Once a success status code was parsed, the IO shall be OPEN. ]*/
                         http_proxy_io_instance->http_proxy_io_state = HTTP_PROXY_IO_STATE_OPEN;
                         /* Codes_SRS_HTTP_PROXY_IO_01_070: [ When a success status code is parsed, the on_open_complete callback shall be triggered with IO_OPEN_OK, passing also the on_open_complete_context argument as context. ]*/
+
+                        if (http_proxy_io_instance->host_trustedCertificate != NULL && http_proxy_io_instance->use_tls_http_proxy)
+                        {
+                            LogInfo("HTTP CONNECT OK, overwriting the trusted cert of the underlying tlsio io");
+                            if (xio_setoption(http_proxy_io_instance->underlying_io, OPTION_TRUSTED_CERT, http_proxy_io_instance->host_trustedCertificate) != 0)
+                            {
+                                LogError("Cannot overwrite the trusted cert of the underlying tlsio io");
+                            }
+                        }
+
                         http_proxy_io_instance->on_io_open_complete(http_proxy_io_instance->on_io_open_complete_context, IO_OPEN_OK);
 
 
@@ -1009,6 +1022,18 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
                 {
                     result = 0;
                 }
+            }
+        }
+        else if (strcmp(option_name, OPTION_TLS_HOST_TRUSTED_CERT) == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&http_proxy_io_instance->host_trustedCertificate, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s %s", option_name);
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
             }
         }
         /* Codes_SRS_HTTP_PROXY_IO_01_043: [ If the option_name argument indicates an option that is not handled by http_proxy_io_set_option, then xio_setoption shall be called on the underlying IO created in http_proxy_io_create, passing the option name and value to it. ]*/

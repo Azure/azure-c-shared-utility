@@ -97,6 +97,7 @@ int main(int argc, char** argv)
     int result;
 
     (void)argc, (void)argv;
+    bool use_tls_http_proxy = true;
     char* proxy_host_cert_data = NULL;
     char* host_cert_data = NULL;
     proxy_host_cert_data = read_data_from_file(FILE_PATH_OF_CERTIFICATE_OF_PROXY_SERVER);
@@ -125,8 +126,9 @@ int main(int argc, char** argv)
             tlsio_config.underlying_io_parameters = &proxy_io_config;
             tlsio_config.underlying_io_interface = proxyio_interface;
             tlsio = xio_create(tlsio_interface, &tlsio_config);
-            xio_setoption(tlsio, "use_tls_http_proxy", proxy_host_cert_data);
-            xio_setoption(tlsio, "tls_proxy_host_TrustedCerts", proxy_host_cert_data);
+            xio_setoption(tlsio, "use_tls_http_proxy", &use_tls_http_proxy);
+            xio_setoption(tlsio, "proxy_tls_proxy_host_TrustedCerts", proxy_host_cert_data);
+            xio_setoption(tlsio, "proxy_tls_host_TrustedCerts", host_cert_data);
             xio_setoption(tlsio, "TrustedCerts", host_cert_data);
 
             if (tlsio == NULL)
