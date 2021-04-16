@@ -88,7 +88,7 @@ struct CRYPTO_dynlock_value
 
 static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
 #define SSL_DO_HANDSHAKE_SUCCESS 1
-static int g_ssl_cert_max_size = 10;
+static int g_ssl_cert_max_size_in_mb = 10;
 
 /*this function will clone an option given by name and value*/
 static void* tlsio_openssl_CloneOption(const char* name, const void* value)
@@ -934,7 +934,7 @@ static int load_cert_crl_http(
         goto error;
     }
 
-    OCSP_set_max_response_length(rctx, 10 * 1024 * 1024);
+    OCSP_set_max_response_length(rctx, g_ssl_cert_max_size_in_mb * 1024 * 1024);
 
     if (!OCSP_REQ_CTX_http(rctx, "GET", isHostnameSet ? url : path))
     {
@@ -2710,7 +2710,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 result = 0;
             }
         }
-        else if (strcmp(OPTION_TRUSTED_CERT_MAX_SIZE, optionName) == 0)
+        else if (strcmp(OPTION_TRUSTED_CERT_MAX_SIZE_IN_MB, optionName) == 0)
         {
             if (tls_io_instance->ssl_context != NULL)
             {
@@ -2719,7 +2719,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
             }
             else
             {
-                g_ssl_cert_max_size = *(const int*)value;
+                g_ssl_cert_max_size_in_mb = *(const int*)value;
                 result = 0;
             }
         }
