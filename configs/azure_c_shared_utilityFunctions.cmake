@@ -644,12 +644,19 @@ function(build_c_test_longhaul_test test_name test_c_files test_h_files)
         if(${VALGRIND_FOUND} STREQUAL VALGRIND_FOUND-NOTFOUND)
             message(WARNING "run_valgrind was TRUE, but valgrind was not found - there will be no tests run under valgrind")
         else()
-            add_test(NAME ${test_name}_valgrind COMMAND valgrind                 --gen-suppressions=all --num-callers=100 --error-exitcode=1 --leak-check=full --track-origins=yes ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${test_name}>)
-#            add_test(NAME ${test_name}_helgrind COMMAND valgrind --tool=helgrind --gen-suppressions=all --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${test_name}>)
-#            add_test(NAME ${test_name}_drd      COMMAND valgrind --tool=drd      --gen-suppressions=all --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${test_name}>)
-            set_tests_properties(${test_name}_valgrind PROPERTIES TIMEOUT 1296000)
-#            set_tests_properties(${test_name}_helgrind PROPERTIES TIMEOUT 1296000)
-#            set_tests_properties(${test_name}_drd PROPERTIES TIMEOUT 1296000)
+            # below are the longhaul tests running under valgrind
+            # These are currently disabled because the longhaul containers are still Ubuntu 16 andd need s to upgraded to Ubuntu 18
+
+            #add_test(NAME ${test_name}_valgrind COMMAND valgrind                 --gen-suppressions=all --num-callers=100 --error-exitcode=1 --leak-check=full --track-origins=yes ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${test_name}>)
+            #add_test(NAME ${test_name}_helgrind COMMAND valgrind --tool=helgrind --gen-suppressions=all --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${test_name}>)
+            #add_test(NAME ${test_name}_drd      COMMAND valgrind --tool=drd      --gen-suppressions=all --num-callers=100 --error-exitcode=1 ${VALGRIND_SUPPRESSIONS_FILE_EXTRA_PARAMETER} $<TARGET_FILE:${test_name}>)
+            #set_tests_properties(${test_name}_valgrind PROPERTIES TIMEOUT 1296000)
+            #set_tests_properties(${test_name}_helgrind PROPERTIES TIMEOUT 1296000)
+            #set_tests_properties(${test_name}_drd PROPERTIES TIMEOUT 1296000)
+
+            # run the lonhaul without using valgrind
+            add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
+            set_tests_properties(${test_name} PROPERTIES TIMEOUT 1296000)
         endif()
     else()
         add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
