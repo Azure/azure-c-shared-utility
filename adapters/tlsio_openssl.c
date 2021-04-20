@@ -88,7 +88,7 @@ struct CRYPTO_dynlock_value
 
 static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
 #define SSL_DO_HANDSHAKE_SUCCESS 1
-static int g_ssl_crl_max_size_in_kb = 10 * 1024 * 1024;
+static int g_ssl_crl_max_size_in_kb = 10 * 1024;
 
 /*this function will clone an option given by name and value*/
 static void* tlsio_openssl_CloneOption(const char* name, const void* value)
@@ -934,7 +934,7 @@ static int load_cert_crl_http(
         goto error;
     }
 
-    OCSP_set_max_response_length(rctx, g_ssl_crl_max_size_in_kb);
+    OCSP_set_max_response_length(rctx, g_ssl_crl_max_size_in_kb * 1024);
 
     if (!OCSP_REQ_CTX_http(rctx, "GET", isHostnameSet ? url : path))
     {
