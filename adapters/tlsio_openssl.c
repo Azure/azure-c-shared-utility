@@ -593,7 +593,7 @@ static int openssl_static_locks_install(void)
     if (openssl_locks != NULL)
     {
         LogInfo("Locks already initialized");
-        result = 0;
+        result = MU_FAILURE;
     }
     else
     {
