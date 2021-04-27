@@ -56,7 +56,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     unsigned int    is_io_error : 1;
     unsigned int    is_connected : 1;
     unsigned int    send_completed : 1;
-    unsigned int    tls_renegotiation;
+    bool            tls_renegotiation;
 } HTTP_HANDLE_DATA;
 
 /*the following function does the same as sscanf(pos2, "%d", &sec)*/
@@ -255,7 +255,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 http_instance->certificate = NULL;
                 http_instance->x509ClientCertificate = NULL;
                 http_instance->x509ClientPrivateKey = NULL;
-                http_instance->tls_renegotiation = 0;
+                http_instance->tls_renegotiation = false;
             }
         }
     }
@@ -746,7 +746,7 @@ static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance)
             result = HTTPAPI_SET_OPTION_FAILED;
             LogInfo("Could not load the client certificate private key");
         }
-        else if ((http_instance->tls_renegotiation != 0) &&
+        else if ((http_instance->tls_renegotiation == true) &&
             (xio_setoption(http_instance->xio_handle, OPTION_SET_TLS_RENEGOTIATION, &http_instance->tls_renegotiation) != 0))
         {
             result = HTTPAPI_SET_OPTION_FAILED;
@@ -1435,7 +1435,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
     }
     else if (strcmp(OPTION_SET_TLS_RENEGOTIATION, optionName) == 0)
     {
-        unsigned int tls_renegotiation = *(unsigned int*)value;
+        bool tls_renegotiation = *(bool*)value;
         http_instance->tls_renegotiation = tls_renegotiation;
         result = HTTPAPI_OK;
     }
@@ -1546,7 +1546,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
     }
     else if (strcmp(OPTION_SET_TLS_RENEGOTIATION, optionName) == 0)
     {
-        unsigned int* temp = (unsigned int*)malloc(sizeof(unsigned int)); /*shall be freed by HTTPAPIEX*/
+        bool* temp = (bool*)malloc(sizeof(bool)); /*shall be freed by HTTPAPIEX_Destroy*/
         if (temp == NULL)
         {
             result = HTTPAPI_ERROR;
@@ -1554,7 +1554,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         }
         else
         {
-            *temp = *(const unsigned int*)value;
+            *temp = *(bool*)value;
             *savedValue = temp;
             result = HTTPAPI_OK;
         }
