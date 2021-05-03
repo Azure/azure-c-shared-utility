@@ -592,7 +592,7 @@ static int openssl_static_locks_install(void)
 
     if (openssl_locks != NULL)
     {
-        LogError("Locks already initialized");
+        LogInfo("Locks already initialized");
         result = MU_FAILURE;
     }
     else
@@ -1216,7 +1216,7 @@ int tlsio_openssl_init(void)
 
     if (openssl_static_locks_install() != 0)
     {
-        LogError("Failed to install static locks in OpenSSL!");
+        LogInfo("Failed to install static locks in OpenSSL!");
         return MU_FAILURE;
     }
 
