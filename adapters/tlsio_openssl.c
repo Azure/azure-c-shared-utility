@@ -106,6 +106,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
     {
         if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
         {
+            //result = (void*)OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
             result = (void*)value;
         }
         else if (strcmp(name, OPTION_TRUSTED_CERT) == 0)

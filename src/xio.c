@@ -218,7 +218,7 @@ static void* xio_CloneOption(const char* name, const void* value)
     {
         if (strcmp(name, CONCRETE_OPTIONS) == 0)
         {
-            result = (void*)value;
+            result = (void*)OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
         }
         else
         {
