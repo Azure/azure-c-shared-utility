@@ -10,6 +10,9 @@
 #include "azure_c_shared_utility/uniqueid.h"
 #include "azure_c_shared_utility/xlogging.h"
 
+#define UUID_LENGTH 36
+#define UUID_BUFFER_LENGTH 37 //length + 1 for \0
+
 MU_DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
 
 // UUID fields as specified in RFC 4122
@@ -25,27 +28,26 @@ typedef struct UUID_TAG {
 static const char* uuid_format =
     "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x";
 
-
 UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
 {
     UNIQUEID_RESULT result;
 
     /* Codes_SRS_UNIQUEID_07_002: [If uid is NULL then UniqueId_Generate shall return UNIQUEID_INVALID_ARG] */
     /* Codes_SRS_UNIQUEID_07_003: [If len is less then 37 then UniqueId_Generate shall return UNIQUEID_INVALID_ARG] */
-    if (uid == NULL || len < 37)
+    if (uid == NULL || len < UUID_BUFFER_LENGTH)
     {
         result = UNIQUEID_INVALID_ARG;
         LogError("Buffer Size is Null or Shorter than 37 Characters. (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(UNIQUEID_RESULT, result));
     }
     else
     {
-
         // generate version 4 uuid
         UUID unique_id;
 
         // get random bytes
         ssize_t bytes_got = getrandom(&unique_id, sizeof(unique_id), GRND_NONBLOCK);
-        if (bytes_got != sizeof(unique_id)) {
+        if (bytes_got != sizeof(unique_id)) 
+        {
             LogError("Failed to obtain random numbers from getrandom.");
             result = UNIQUEID_ERROR;
         }
@@ -64,10 +66,13 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
                 unique_id.node[0], unique_id.node[1], unique_id.node[2],
                 unique_id.node[3], unique_id.node[4], unique_id.node[5]);
 
-            if (chars_written != 36) {
+            if (chars_written != UUID_LENGTH) 
+            {
                 LogError("Failed to convert binary uuid to string format.");
                 result = UNIQUEID_ERROR;
-            } else {
+            } 
+            else 
+            {
                 result = UNIQUEID_OK;
             }
         }
