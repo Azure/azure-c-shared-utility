@@ -34,7 +34,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
 
     /* Codes_SRS_UNIQUEID_07_002: [If uid is NULL then UniqueId_Generate shall return UNIQUEID_INVALID_ARG] */
     /* Codes_SRS_UNIQUEID_07_003: [If len is less then 37 then UniqueId_Generate shall return UNIQUEID_INVALID_ARG] */
-    if (uid == NULL || len < (UUID_LENGTH + 1))
+    if (uid == NULL || len < (UUID_LENGTH + 1)) // UUID_LENGTH + 1 to compensate "/0"
     {
         result = UNIQUEID_INVALID_ARG;
         LogError("Buffer Size is Null or Shorter than 37 Characters. (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(UNIQUEID_RESULT, result));
