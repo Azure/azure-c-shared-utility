@@ -11,12 +11,12 @@
 #include "azure_c_shared_utility/xlogging.h"
 
 #define UUID_LENGTH 36
-#define UUID_BUFFER_LENGTH 37 //length + 1 for \0
 
 MU_DEFINE_ENUM_STRINGS(UNIQUEID_RESULT, UNIQUEID_RESULT_VALUES);
 
 // UUID fields as specified in RFC 4122
-typedef struct UUID_TAG {
+typedef struct UUID_TAG 
+{
     uint32_t    time_low;
     uint16_t    time_mid;
     uint16_t    time_hi_and_version;
@@ -34,7 +34,7 @@ UNIQUEID_RESULT UniqueId_Generate(char* uid, size_t len)
 
     /* Codes_SRS_UNIQUEID_07_002: [If uid is NULL then UniqueId_Generate shall return UNIQUEID_INVALID_ARG] */
     /* Codes_SRS_UNIQUEID_07_003: [If len is less then 37 then UniqueId_Generate shall return UNIQUEID_INVALID_ARG] */
-    if (uid == NULL || len < UUID_BUFFER_LENGTH)
+    if (uid == NULL || len < (UUID_LENGTH + 1))
     {
         result = UNIQUEID_INVALID_ARG;
         LogError("Buffer Size is Null or Shorter than 37 Characters. (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(UNIQUEID_RESULT, result));
