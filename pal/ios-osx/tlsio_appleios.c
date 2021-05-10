@@ -499,6 +499,10 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
                 {
                     // The errSSLWouldBlock is defined as a recoverable error and should just be retried
                     LogInfo("errSSLWouldBlock on write");
+                    if (write_error != NULL)
+                    {
+                        CFRelease(write_error);
+                    }
                 }
             }
         }

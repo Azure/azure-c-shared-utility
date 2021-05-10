@@ -56,6 +56,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     unsigned int    is_io_error : 1;
     unsigned int    is_connected : 1;
     unsigned int    send_completed : 1;
+    bool            tls_renegotiation;
 } HTTP_HANDLE_DATA;
 
 /*the following function does the same as sscanf(pos2, "%d", &sec)*/
@@ -254,6 +255,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 http_instance->certificate = NULL;
                 http_instance->x509ClientCertificate = NULL;
                 http_instance->x509ClientPrivateKey = NULL;
+                http_instance->tls_renegotiation = false;
             }
         }
     }
@@ -743,6 +745,12 @@ static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance)
             /*Codes_SRS_HTTPAPI_COMPACT_06_006: [ If the transport failed setting the client certificate private key, the HTTPAPI_ExecuteRequest shall not send any request and return HTTPAPI_SET_OPTION_FAILED. ] */
             result = HTTPAPI_SET_OPTION_FAILED;
             LogInfo("Could not load the client certificate private key");
+        }
+        else if ((http_instance->tls_renegotiation == true) &&
+            (xio_setoption(http_instance->xio_handle, OPTION_SET_TLS_RENEGOTIATION, &http_instance->tls_renegotiation) != 0))
+        {
+            result = HTTPAPI_SET_OPTION_FAILED;
+            LogInfo("Could not load renegotiation flag");
         }
         else
         {
@@ -1425,6 +1433,12 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             }
         }
     }
+    else if (strcmp(OPTION_SET_TLS_RENEGOTIATION, optionName) == 0)
+    {
+        bool tls_renegotiation = *(bool*)value;
+        http_instance->tls_renegotiation = tls_renegotiation;
+        result = HTTPAPI_OK;
+    }
     else
     {
         /*Codes_SRS_HTTPAPI_COMPACT_21_063: [ If the HTTP do not support the optionName, the HTTPAPI_SetOption shall return HTTPAPI_INVALID_ARG. ]*/
@@ -1530,6 +1544,21 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             result = HTTPAPI_OK;
         }
     }
+    else if (strcmp(OPTION_SET_TLS_RENEGOTIATION, optionName) == 0)
+    {
+        bool* temp = (bool*)malloc(sizeof(bool)); /*shall be freed by HTTPAPIEX_Destroy*/
+        if (temp == NULL)
+        {
+            result = HTTPAPI_ERROR;
+            LogError("malloc failed (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
+        }
+        else
+        {
+            *temp = *(bool*)value;
+            *savedValue = temp;
+            result = HTTPAPI_OK;
+        }
+    }
     else
     {
         /*Codes_SRS_HTTPAPI_COMPACT_21_071: [ If the HTTP do not support the optionName, the HTTPAPI_CloneOption shall return HTTPAPI_INVALID_ARG. ]*/
@@ -1538,3 +1567,4 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
     }
     return result;
 }
+
