@@ -723,7 +723,7 @@ static void* wsio_clone_option(const char* name, const void* value)
         if (strcmp(name, WSIO_OPTIONS) == 0)
         {
             /* Codes_SRS_WSIO_01_171: [** wsio_clone_option called with name being WSIOOptions shall return the same value. ]*/
-            result = (void*)value;
+            result = (void*)OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
         }
         else
         {
@@ -800,10 +800,11 @@ OPTIONHANDLER_HANDLE wsio_retrieveoptions(CONCRETE_IO_HANDLE handle)
                 {
                     /* Codes_SRS_WSIO_01_182: [ If OptionHandler_AddOption fails, uws_client_retrieve_options shall fail and return NULL. ]*/
                     LogError("unable to OptionHandler_AddOption");
-                    OptionHandler_Destroy(concreteOptions);
                     OptionHandler_Destroy(result);
                     result = NULL;
                 }
+
+                OptionHandler_Destroy(concreteOptions);
             }
         }
     }

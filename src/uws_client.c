@@ -2128,7 +2128,7 @@ static void* uws_client_clone_option(const char* name, const void* value)
         if (strcmp(name, UWS_CLIENT_OPTIONS) == 0)
         {
             /* Codes_SRS_UWS_CLIENT_01_507: [ uws_client_clone_option called with name being uWSClientOptions shall return the same value. ]*/
-            result = (void*)value;
+            result = (void*)OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
         }
         else
         {
@@ -2204,10 +2204,11 @@ OPTIONHANDLER_HANDLE uws_client_retrieve_options(UWS_CLIENT_HANDLE uws_client)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_505: [ If OptionHandler_AddOption fails, uws_client_retrieve_options shall fail and return NULL. ]*/
                     LogError("OptionHandler_AddOption failed");
-                    OptionHandler_Destroy(underlying_io_options);
                     OptionHandler_Destroy(result);
                     result = NULL;
                 }
+
+                OptionHandler_Destroy(underlying_io_options);
             }
         }
 
