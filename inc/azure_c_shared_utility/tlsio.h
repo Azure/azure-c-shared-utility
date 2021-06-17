@@ -16,6 +16,7 @@ typedef struct TLSIO_CONFIG_TAG
     int port;
     const IO_INTERFACE_DESCRIPTION* underlying_io_interface;
     void* underlying_io_parameters;
+    const char* protocol;
 } TLSIO_CONFIG;
 
 #ifdef __cplusplus

@@ -235,7 +235,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             tlsio_config.port = 443;
             tlsio_config.underlying_io_interface = NULL;
             tlsio_config.underlying_io_parameters = NULL;
-
+            tlsio_config.protocol="http";
             http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
 
             /*Codes_SRS_HTTPAPI_COMPACT_21_016: [ If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. ]*/
