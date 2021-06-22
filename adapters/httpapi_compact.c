@@ -235,7 +235,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             tlsio_config.port = 443;
             tlsio_config.underlying_io_interface = NULL;
             tlsio_config.underlying_io_parameters = NULL;
-            tlsio_config.protocol="http";
+            tlsio_config.invoke_on_send_complete_callback_for_fragments = true;
             http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
 
             /*Codes_SRS_HTTPAPI_COMPACT_21_016: [ If the HTTPAPI_CreateConnection failed to create the connection, it shall return NULL as the handle. ]*/
@@ -1408,6 +1408,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 tlsio_config.port = 443;
                 tlsio_config.underlying_io_interface =  http_proxy_io_get_interface_description();
                 tlsio_config.underlying_io_parameters = &proxy_config;
+                tlsio_config.invoke_on_send_complete_callback_for_fragments=true;
 
                 http_instance->xio_handle = xio_create(platform_get_default_tlsio(), (void*)&tlsio_config);
 
