@@ -928,6 +928,9 @@ static int process_option(char** destination, const char* name, const char* valu
     (void) name;
 
     int result;
+
+    UNUSED(name);
+
     if (*destination != NULL)
     {
         free(*destination);
