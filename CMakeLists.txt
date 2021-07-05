@@ -120,8 +120,9 @@ endif()
 
 if(${use_applessl})
     # MACOSX only has native tls and open ssl, so use the native apple tls
-    find_library(cf_foundation Foundation)
+    find_library(cf_foundation CoreFoundation)
     find_library(cf_network CFNetwork)
+    find_library(cf_security Security)
 endif()
 
 if(${no_logging})
@@ -581,7 +582,7 @@ endif()
 
 
 if(${use_applessl})
-    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${cf_foundation} ${cf_network})
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${cf_foundation} ${cf_network} ${cf_security})
 endif()
 
 if(WIN32)
