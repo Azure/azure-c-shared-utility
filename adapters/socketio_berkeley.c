@@ -1063,7 +1063,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         // Do not log error here due to this is probably the socket being closed on the other end
                         indicate_error(socket_io_instance);
                     }
-                    else if (received < 0 && errno != EAGAIN)
+                    else if (received < 0 && !((errno == EAGAIN) || (errno == EWOULDBLOCK)))
                     {
                         LogError("Socketio_Failure: Receiving data from endpoint: errno=%d.", errno);
                         indicate_error(socket_io_instance);

@@ -70,10 +70,10 @@ endif()
 if(MSVC)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
       set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
-elseif(UNIX) #LINUX OR APPLE
+elseif(UNIX) #LINUX OR APPLE OR VXWORKS
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-    if(NOT (IN_OPENWRT OR APPLE))
+    if(NOT (IN_OPENWRT OR APPLE OR VXWORKS))
         set (CMAKE_C_FLAGS "-D_POSIX_C_SOURCE=200112L ${CMAKE_C_FLAGS}")
     endif()
 endif()
