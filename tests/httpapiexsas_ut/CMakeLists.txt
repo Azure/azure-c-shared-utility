@@ -10,7 +10,6 @@ endif()
 set(theseTestsName httpapiexsas_ut)
 
 generate_cppunittest_wrapper(${theseTestsName})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -nowarn:4505")
 
 set(${theseTestsName}_c_files
 ../../src/httpapiexsas.c
