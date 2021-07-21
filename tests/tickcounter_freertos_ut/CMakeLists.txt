@@ -5,9 +5,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(theseTestsName tickcounter_freertos_ut)
 
-set(${theseTestsName}_test_files
-${theseTestsName}.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
 ../../pal/freertos/tickcounter.c
@@ -20,4 +18,3 @@ include_directories(.)
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
-compile_c_test_artifacts_as(${theseTestsName} C99)

@@ -5,9 +5,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(theseTestsName x509_schannel_ut)
 
-set(${theseTestsName}_test_files
-${theseTestsName}.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
 ../../adapters/x509_schannel.c
@@ -29,4 +27,4 @@ string(REPLACE "advapi32.lib" "" CMAKE_CXX_STANDARD_LIBRARIES ${CMAKE_CXX_STANDA
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
-compile_c_test_artifacts_as(${theseTestsName} C99)
+

@@ -9,9 +9,7 @@ endif()
 
 set(theseTestsName httpheaders_ut)
 
-set(${theseTestsName}_test_files
-${theseTestsName}.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
 ../../src/httpheaders.c

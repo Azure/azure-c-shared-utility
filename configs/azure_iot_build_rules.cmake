@@ -187,6 +187,15 @@ function(compileTargetAsC11 theTarget)
   endif()
 endfunction()
 
+macro(generate_cppunittest_wrapper whatIsBuilding)
+    if (${use_cppunittest} AND WIN32)
+      file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${whatIsBuilding}.cxx "#include \"${CMAKE_CURRENT_SOURCE_DIR}/${whatIsBuilding}.c\"")
+      set(${whatIsBuilding}_test_files ${CMAKE_CURRENT_BINARY_DIR}/${whatIsBuilding}.cxx)
+    else()
+      set(${whatIsBuilding}_test_files ${CMAKE_CURRENT_BINARY_DIR}/${whatIsBuilding}.c)
+    endif()
+endmacro(set_platform_files)
+
 IF((WIN32) AND (NOT(MINGW)))
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)

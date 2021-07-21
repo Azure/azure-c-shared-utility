@@ -5,9 +5,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(theseTestsName condition_ut)
 
-set(${theseTestsName}_test_files
-	${theseTestsName}.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
 	${CONDITION_C_FILE}
@@ -31,4 +29,3 @@ else()
     target_link_libraries(${theseTestsName}_exe pthread)
 endif()
 
-compile_c_test_artifacts_as(${theseTestsName} C99)

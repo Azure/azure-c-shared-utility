@@ -9,9 +9,7 @@ endif()
 
 set(theseTestsName httpapi_compact_ut)
 
-set(${theseTestsName}_test_files
-httpapicompact_ut.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
 ../../adapters/httpapi_compact.c
@@ -22,4 +20,3 @@ set(${theseTestsName}_h_files
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
-compile_c_test_artifacts_as(${theseTestsName} C99)

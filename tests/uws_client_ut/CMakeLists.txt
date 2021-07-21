@@ -7,9 +7,7 @@ set(theseTestsName uws_client_ut)
 
 include_directories(${SHARED_UTIL_REAL_TEST_FOLDER})
 
-set(${theseTestsName}_test_files
-${theseTestsName}.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
 ../../src/uws_client.c

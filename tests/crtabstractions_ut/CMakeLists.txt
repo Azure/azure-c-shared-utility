@@ -5,9 +5,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(theseTestsName crt_abstractions_ut)
 
-set(${theseTestsName}_test_files
-crtabstractions_ut.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
 ../../src/crt_abstractions.c
@@ -18,4 +16,3 @@ set(${theseTestsName}_h_files
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
-compile_c_test_artifacts_as(${theseTestsName} C99)

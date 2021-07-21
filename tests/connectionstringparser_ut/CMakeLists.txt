@@ -5,9 +5,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(theseTestsName connectionstringparser_ut)
 
-set(${theseTestsName}_test_files
-${theseTestsName}.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 include_directories(${SHARED_UTIL_REAL_TEST_FOLDER})
 
@@ -27,4 +25,3 @@ set(${theseTestsName}_h_files
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
-compile_c_test_artifacts_as(${theseTestsName} C99)

@@ -6,9 +6,7 @@ compileAsC99()
 
 set(theseTestsName gballoc_ut)
 
-set(${theseTestsName}_test_files
-${theseTestsName}.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
 gballoc_undertest.c
