@@ -200,7 +200,7 @@ macro(generate_cppunittest_wrapper whatIsBuilding)
       #C compiler doesn't like to complain about the same thing
       set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4505")
     else()
-      set(${whatIsBuilding}_test_files ${CMAKE_CURRENT_BINARY_DIR}/${whatIsBuilding}.c)
+      set(${whatIsBuilding}_test_files ${whatIsBuilding}.c)
     endif()
 endmacro(set_platform_files)
 
