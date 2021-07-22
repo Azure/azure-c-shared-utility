@@ -287,13 +287,14 @@ TEST_FUNCTION(vsprintf_wchar_with_empty_string_succeeds)
 
     ///act
     result = vsprintf_wchar_wrapper_function(L"%s", "");
+    printf("  [0] = %d", *result);
+    printf("  [1] = %d", *(result + 1));
+    printf("  [2] = %d", *(result + 2));
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, wcscmp(result, L""));
 
-    printf("[0] = %d", *result);
-    printf("[1] = %d", *(result + 1));
-    printf("[2] = %d", *(result + 2));
+
 
     /// cleanup
     free(result);
