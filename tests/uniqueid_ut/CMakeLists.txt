@@ -36,3 +36,5 @@ elseif(UNIX)
     endif()
 endif()
 
+compile_c_test_artifacts_as(${theseTestsName} C99)
+

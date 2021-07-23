@@ -15,6 +15,8 @@ set(${theseTestsName}_h_files
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
+compile_c_test_artifacts_as(${theseTestsName} C99)
+
 if(TARGET ${theseTestsName}_dll)
     target_link_libraries(${theseTestsName}_dll crypt32 Ncrypt aziotsharedutil)
 endif()

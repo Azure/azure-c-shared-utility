@@ -27,4 +27,4 @@ string(REPLACE "advapi32.lib" "" CMAKE_CXX_STANDARD_LIBRARIES ${CMAKE_CXX_STANDA
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
-
+compile_c_test_artifacts_as(${theseTestsName} C99)
