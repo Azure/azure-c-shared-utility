@@ -18,3 +18,4 @@ include_directories(.)
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
+compile_c_test_artifacts_as(${theseTestsName} C99)
