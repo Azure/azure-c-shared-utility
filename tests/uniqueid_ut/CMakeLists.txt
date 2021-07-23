@@ -35,6 +35,3 @@ elseif(UNIX)
         build_c_test_artifacts(${uniqueid_ut_test_file} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS uuid)
     endif()
 endif()
-
-compile_c_test_artifacts_as(${theseTestsName} C99)
-
