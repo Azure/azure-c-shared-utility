@@ -1279,7 +1279,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest_Internal(HTTP_HANDLE handle, HTTPAPI_REQUE
     BUFFER_HANDLE responseContent, ON_CHUNK_RECEIVED onChunkReceived, void* onChunkReceivedContext)
 {
     HTTPAPI_RESULT result = HTTPAPI_ERROR;
-    size_t  headersCount;
+    size_t  headersCount = 0;
     size_t  bodyLength = 0;
     bool    chunked = false;
     HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)handle;

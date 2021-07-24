@@ -677,9 +677,9 @@ static void indicate_ws_error_and_close(UWS_CLIENT_INSTANCE* uws_client, WS_ERRO
 static char* get_request_headers(MAP_HANDLE headers)
 {
     char* result;
-    const char* const* keys;
-    const char* const* values;
-    size_t count;
+    const char* const* keys = NULL;
+    const char* const* values = NULL;
+    size_t count = 0;
 
     if (Map_GetInternals(headers, &keys, &values, &count) != MAP_OK)
     {

@@ -251,9 +251,9 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeader(HTTP_HEADERS_HANDLE handle, size_t ind
     else
     {
         HTTP_HEADERS_HANDLE_DATA* handleData = (HTTP_HEADERS_HANDLE_DATA*)handle;
-        const char*const* keys;
-        const char*const* values;
-        size_t headerCount;
+        const char*const* keys = NULL;
+        const char*const* values = NULL;
+        size_t headerCount = 0;
         if (Map_GetInternals(handleData->headers, &keys, &values, &headerCount) != MAP_OK)
         {
             /*Codes_SRS_HTTP_HEADERS_99_034:[ The function shall return HTTP_HEADERS_ERROR when an internal error occurs]*/
