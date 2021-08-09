@@ -375,7 +375,7 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
             tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
         {
         	// trigger callback always on failure, otherwise call it on last fragment completion
-        	// In case of http communication (ie blob upload), The callback is called with each fragment
+        	// In case of http communication (ie blob upload), the callback is called with each fragment
         	if((tls_io_instance->invoke_on_send_complete_callback_for_fragments && tls_io_instance->send_complete_info.is_fragmented_req)||
         			(send_result != IO_SEND_OK || !tls_io_instance->send_complete_info.is_fragmented_req))
         	{
