@@ -51,7 +51,8 @@ jobs:
 - job: raspberrypi
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c-buster:brown"
-  pool: Hosted Ubuntu 1604
+  pool: 
+    name: 'sdk-c--ubuntu-18'
   displayName: raspberrypi
   steps:
   - script: |
@@ -63,7 +64,8 @@ jobs:
 - job: linuxoptions
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-linux-c-ubuntu"
-  pool: Hosted Ubuntu 1604
+  pool: 
+      name: 'sdk-c--ubuntu-18'
   displayName: 'linux-options'
   steps:
   - script: |
@@ -139,7 +141,8 @@ jobs:
 - job: clang
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/ubuntu-clang"
-  pool: Hosted Ubuntu 1604
+  pool:
+      name: 'sdk-c--ubuntu-18'
   displayName: 'clang'
   steps:
   - script: |
@@ -174,7 +177,8 @@ jobs:
 - job: ubuntu1604
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu"
-  pool: Hosted Ubuntu 1604
+  pool: 
+      name: 'sdk-c--ubuntu-18'
   displayName: 'ubuntu1604'
   steps:
   - script: |
@@ -209,7 +213,8 @@ jobs:
 - job: debian
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/c-debian"
-  pool: Hosted Ubuntu 1604
+  pool: 
+      name: 'sdk-c--ubuntu-18'
   displayName: 'debian'
   steps:
   - script: |
@@ -244,7 +249,8 @@ jobs:
 - job: linux_mbed
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-mbed"
-  pool: Hosted Ubuntu 1604
+  pool: 
+      name: 'sdk-c--ubuntu-18'
   displayName: 'linux_mbed'
   steps:
   - script: |
@@ -277,7 +283,8 @@ jobs:
 - job: wolfssl
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-wolfssl"
-  pool: Hosted Ubuntu 1604
+  pool: 
+      name: 'sdk-c--ubuntu-18'
   displayName: 'wolfssl'
   steps:
   - script: |
@@ -316,7 +323,8 @@ jobs:
 - job: bearssl
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-bearssl"
-  pool: Hosted Ubuntu 1604
+  pool: 
+      name: 'sdk-c--ubuntu-18'
   displayName: 'bearssl'
   steps:
   - script: |
