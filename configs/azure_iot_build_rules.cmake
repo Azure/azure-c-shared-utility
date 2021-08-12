@@ -187,10 +187,10 @@ function(compileTargetAsC11 theTarget)
   endif()
 endfunction()
 
-macro(generate_c_wrapper setVar whatIsBuilding)
+macro(generate_cpp_wrapper setVar whatIsBuilding)
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${whatIsBuilding}.cxx "#include \"${CMAKE_CURRENT_SOURCE_DIR}/${whatIsBuilding}.c\"")
   set(${setVar} ${CMAKE_CURRENT_BINARY_DIR}/${whatIsBuilding}.cxx)
-endmacro(generate_c_wrapper)
+endmacro(generate_cpp_wrapper)
 
 macro(generate_cppunittest_wrapper whatIsBuilding)
     if (${use_cppunittest} AND WIN32)
