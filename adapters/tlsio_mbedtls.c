@@ -72,6 +72,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     mbedtls_ssl_session ssn;
     char *trusted_certificates;
 
+    bool invoke_on_send_complete_callback_for_fragments;
     char *hostname;
     mbedtls_x509_crt owncert;
     mbedtls_pk_context pKey;
@@ -373,12 +374,14 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
         if (tls_io_instance->send_complete_info.on_send_complete != NULL &&
             tls_io_instance->tlsio_state != TLSIO_STATE_CLOSING)
         {
-            // trigger callback always on failure, otherwise call it on last fragment completion
-            if (send_result != IO_SEND_OK || !tls_io_instance->send_complete_info.is_fragmented_req)
-            {
+        	// trigger callback always on failure, otherwise call it on last fragment completion
+        	// In case of http communication (ie blob upload), the callback is called with each fragment
+        	if((tls_io_instance->invoke_on_send_complete_callback_for_fragments && tls_io_instance->send_complete_info.is_fragmented_req)||
+        			(send_result != IO_SEND_OK || !tls_io_instance->send_complete_info.is_fragmented_req))
+        	{
                 void *ctx = tls_io_instance->send_complete_info.on_send_complete_callback_context;
                 tls_io_instance->send_complete_info.on_send_complete(ctx, send_result);
-            }
+        	}
         }
     }
     else
@@ -558,6 +561,7 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void *io_create_parameters)
                     result->tls_status = TLS_STATE_NOT_INITIALIZED;
                     mbedtls_init((void*)result);
                     result->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                    result->invoke_on_send_complete_callback_for_fragments = tls_io_config->invoke_on_send_complete_callback_for_fragments;
                 }
             }
         }
