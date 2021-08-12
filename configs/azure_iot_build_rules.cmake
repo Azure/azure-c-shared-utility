@@ -190,7 +190,7 @@ endfunction()
 macro(generate_c_wrapper setVar whatIsBuilding)
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${whatIsBuilding}.cxx "#include \"${CMAKE_CURRENT_SOURCE_DIR}/${whatIsBuilding}.c\"")
   set(${setVar} ${CMAKE_CURRENT_BINARY_DIR}/${whatIsBuilding}.cxx)
-endmacro(set_platform_files)
+endmacro(generate_c_wrapper)
 
 macro(generate_cppunittest_wrapper whatIsBuilding)
     if (${use_cppunittest} AND WIN32)
@@ -202,7 +202,7 @@ macro(generate_cppunittest_wrapper whatIsBuilding)
     else()
       set(${whatIsBuilding}_test_files ${whatIsBuilding}.c)
     endif()
-endmacro(set_platform_files)
+endmacro(generate_cppunittest_wrapper)
 
 IF((WIN32) AND (NOT(MINGW)))
     #windows needs this define
