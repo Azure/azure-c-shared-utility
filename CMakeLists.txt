@@ -1,7 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required (VERSION 3.5)
 
 if (TARGET aziotsharedutil)
     RETURN()
@@ -26,7 +26,7 @@ option(use_default_uuid "set use_default_uuid to ON to use the out of the box UU
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
 option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
 option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in httpapi_compact that comes with C shared utility (default is OFF)" OFF)
-option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
+option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
 
