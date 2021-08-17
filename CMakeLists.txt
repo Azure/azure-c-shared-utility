@@ -536,8 +536,8 @@ endif()
 if(${use_mbedtls})
     if (WIN32)
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ws2_32
-            $ENV{mbedtlsLibDir}/mbedtls.lib 
-            $ENV{mbedtlsLibDir}/mbedx509.lib 
+            $ENV{mbedtlsLibDir}/mbedtls.lib
+            $ENV{mbedtlsLibDir}/mbedx509.lib
             $ENV{mbedtlsLibDir}/mbedcrypto.lib
         )
         include_directories("$ENV{mbedtlsDir}/include")
@@ -548,7 +548,7 @@ endif()
 
 if(${use_bearssl})
     if (WIN32)
-        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} 
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs}
             $ENV{bearsslDir}/build/bearssls.lib
         )
         include_directories("$ENV{bearsslDir}/inc")
@@ -683,18 +683,18 @@ else(${build_as_dynamic})
     set(targets aziotsharedutil)
 endif(${build_as_dynamic})
 
-set(cmake_install_includes_dir ${CMAKE_INSTALL_INCLUDEDIR})
+set(cmake_install_include_dir ${CMAKE_INSTALL_INCLUDEDIR})
 if (${use_installed_dependencies})
-    set(cmake_install_includes_dir ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
+    set(cmake_install_include_dir ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
 endif()
 
 install (TARGETS ${targets} EXPORT aziotsharedutilTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
-    INCLUDES DESTINATION ${cmake_install_includes_dir}
+    INCLUDES DESTINATION ${cmake_install_include_dir}
 )
-install (FILES ${source_h_files} DESTINATION ${cmake_install_includes_dir}/azure_c_shared_utility)
+install (FILES ${source_h_files} DESTINATION ${cmake_install_include_dir}/azure_c_shared_utility)
 install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
 
 
