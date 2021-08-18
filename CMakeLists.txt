@@ -683,18 +683,13 @@ else(${build_as_dynamic})
     set(targets aziotsharedutil)
 endif(${build_as_dynamic})
 
-set(cmake_install_include_dir ${CMAKE_INSTALL_INCLUDEDIR})
-if (${use_installed_dependencies})
-    set(cmake_install_include_dir ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
-endif()
-
 install (TARGETS ${targets} EXPORT aziotsharedutilTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
-    INCLUDES DESTINATION ${cmake_install_include_dir}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
 )
-install (FILES ${source_h_files} DESTINATION ${cmake_install_include_dir}/azure_c_shared_utility)
+install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
 install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
 
 
