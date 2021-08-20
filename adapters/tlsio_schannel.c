@@ -344,7 +344,6 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
     {
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         indicate_error(tls_io_instance);
-        (void)FreeCredentialHandle(&tls_io_instance->credential_handle);
     }
     else
     {
