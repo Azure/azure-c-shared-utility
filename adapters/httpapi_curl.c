@@ -48,6 +48,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     mbedtls_x509_crt cert;
     mbedtls_pk_context key;
     mbedtls_x509_crt trusted_certificates;
+    mbedtls_ssl_config config;
 #endif
 } HTTP_HANDLE_DATA;
 
@@ -148,6 +149,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         mbedtls_x509_crt_init(&httpHandleData->cert);
                         mbedtls_pk_init(&httpHandleData->key);
                         mbedtls_x509_crt_init(&httpHandleData->trusted_certificates);
+                        mbedtls_ssl_config_init(&httpHandleData->config);
 #endif
                     }
                 }
@@ -175,6 +177,7 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
         mbedtls_x509_crt_free(&httpHandleData->cert);
         mbedtls_pk_free(&httpHandleData->key);
         mbedtls_x509_crt_free(&httpHandleData->trusted_certificates);
+        mbedtls_ssl_config_free( &httpHandleData->config);
 #endif
         free(httpHandleData);
     }
@@ -330,6 +333,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
 #endif
         else
         {
+        	httpHandleData->config = *((mbedtls_ssl_config*)ssl_ctx);
             result = CURLE_OK;
         }
     }
