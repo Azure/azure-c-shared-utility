@@ -70,6 +70,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     TLSIO_STATE tlsio_state;
     char* certificate;
     char* cipher_list;
+    char* signature_algorithms;
     const char* x509_certificate;
     const char* x509_private_key;
     TLSIO_VERSION tls_version;
@@ -121,6 +122,18 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
             }
         }
         else if (strcmp(name, OPTION_OPENSSL_CIPHER_SUITE) == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&result, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s CipherSuite value");
+                result = NULL;
+            }
+            else
+            {
+                /*return as is*/
+            }
+        }
+        else if (strcmp(name, OPTION_OPENSSL_SIGNATURE_ALGORITHMS) == 0)
         {
             if (mallocAndStrcpy_s((char**)&result, value) != 0)
             {
@@ -281,6 +294,7 @@ static void tlsio_openssl_DestroyOption(const char* name, const void* value)
         if (
             (strcmp(name, OPTION_TRUSTED_CERT) == 0) ||
             (strcmp(name, OPTION_OPENSSL_CIPHER_SUITE) == 0) ||
+            (strcmp(name, OPTION_OPENSSL_SIGNATURE_ALGORITHMS) == 0) ||
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
             (strcmp(name, OPTION_X509_ECC_CERT) == 0) ||
@@ -361,6 +375,15 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
                     )
                 {
                     LogError("unable to save CipherSuite option");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else if(
+                    (tls_io_instance->signature_algorithms != NULL) &&
+                    (OptionHandler_AddOption(result, OPTION_OPENSSL_SIGNATURE_ALGORITHMS, tls_io_instance->signature_algorithms) != OPTIONHANDLER_OK)
+                )
+                {
+                    LogError("unable to save SignatureAlgorithms option");
                     OptionHandler_Destroy(result);
                     result = NULL;
                 }
@@ -1093,6 +1116,15 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         log_ERR_get_error("unable to set cipher list.");
         result = MU_FAILURE;
     }
+    else if ((tlsInstance->signature_algorithms != NULL) &&
+            (SSL_CTX_set1_client_sigalgs_list(tlsInstance->ssl_context, tlsInstance->signature_algorithms) != 1))
+    {
+        engine_destroy(tlsInstance);
+        SSL_CTX_free(tlsInstance->ssl_context);
+        tlsInstance->ssl_context = NULL;
+        log_ERR_get_error("unable to set signature algorithms.");
+        result = MU_FAILURE;
+    }
     else if (add_certificate_to_store(tlsInstance, tlsInstance->certificate) != 0)
     {
         engine_destroy(tlsInstance);
@@ -1312,6 +1344,7 @@ CONCRETE_IO_HANDLE tlsio_openssl_create(void* io_create_parameters)
             {
                 result->certificate = NULL;
                 result->cipher_list = NULL;
+                result->signature_algorithms = NULL;
                 result->in_bio = NULL;
                 result->out_bio = NULL;
                 result->on_bytes_received = NULL;
@@ -1374,6 +1407,11 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
         {
             free(tls_io_instance->cipher_list);
             tls_io_instance->cipher_list = NULL;
+        }
+        if (tls_io_instance->signature_algorithms != NULL)
+        {
+            free(tls_io_instance->signature_algorithms);
+            tls_io_instance->signature_algorithms = NULL;
         }
         free((void*)tls_io_instance->x509_certificate);
         free((void*)tls_io_instance->x509_private_key);
@@ -1668,6 +1706,24 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 
             // Store the cipher suites
             if (mallocAndStrcpy_s((char**)&tls_io_instance->cipher_list, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s %s", optionName);
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        else if(strcmp(OPTION_OPENSSL_SIGNATURE_ALGORITHMS, optionName) == 0)
+        {
+            if (tls_io_instance->signature_algorithms != NULL)
+            {
+                free(tls_io_instance->signature_algorithms);
+                tls_io_instance->signature_algorithms = NULL;
+            }
+
+            if (mallocAndStrcpy_s((char**)&tls_io_instance->signature_algorithms, value) != 0)
             {
                 LogError("unable to mallocAndStrcpy_s %s", optionName);
                 result = MU_FAILURE;

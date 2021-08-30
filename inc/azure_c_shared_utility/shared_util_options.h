@@ -28,6 +28,8 @@ extern "C"
     // They instead should rely on the underlying client TLS stack and service to negotiate an appropriate cipher.
     static STATIC_VAR_UNUSED const char* const OPTION_OPENSSL_CIPHER_SUITE = "CipherSuite";
 
+    static STATIC_VAR_UNUSED const char* const OPTION_OPENSSL_SIGNATURE_ALGORITHMS = "SignatureAlgo";
+
     static STATIC_VAR_UNUSED const char* const OPTION_OPENSSL_ENGINE = "Engine";
     static STATIC_VAR_UNUSED const char* const OPTION_OPENSSL_PRIVATE_KEY_TYPE = "x509PrivatekeyType";
 
