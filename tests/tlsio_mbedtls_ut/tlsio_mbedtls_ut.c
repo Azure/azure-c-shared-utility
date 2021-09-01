@@ -115,6 +115,7 @@ MOCKABLE_FUNCTION(, int, mbedtls_ssl_config_defaults, mbedtls_ssl_config*, conf,
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_config_init, mbedtls_ssl_config*, conf);
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_session_init, mbedtls_ssl_session*, session);
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_session_reset, mbedtls_ssl_context*, ssl);
+MOCKABLE_FUNCTION(, void, mbedtls_ssl_session_free, mbedtls_ssl_session*, ssl);
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_conf_own_cert, mbedtls_ssl_config*, conf, mbedtls_x509_crt*, own_cert, mbedtls_pk_context*, pk_key);
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_renegotiation, mbedtls_ssl_config*, conf, int, renegotiation);
 
@@ -566,6 +567,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(mbedtls_ssl_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_session_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_PTR_ARG));
@@ -878,6 +880,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         tls_io_config.port = TEST_CONNECTION_PORT;
         tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
         tls_io_config.underlying_io_parameters = NULL;
+        tls_io_config.invoke_on_send_complete_callback_for_fragments = false;
         CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
         (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
@@ -921,6 +924,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         tls_io_config.port = TEST_CONNECTION_PORT;
         tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
         tls_io_config.underlying_io_parameters = NULL;
+        tls_io_config.invoke_on_send_complete_callback_for_fragments = false;
         CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
         (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);

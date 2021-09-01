@@ -388,6 +388,8 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
                 }
             }
         }
+        FreeContextBuffer(init_security_buffers[0].pvBuffer);
+        FreeContextBuffer(init_security_buffers[1].pvBuffer);
     }
 }
 
@@ -810,7 +812,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         LPVOID srcText = NULL;
                         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)srcText, 0, NULL) > 0)
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
                         {
                             LogError("[%#x] %s", status, (LPTSTR)srcText);
                             LocalFree(srcText);
@@ -825,6 +827,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     }
                     break;
                 }
+                FreeContextBuffer(output_buffers[0].pvBuffer);
+                FreeContextBuffer(output_buffers[1].pvBuffer);
             }
             else if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
             {
@@ -965,6 +969,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             }
                         }
                     }
+                    FreeContextBuffer(output_buffers[0].pvBuffer);
+                    FreeContextBuffer(output_buffers[1].pvBuffer);
                     break;
                 }
 
@@ -972,7 +978,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         LPVOID srcText = NULL;
                         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)srcText, 0, NULL) > 0)
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
                         {
                             LogError("[%#x] %s", status, (LPTSTR)srcText);
                             LocalFree(srcText);

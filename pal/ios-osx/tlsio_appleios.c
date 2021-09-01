@@ -425,7 +425,7 @@ static void dowork_read(TLS_IO_INSTANCE* tls_io_instance)
     if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
     {
         CFStreamStatus read_status = CFReadStreamGetStatus(tls_io_instance->sockRead);
-        if (read_status == kCFStreamStatusAtEnd)
+        if (read_status == kCFStreamStatusAtEnd || read_status == kCFStreamStatusError)
         {
             enter_tlsio_error_state(tls_io_instance);
         }
@@ -499,6 +499,10 @@ static void dowork_send(TLS_IO_INSTANCE* tls_io_instance)
                 {
                     // The errSSLWouldBlock is defined as a recoverable error and should just be retried
                     LogInfo("errSSLWouldBlock on write");
+                    if (write_error != NULL)
+                    {
+                        CFRelease(write_error);
+                    }
                 }
             }
         }
@@ -521,7 +525,14 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
     CFStreamCreatePairWithSocketToHost(NULL, tls_io_instance->hostname, tls_io_instance->port, &tls_io_instance->sockRead, &tls_io_instance->sockWrite);
     if (tls_io_instance->sockRead != NULL && tls_io_instance->sockWrite != NULL)
     {
-        if (CFReadStreamSetProperty(tls_io_instance->sockRead, kCFStreamPropertySSLSettings, kCFStreamSocketSecurityLevelNegotiatedSSL))
+        
+        CFStringRef keys[1] = {kCFStreamPropertySocketSecurityLevel};
+        CFStringRef values[1] = {kCFStreamSocketSecurityLevelNegotiatedSSL};
+
+        CFDictionaryRef tls_io_dictionary = CFDictionaryCreate(NULL , (void *)keys , (void *)values , 1,  NULL , NULL);
+        
+        if (CFReadStreamSetProperty(tls_io_instance->sockRead, kCFStreamPropertySSLSettings, tls_io_dictionary))
+
         {
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING_WAITING_SSL;
         }
@@ -530,6 +541,8 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
             LogError("Failed to set socket properties");
             enter_open_error_state(tls_io_instance);
         }
+        
+        CFRelease(tls_io_dictionary);
     }
     else
     {
