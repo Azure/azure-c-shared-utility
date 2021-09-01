@@ -106,9 +106,9 @@ HTTPAPIEX_SAS_HANDLE HTTPAPIEX_SAS_Create(STRING_HANDLE key, STRING_HANDLE uriRe
 void HTTPAPIEX_SAS_Destroy(HTTPAPIEX_SAS_HANDLE handle)
 {
     /*Codes_SRS_HTTPAPIEXSAS_06_005: [If the parameter handle is NULL then HTTAPIEX_SAS_Destroy shall do nothing and return.]*/
-    if (handle)
+    HTTPAPIEX_SAS_STATE* state = (HTTPAPIEX_SAS_STATE*)handle;
+    if (state)
     {
-        HTTPAPIEX_SAS_STATE* state = (HTTPAPIEX_SAS_STATE*)handle;
         /*Codes_SRS_HTTPAPIEXSAS_06_006: [HTTAPIEX_SAS_Destroy shall deallocate any structures denoted by the parameter handle.]*/
         if (state->key)
         {
@@ -158,7 +158,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
                     {
                         /*Codes_SRS_HTTPAPIEXSAS_06_011: [SASToken_Create shall be invoked.]*/
                         /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
-                        size_t expiry = (size_t)(difftime(currentTime, 0) + 3600);
+                        uint64_t expiry = (uint64_t)(difftime(currentTime, 0) + 3600);
                         newSASToken = SASToken_CreateString(state->key, state->uriResource, state->keyName, expiry);
                     }
 

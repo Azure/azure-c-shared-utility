@@ -51,6 +51,8 @@ typedef struct TLS_IO_INSTANCE_TAG
     char* x509certificate;
     char* x509privatekey;
     int wolfssl_device_id;
+    char* hostname;
+    bool ignore_host_name_check;
 } TLS_IO_INSTANCE;
 
 STATIC_VAR_UNUSED const char* const OPTION_WOLFSSL_SET_DEVICE_ID = "SetDeviceId";
@@ -103,6 +105,23 @@ static void* tlsio_wolfssl_CloneOption(const char* name, const void* value)
                 /*return as is*/
             }
         }
+        #ifdef INVALID_DEVID
+        else if(strcmp(name, OPTION_WOLFSSL_SET_DEVICE_ID) == 0 )
+        {
+             int* value_clone;
+
+             if ((value_clone = malloc(sizeof(int))) == NULL)
+             {
+                 LogError("unable to clone device id option");
+             }
+             else
+             {
+                 *value_clone = *(int*)value;
+             }
+
+             result = value_clone;
+        }
+        #endif
         else
         {
             LogError("not handled option : %s", name);
@@ -124,7 +143,8 @@ static void tlsio_wolfssl_DestroyOption(const char* name, const void* value)
     {
         if ((strcmp(name, OPTION_TRUSTED_CERT) == 0) ||
             (strcmp(name, SU_OPTION_X509_CERT) == 0) ||
-            (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0))
+            (strcmp(name, SU_OPTION_X509_PRIVATE_KEY) == 0) ||
+            (strcmp(name, OPTION_WOLFSSL_SET_DEVICE_ID) == 0))
         {
             free((void*)value);
         }
@@ -182,6 +202,17 @@ static OPTIONHANDLER_HANDLE tlsio_wolfssl_retrieveoptions(CONCRETE_IO_HANDLE tls
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
+            #ifdef INVALID_DEVID
+            else if (
+                (tls_io_instance->wolfssl_device_id != INVALID_DEVID) &&
+                (OptionHandler_AddOption(result, OPTION_WOLFSSL_SET_DEVICE_ID, &tls_io_instance->wolfssl_device_id) != OPTIONHANDLER_OK)
+                )
+            {
+                LogError("unable to save deviceid option");
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            #endif
             else
             {
                 /*all is fine, all interesting options have been saved*/
@@ -259,7 +290,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         res = wolfSSL_connect(tls_io_instance->ssl);
         if (res != SSL_SUCCESS)
         {
-            LogError("WolfSSL connect failed");
+            // Error codes explained in https://www.wolfssl.com/docs/wolfssl-manual/appendix-c/
+            LogError("WolfSSL connect failed (%d)", wolfSSL_get_error(tls_io_instance->ssl, res));
             indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
             tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         }
@@ -396,7 +428,15 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
         }
         else if ( (result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN))
         {
+#ifdef HAVE_SECURE_RENEGOTIATION
+            if (wolfSSL_SSL_renegotiate_pending(tls_io_instance->ssl) == 0) // SERVER_HELLODONE_COMPLETE
+            {
+                result = WOLFSSL_CBIO_ERR_WANT_READ;
+            }
+            // If Server Hello not complete during renegotiation, do not return error.
+#else
             result = WOLFSSL_CBIO_ERR_WANT_READ;
+#endif
         }
         else if ((result == 0) && (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING || tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN))
         {
@@ -422,7 +462,7 @@ static int on_io_send(WOLFSSL *ssl, char *buf, int sz, void *context)
         LogError("Failed sending bytes through underlying IO");
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         indicate_error(tls_io_instance);
-        result = 0;
+        result = WOLFSSL_CBIO_ERR_GENERAL;
     }
     else
     {
@@ -486,13 +526,6 @@ static int x509_wolfssl_add_credentials(WOLFSSL* ssl, char* x509certificate, cha
         LogError("unable to load x509 client private key");
         result = MU_FAILURE;
     }
-#ifdef HAVE_SECURE_RENEGOTIATION
-    else if (wolfSSL_UseSecureRenegotiation(ssl) != SSL_SUCCESS)
-    {
-        LogError("unable to enable secure renegotiation");
-        result = MU_FAILURE;
-    }
-#endif
     else
     {
         result = 0;
@@ -532,14 +565,43 @@ static int create_wolfssl_instance(TLS_IO_INSTANCE* tls_io_instance)
 
         tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
         result = 0;
+
+#ifdef HAVE_SECURE_RENEGOTIATION
+        if (wolfSSL_UseSecureRenegotiation(tls_io_instance->ssl) != SSL_SUCCESS)
+        {
+            LogError("unable to enable secure renegotiation");
+            result = MU_FAILURE;
+        }
+#endif
     }
+    return result;
+}
+
+static int enable_domain_check(TLS_IO_INSTANCE* tls_io_instance)
+{
+    int result = 0;
+
+    if (!tls_io_instance->ignore_host_name_check)
+    {
+        if (wolfSSL_check_domain_name(tls_io_instance->ssl, tls_io_instance->hostname) != WOLFSSL_SUCCESS)
+        {
+            result = MU_FAILURE;
+        }
+    }
+
     return result;
 }
 
 static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
 {
     int result;
-    if (add_certificate_to_store(tls_io_instance) != 0)
+
+    if (enable_domain_check(tls_io_instance))
+    {
+        LogError("Failed to configure domain name verification");
+        result = MU_FAILURE;
+    }
+    else if (add_certificate_to_store(tls_io_instance) != 0)
     {
         LogError("Failed to add certificates to store");
         result = MU_FAILURE;
@@ -553,13 +615,6 @@ static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
         LogError("unable to use x509 authentication");
         result = MU_FAILURE;
     }
-#ifdef INVALID_DEVID
-    else if (tls_io_instance->wolfssl_device_id != INVALID_DEVID && wolfSSL_SetDevId(tls_io_instance->ssl, tls_io_instance->wolfssl_device_id) != WOLFSSL_SUCCESS)
-    {
-        LogError("Failure setting device id");
-        result = MU_FAILURE;
-    }
-#endif
     else
     {
         result = 0;
@@ -571,7 +626,6 @@ int tlsio_wolfssl_init(void)
 {
     (void)wolfSSL_library_init();
     wolfSSL_load_error_strings();
-
     return 0;
 }
 
@@ -609,6 +663,12 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
                 free(result);
                 result = NULL;
             }
+            else if (mallocAndStrcpy_s(&result->hostname, tls_io_config->hostname) != 0)
+            {
+                LogError("Failed copying the target hostname.");
+                free(result);
+                result = NULL;
+            }
             else
             {
                 // Set the recv and send function on the wolfssl context object
@@ -638,6 +698,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
                 {
                     LogError("Failed getting socket IO interface description.");
                     wolfSSL_CTX_free(result->ssl_context);
+                    free(result->hostname);
                     free(result);
                     result = NULL;
                 }
@@ -648,6 +709,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
                     {
                         LogError("Failure connecting to underlying socket_io");
                         wolfSSL_CTX_free(result->ssl_context);
+                        free(result->hostname);
                         free(result);
                         result = NULL;
                     }
@@ -655,6 +717,7 @@ CONCRETE_IO_HANDLE tlsio_wolfssl_create(void* io_create_parameters)
                     {
                         LogError("Failure connecting to underlying socket_io");
                         wolfSSL_CTX_free(result->ssl_context);
+                        free(result->hostname);
                         free(result);
                         result = NULL;
                     }
@@ -697,6 +760,7 @@ void tlsio_wolfssl_destroy(CONCRETE_IO_HANDLE tls_io)
         tls_io_instance->ssl_context = NULL;
 
         xio_destroy(tls_io_instance->socket_io);
+        free(tls_io_instance->hostname);
         free(tls_io);
     }
 }
@@ -746,16 +810,7 @@ int tlsio_wolfssl_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
             }
             else
             {
-                // The state can get changed in the on_underlying_io_open_complete
-                if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
-                {
-                    LogError("Failed to connect to server.  The certificates may not be correct.");
-                    result = MU_FAILURE;
-                }
-                else
-                {
-                    result = 0;
-                }
+                result = 0;
             }
         }
     }
@@ -836,6 +891,10 @@ int tlsio_wolfssl_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t siz
             {
                 result = 0;
             }
+
+            // remove on send complete and callback context
+            tls_io_instance->on_send_complete = NULL;
+            tls_io_instance->on_send_complete_callback_context = NULL;
         }
     }
 
@@ -851,19 +910,23 @@ void tlsio_wolfssl_dowork(CONCRETE_IO_HANDLE tls_io)
     else
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
-
-        if ((tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN) &&
-            (tls_io_instance->tlsio_state != TLSIO_STATE_ERROR))
+        if (tls_io_instance->tlsio_state == TLSIO_STATE_IN_HANDSHAKE ||
+            tls_io_instance->tlsio_state == TLSIO_STATE_OPEN ||
+            tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING)
         {
             decode_ssl_received_bytes(tls_io_instance);
-            xio_dowork(tls_io_instance->socket_io);
         }
+
+        xio_dowork(tls_io_instance->socket_io);
     }
 }
 
 
 static int process_option(char** destination, const char* name, const char* value)
 {
+
+    (void) name;
+
     int result;
     if (*destination != NULL)
     {
@@ -881,6 +944,20 @@ static int process_option(char** destination, const char* name, const char* valu
     }
     return result;
 }
+
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
+static void logging_callback(const int logLevel, const char *const logMessage)
+{
+    if (logLevel == ERROR_LOG)
+    {
+        LogError("tlsio_wolfssl: %s", logMessage);
+    }
+    else
+    {
+        LogInfo("tlsio_wolfssl: %s", logMessage);
+    }
+}
+#endif // LIBWOLFSSL_VERSION_HEX >= 0x04000000
 
 int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, const void* value)
 {
@@ -916,11 +993,39 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
         else if (strcmp(OPTION_WOLFSSL_SET_DEVICE_ID, optionName) == 0)
         {
             int device_id = *((int *)value);
-            if (tls_io_instance->ssl != NULL)
+            if (tls_io_instance->ssl != NULL && wolfSSL_SetDevId(tls_io_instance->ssl, device_id) != WOLFSSL_SUCCESS)
             {
-                if (tls_io_instance->ssl != NULL && wolfSSL_SetDevId(tls_io_instance->ssl, device_id) != WOLFSSL_SUCCESS)
+                LogError("Failure setting device id on ssl");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                // Save the device Id even if ssl object not yet created.
+                tls_io_instance->wolfssl_device_id = device_id;
+                result = 0;
+            }
+        }
+#endif
+        else if (strcmp("ignore_host_name_check", optionName) == 0)
+        {
+            bool* server_name_check = (bool*)value;
+            tls_io_instance->ignore_host_name_check = *server_name_check;
+            result = 0;
+        }
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
+        else if (strcmp("debug_log", optionName) == 0)
+        {
+            bool* enable_debug_logging = (bool*)value;
+            if (enable_debug_logging)
+            {
+                if (!wolfSSL_Debugging_ON())
                 {
-                    LogError("Failure setting device id on ssl");
+                    LogError("wolfSSL_Debugging_ON failed.");
+                    result = MU_FAILURE;
+                }
+                else if (!wolfSSL_SetLoggingCb(&logging_callback))
+                {
+                    LogError("wolfSSL_SetLoggingCb failed.");
                     result = MU_FAILURE;
                 }
                 else
@@ -928,14 +1033,8 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                     result = 0;
                 }
             }
-            else
-            {
-                // Save the id till we create the ssl object
-                tls_io_instance->wolfssl_device_id = device_id;
-                result = 0;
-            }
         }
-#endif
+#endif // LIBWOLFSSL_VERSION_HEX >= 0x04000000
         else
         {
             if (tls_io_instance->socket_io == NULL)
