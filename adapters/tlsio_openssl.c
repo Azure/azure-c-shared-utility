@@ -38,9 +38,9 @@ typedef enum TLSIO_STATE_TAG
 
 typedef enum TLSIO_VERSION_TAG
 {
-    VERSION_1_0,
-    VERSION_1_1,
-    VERSION_1_2,
+    VERSION_1_0 = 10,
+    VERSION_1_1 = 11,
+    VERSION_1_2 = 12,
 } TLSIO_VERSION;
 
 static bool is_an_opening_state(TLSIO_STATE state)
@@ -106,7 +106,7 @@ static void* tlsio_openssl_CloneOption(const char* name, const void* value)
     {
         if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
         {
-            result = (void*)value;
+            result = (void*)OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
         }
         else if (strcmp(name, OPTION_TRUSTED_CERT) == 0)
         {
@@ -332,96 +332,106 @@ static OPTIONHANDLER_HANDLE tlsio_openssl_retrieveoptions(CONCRETE_IO_HANDLE han
             TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)handle;
             OPTIONHANDLER_HANDLE underlying_io_options;
 
-            if ((underlying_io_options = xio_retrieveoptions(tls_io_instance->underlying_io)) == NULL ||
-                OptionHandler_AddOption(result, OPTION_UNDERLYING_IO_OPTIONS, underlying_io_options) != OPTIONHANDLER_OK)
+            if ((underlying_io_options = xio_retrieveoptions(tls_io_instance->underlying_io)) == NULL)
             {
-                LogError("unable to save underlying_io options");
-                OptionHandler_Destroy(underlying_io_options);
+                LogError("unable to retrieve underlying_io options");
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
-            else if (
-                (tls_io_instance->certificate != NULL) &&
-                (OptionHandler_AddOption(result, OPTION_TRUSTED_CERT, tls_io_instance->certificate) != OPTIONHANDLER_OK)
-                )
+            else
             {
-                LogError("unable to save TrustedCerts option");
-                OptionHandler_Destroy(result);
-                result = NULL;
-            }
-            else if (
-                (tls_io_instance->cipher_list != NULL) &&
-                (OptionHandler_AddOption(result, OPTION_OPENSSL_CIPHER_SUITE, tls_io_instance->cipher_list) != OPTIONHANDLER_OK)
-                )
-            {
-                LogError("unable to save CipherSuite option");
-                OptionHandler_Destroy(result);
-                result = NULL;
-            }
-            else if (tls_io_instance->x509_certificate != NULL && (OptionHandler_AddOption(result, SU_OPTION_X509_CERT, tls_io_instance->x509_certificate) != OPTIONHANDLER_OK) )
-            {
-                LogError("unable to save x509 certificate option");
-                OptionHandler_Destroy(result);
-                result = NULL;
-            }
-            else if (tls_io_instance->x509_private_key != NULL && (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509_private_key) != OPTIONHANDLER_OK) )
-            {
-                LogError("unable to save x509 privatekey option");
-                OptionHandler_Destroy(result);
-                result = NULL;
-            }
-            else if (tls_io_instance->tls_version != 0 && (OptionHandler_AddOption(result, OPTION_TLS_VERSION, &tls_io_instance->tls_version) != OPTIONHANDLER_OK) )
-            {
-                LogError("unable to save tls_version option");
-                OptionHandler_Destroy(result);
-                result = NULL;
-            }
-            else if (
-                (tls_io_instance->engine_id != NULL) &&
-                (OptionHandler_AddOption(result, OPTION_OPENSSL_ENGINE, tls_io_instance->engine_id) != OPTIONHANDLER_OK)
-                )
-            {
-                LogError("unable to save Engine option");
-                OptionHandler_Destroy(result);
-                result = NULL;
-            }
-            else if (
-                (tls_io_instance->x509_private_key_type != KEY_TYPE_DEFAULT) &&
-                (OptionHandler_AddOption(result, OPTION_OPENSSL_PRIVATE_KEY_TYPE, &tls_io_instance->x509_private_key_type))
-                )
-            {
-                LogError("unable to save x509PrivatekeyType option");
-                OptionHandler_Destroy(result);
-                result = NULL;
-            }
-            else if (tls_io_instance->tls_validation_callback != NULL)
-            {
+                if (OptionHandler_AddOption(result, OPTION_UNDERLYING_IO_OPTIONS, underlying_io_options) != OPTIONHANDLER_OK)
+                {
+                    LogError("unable to save underlying_io options");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else if (
+                    (tls_io_instance->certificate != NULL) &&
+                    (OptionHandler_AddOption(result, OPTION_TRUSTED_CERT, tls_io_instance->certificate) != OPTIONHANDLER_OK)
+                    )
+                {
+                    LogError("unable to save TrustedCerts option");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else if (
+                    (tls_io_instance->cipher_list != NULL) &&
+                    (OptionHandler_AddOption(result, OPTION_OPENSSL_CIPHER_SUITE, tls_io_instance->cipher_list) != OPTIONHANDLER_OK)
+                    )
+                {
+                    LogError("unable to save CipherSuite option");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else if (tls_io_instance->x509_certificate != NULL && (OptionHandler_AddOption(result, SU_OPTION_X509_CERT, tls_io_instance->x509_certificate) != OPTIONHANDLER_OK) )
+                {
+                    LogError("unable to save x509 certificate option");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else if (tls_io_instance->x509_private_key != NULL && (OptionHandler_AddOption(result, SU_OPTION_X509_PRIVATE_KEY, tls_io_instance->x509_private_key) != OPTIONHANDLER_OK) )
+                {
+                    LogError("unable to save x509 privatekey option");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else if (tls_io_instance->tls_version != 0 && (OptionHandler_AddOption(result, OPTION_TLS_VERSION, &tls_io_instance->tls_version) != OPTIONHANDLER_OK) )
+                {
+                    LogError("unable to save tls_version option");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else if (
+                    (tls_io_instance->engine_id != NULL) &&
+                    (OptionHandler_AddOption(result, OPTION_OPENSSL_ENGINE, tls_io_instance->engine_id) != OPTIONHANDLER_OK)
+                    )
+                {
+                    LogError("unable to save Engine option");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else if (
+                    (tls_io_instance->x509_private_key_type != KEY_TYPE_DEFAULT) &&
+                    (OptionHandler_AddOption(result, OPTION_OPENSSL_PRIVATE_KEY_TYPE, &tls_io_instance->x509_private_key_type))
+                    )
+                {
+                    LogError("unable to save x509PrivatekeyType option");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else if (tls_io_instance->tls_validation_callback != NULL)
+                {
 #ifdef WIN32
 #pragma warning(push)
 #pragma warning(disable:4152)
 #endif
-                void* ptr = tls_io_instance->tls_validation_callback;
+                    void* ptr = tls_io_instance->tls_validation_callback;
 #ifdef WIN32
 #pragma warning(pop)
 #endif
-                if (OptionHandler_AddOption(result, "tls_validation_callback", (const char*)ptr) != OPTIONHANDLER_OK)
+                    if (OptionHandler_AddOption(result, "tls_validation_callback", (const char*)ptr) != OPTIONHANDLER_OK)
+                    {
+                        LogError("unable to save tls_validation_callback option");
+                        OptionHandler_Destroy(result);
+                        result = NULL;
+                    }
+
+                    if (OptionHandler_AddOption(result, "tls_validation_callback_data", (const char*)tls_io_instance->tls_validation_callback_data) != OPTIONHANDLER_OK)
+                    {
+                        LogError("unable to save tls_validation_callback_data option");
+                        OptionHandler_Destroy(result);
+                        result = NULL;
+                    }
+                }
+                else
                 {
-                    LogError("unable to save tls_validation_callback option");
-                    OptionHandler_Destroy(result);
-                    result = NULL;
+                    /*all is fine, all interesting options have been saved*/
+                    /*return as is*/
                 }
 
-                if (OptionHandler_AddOption(result, "tls_validation_callback_data", (const char*)tls_io_instance->tls_validation_callback_data) != OPTIONHANDLER_OK)
-                {
-                    LogError("unable to save tls_validation_callback_data option");
-                    OptionHandler_Destroy(result);
-                    result = NULL;
-                }
-            }
-            else
-            {
-                /*all is fine, all interesting options have been saved*/
-                /*return as is*/
+                // Must destroy since OptionHandler_AddOption creates a copy of it. 
+                OptionHandler_Destroy(underlying_io_options); 
             }
         }
     }
@@ -592,7 +602,7 @@ static int openssl_static_locks_install(void)
 
     if (openssl_locks != NULL)
     {
-        LogError("Locks already initialized");
+        LogInfo("Locks already initialized");
         result = MU_FAILURE;
     }
     else
@@ -1022,7 +1032,8 @@ static int enable_domain_check(TLS_IO_INSTANCE* tlsInstance)
         X509_VERIFY_PARAM *param = SSL_get0_param(tlsInstance->ssl);
 
         X509_VERIFY_PARAM_set_hostflags(param, 0);
-        if (!X509_VERIFY_PARAM_set1_host(param, tlsInstance->hostname, strlen(tlsInstance->hostname)))
+        if (!(X509_VERIFY_PARAM_set1_ip_asc(param, tlsInstance->hostname) ||
+              X509_VERIFY_PARAM_set1_host(param, tlsInstance->hostname, strlen(tlsInstance->hostname))))
         {
             result = MU_FAILURE;
         }
@@ -1215,7 +1226,7 @@ int tlsio_openssl_init(void)
 
     if (openssl_static_locks_install() != 0)
     {
-        LogError("Failed to install static locks in OpenSSL!");
+        LogInfo("Failed to install static locks in OpenSSL!");
         return MU_FAILURE;
     }
 

@@ -286,7 +286,7 @@ TEST_FUNCTION(vsprintf_wchar_with_empty_string_succeeds)
     wchar_t* result;
 
     ///act
-    result = vsprintf_wchar_wrapper_function(L"%s", "");
+    result = vsprintf_wchar_wrapper_function(L"%s", L"");
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, wcscmp(result, L""));

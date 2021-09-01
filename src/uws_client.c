@@ -651,7 +651,8 @@ static int send_close_frame(UWS_CLIENT_INSTANCE* uws_client, unsigned int close_
         close_frame_length = BUFFER_length(close_frame_buffer);
 
         /* Codes_SRS_UWS_CLIENT_01_471: [ The callback on_underlying_io_close_sent shall be passed as argument to xio_send. ]*/
-        if (xio_send(uws_client->underlying_io, close_frame, close_frame_length, unchecked_on_send_complete, NULL) != 0)
+        if (uws_client == NULL ||
+            xio_send(uws_client->underlying_io, close_frame, close_frame_length, unchecked_on_send_complete, NULL) != 0)
         {
             LogError("Sending CLOSE frame failed.");
             result = MU_FAILURE;
@@ -1790,8 +1791,11 @@ int uws_client_close_async(UWS_CLIENT_HANDLE uws_client, ON_WS_CLOSE_COMPLETE on
                 {
                     WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_send);
 
-                    /* Codes_SRS_UWS_CLIENT_01_036: [ For each pending send frame the send complete callback shall be called with UWS_SEND_FRAME_CANCELLED. ]*/
-                    complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
+                    if (ws_pending_send != NULL)
+                    {
+                        /* Codes_SRS_UWS_CLIENT_01_036: [ For each pending send frame the send complete callback shall be called with UWS_SEND_FRAME_CANCELLED. ]*/
+                        complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
+                    }
                 }
 
                 /* Codes_SRS_UWS_CLIENT_01_396: [ On success uws_client_close_async shall return 0. ]*/
@@ -1852,8 +1856,10 @@ int uws_client_close_handshake_async(UWS_CLIENT_HANDLE uws_client, uint16_t clos
                 while ((first_pending_send = singlylinkedlist_get_head_item(uws_client->pending_sends)) != NULL)
                 {
                     WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_send);
-
-                    complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
+                    if (ws_pending_send != NULL)
+                    {
+                        complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
+                    }
                 }
 
                 /* Codes_SRS_UWS_CLIENT_01_466: [ On success uws_client_close_handshake_async shall return 0. ]*/
@@ -2122,7 +2128,7 @@ static void* uws_client_clone_option(const char* name, const void* value)
         if (strcmp(name, UWS_CLIENT_OPTIONS) == 0)
         {
             /* Codes_SRS_UWS_CLIENT_01_507: [ uws_client_clone_option called with name being uWSClientOptions shall return the same value. ]*/
-            result = (void*)value;
+            result = (void*)OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
         }
         else
         {
@@ -2198,10 +2204,11 @@ OPTIONHANDLER_HANDLE uws_client_retrieve_options(UWS_CLIENT_HANDLE uws_client)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_505: [ If OptionHandler_AddOption fails, uws_client_retrieve_options shall fail and return NULL. ]*/
                     LogError("OptionHandler_AddOption failed");
-                    OptionHandler_Destroy(underlying_io_options);
                     OptionHandler_Destroy(result);
                     result = NULL;
                 }
+
+                OptionHandler_Destroy(underlying_io_options);
             }
         }
 
