@@ -635,6 +635,12 @@ static int readChunk(HTTP_HANDLE_DATA* http_instance, char* buf, size_t size)
             break;
         }
 
+        // on error
+        if (cur < 0)
+        {
+            return cur;
+        }
+
         // read cur bytes (might be less than requested)
         size -= (size_t)cur;
         offset += cur;
