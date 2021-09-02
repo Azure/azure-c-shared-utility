@@ -719,7 +719,7 @@ int mallocAndStrcpy_s(char** destination, const char* source)
             *destination = temp;
             /*Codes_SRS_CRT_ABSTRACTIONS_99_039: [mallocAndstrcpy_s shall copy the contents in the address source, including the terminating null character into location specified by the destination pointer after the memory allocation.]*/
             copied_result = strcpy_s(*destination, l + 1, source);
-            if (copied_result < 0) /*strcpy_s error*/
+            if (copied_result != 0) /*strcpy_s error*/
             {
                 free(*destination);
                 *destination = NULL;
