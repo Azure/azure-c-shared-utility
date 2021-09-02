@@ -903,7 +903,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         }
         else if ((result = ReceiveResponseAndStatusCode(requestHandle, statusCode)) != HTTPAPI_OK)
         {
-            LogError("failed receiving response and/or headeders");
+            LogError("failed receiving response and/or headers");
         }
         else if ((responseContent != NULL) && ((result = ReceiveResponseContent(requestHandle, responseContent)) != HTTPAPI_OK))
         {
