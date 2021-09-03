@@ -1624,7 +1624,7 @@ static int allow_CRL_fetch_error(int status, X509_STORE_CTX *ctx)
 {
     if(X509_V_ERR_UNABLE_TO_GET_CRL == X509_STORE_CTX_get_error(ctx))
     {
-        LogInfo("Ignoring CRL Downlaod failure\n");
+        LogInfo("Ignoring CRL Download failure\n");
         return 1;
     }
     else
@@ -1726,6 +1726,13 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
             X509_CRL_free(x509_crl);
         }
     }
+/* 
+    // [DCohen 9/3/2021] Remove this hard-coded setting. By default CRL check will still be done, however by removing this
+    // hard coded setting, the Windows UWP application now has the option to set OPENSSL_DISABLE_CRL_CHECK or 
+    // OPENSSL_CONTINUE_ON_CRL_DOWNLOAD_FAILURE properties on SpeechConfig to control disabling of CRL. This is done
+    // by the logic at the end of the function setup_crl_check() below. Note that this function is only defined
+    // for WIN32 builds, however since Carbon uses tlsio_schannel.c for native Windows application, the code here
+    // really only applies to UWP builds.
 
     // setup CRL checking
     int flags = X509_VERIFY_PARAM_get_flags(store->param);
@@ -1734,7 +1741,7 @@ static int load_system_store(TLS_IO_INSTANCE* tls_io_instance)
         X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
         X509_STORE_set_lookup_crls_cb(store, crls_http_cb);
     }
-
+*/
     if (hSysStore)
     {
         CertCloseStore(hSysStore, 0);
