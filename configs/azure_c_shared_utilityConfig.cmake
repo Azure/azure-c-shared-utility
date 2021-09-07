@@ -2,7 +2,7 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 include(CMakeFindDependencyMacro)
-find_dependency(CURL CONFIG)
+find_dependency(CURL)
 
 include("${CMAKE_CURRENT_LIST_DIR}/azure_c_shared_utilityTargets.cmake")
 
