@@ -1,11 +1,12 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-include("${CMAKE_CURRENT_LIST_DIR}/azure_c_shared_utilityTargets.cmake")
+if(UNIX)
+    include(CMakeFindDependencyMacro)
+    find_dependency(CURL CONFIG)
+endif()
 
-include(CMakeFindDependencyMacro)
-set(CURL_DIR CMake)
-find_dependency(CURL CONFIG)
+include("${CMAKE_CURRENT_LIST_DIR}/azure_c_shared_utilityTargets.cmake")
 
 get_target_property(AZURE_C_SHARED_UTILITY_INCLUDES aziotsharedutil INTERFACE_INCLUDE_DIRECTORIES)
 

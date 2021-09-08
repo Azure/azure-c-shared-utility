@@ -503,8 +503,7 @@ if(${use_http})
         if (NOT use_builtin_httpapi)
 
             # try CMake find_package first
-            set(CURL_DIR CMake)
-            find_package(CURL CONFIG)
+            find_package(CURL)
 
             # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
             # pkg-config tool can not be used by cmake while cross compiling.
