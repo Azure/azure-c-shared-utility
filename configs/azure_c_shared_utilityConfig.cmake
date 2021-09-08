@@ -4,7 +4,8 @@
 include("${CMAKE_CURRENT_LIST_DIR}/azure_c_shared_utilityTargets.cmake")
 
 include(CMakeFindDependencyMacro)
-find_dependency(CURL)
+set(CURL_DIR CMake)
+find_dependency(CURL CONFIG)
 
 get_target_property(AZURE_C_SHARED_UTILITY_INCLUDES aziotsharedutil INTERFACE_INCLUDE_DIRECTORIES)
 
