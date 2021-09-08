@@ -3,7 +3,7 @@
 
 if(UNIX)
     include(CMakeFindDependencyMacro)
-    find_dependency(CURL CONFIG)
+    find_dependency(CURL)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/azure_c_shared_utilityTargets.cmake")
