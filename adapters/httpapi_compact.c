@@ -40,7 +40,7 @@
 /*Codes_SRS_HTTPAPI_COMPACT_21_081: [ The HTTPAPI_ExecuteRequest shall try to read the message with the response up to 20 seconds. ]*/
 #define MAX_RECEIVE_RETRY   200
 /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-#define RETRY_INTERVAL_IN_MICROSECONDS  100
+#define RETRY_INTERVAL_IN_MS  100
 
 MU_DEFINE_ENUM_STRINGS(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES)
 
@@ -314,7 +314,7 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
                     {
                         LogInfo("Waiting for TLS close connection");
                         /*Codes_SRS_HTTPAPI_COMPACT_21_086: [ The HTTPAPI_CloseConnection shall wait, at least, 100 milliseconds between retries. ]*/
-                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MS);
                     }
                 }
             }
@@ -507,7 +507,7 @@ static int conn_receive(HTTP_HANDLE_DATA* http_instance, char* buffer, int count
             }
 
             /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-            ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+            ThreadAPI_Sleep(RETRY_INTERVAL_IN_MS);
         }
     }
 
@@ -602,7 +602,7 @@ static int readLine(HTTP_HANDLE_DATA* http_instance, char* buf, const size_t max
                 if ((countRetry--) > 0)
                 {
                     /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                    ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                    ThreadAPI_Sleep(RETRY_INTERVAL_IN_MS);
                 }
                 else
                 {
@@ -633,6 +633,12 @@ static int readChunk(HTTP_HANDLE_DATA* http_instance, char* buf, size_t size)
         if (cur == 0)
         {
             break;
+        }
+
+        // on error
+        if (cur < 0)
+        {
+            return cur;
         }
 
         // read cur bytes (might be less than requested)
@@ -690,7 +696,7 @@ static int skipN(HTTP_HANDLE_DATA* http_instance, size_t n)
                     if ((countRetry--) > 0)
                     {
                         /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MS);
                     }
                     else
                     {
@@ -782,7 +788,7 @@ static HTTPAPI_RESULT OpenXIOConnection(HTTP_HANDLE_DATA* http_instance)
                     else
                     {
                         /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                        ThreadAPI_Sleep(RETRY_INTERVAL_IN_MS);
                     }
                 }
             }
@@ -833,7 +839,7 @@ static HTTPAPI_RESULT conn_send_all(HTTP_HANDLE_DATA* http_instance, const unsig
             else
             {
                 /*Codes_SRS_HTTPAPI_COMPACT_21_083: [ The HTTPAPI_ExecuteRequest shall wait, at least, 100 milliseconds between retries. ]*/
-                ThreadAPI_Sleep(RETRY_INTERVAL_IN_MICROSECONDS);
+                ThreadAPI_Sleep(RETRY_INTERVAL_IN_MS);
             }
         }
     }
