@@ -15,6 +15,9 @@
 clockid_t time_basis = -1;
 #endif
 
+#define MILLISECONDS_IN_ONE_SECOND 1000
+#define NANOSECONDS_IN_ONE_MILLISECOND 1000000
+
 void set_time_basis(void)
 {
 // The time basis depends on what clock is available. Prefer CLOCK_MONOTONIC,
@@ -70,6 +73,6 @@ int64_t get_time_ms()
         return INVALID_TIME_VALUE;
     }
 
-    return (int64_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+    return (int64_t)(ts.tv_sec * MILLISECONDS_IN_ONE_SECOND + ts.tv_nsec / NANOSECONDS_IN_ONE_MILLISECOND);
 }
 
