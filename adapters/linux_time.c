@@ -15,9 +15,6 @@
 clockid_t time_basis = -1;
 #endif
 
-#define MILLISECONDS_IN_ONE_SECOND 1000
-#define NANOSECONDS_IN_ONE_MILLISECOND 1000000
-
 void set_time_basis(void)
 {
 // The time basis depends on what clock is available. Prefer CLOCK_MONOTONIC,
