@@ -73,6 +73,6 @@ int64_t get_time_ms()
         return INVALID_TIME_VALUE;
     }
 
-    return (int64_t)((int64_t)ts.tv_sec * MILLISECONDS_IN_ONE_SECOND + (int64_t)ts.tv_nsec / NANOSECONDS_IN_ONE_MILLISECOND);
+    return (int64_t)((int64_t)ts.tv_sec * MILLISECONDS_IN_1_SECOND + (int64_t)ts.tv_nsec / NANOSECONDS_IN_1_MILLISECOND);
 }
 
