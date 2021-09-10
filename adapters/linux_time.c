@@ -41,19 +41,26 @@ int get_time_ns(struct timespec* ts)
     int err;
 
 #ifdef __MACH__
-    clock_serv_t cclock;
-    mach_timespec_t mts;
-    err = host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-    if (!err)
+    if (__builtin_available(iOS 10.0, *) || __builtin_available(macOS 10.12, *))
     {
-        err = clock_get_time(cclock, &mts);
-        mach_port_deallocate(mach_task_self(), cclock);
+        err = clock_gettime(CLOCK_MONOTONIC, ts);
+    }
+    else
+    {
+      clock_serv_t cclock;
+      mach_timespec_t mts;
+      err = host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+      if (!err)
+      {
+          err = clock_get_time(cclock, &mts);
+          mach_port_deallocate(mach_task_self(), cclock);
 
-        if (!err)
-        {
-            ts->tv_sec = mts.tv_sec;
-            ts->tv_nsec = mts.tv_nsec;
-        }
+          if (!err)
+          {
+              ts->tv_sec = mts.tv_sec;
+              ts->tv_nsec = mts.tv_nsec;
+          }
+      }
     }
 #else
     err = clock_gettime(time_basis, ts);
