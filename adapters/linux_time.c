@@ -41,9 +41,9 @@ int get_time_ns(struct timespec* ts)
     int err;
 
 #ifdef __MACH__
-    if (__builtin_available(iOS 10.0, *) || __builtin_available(macOS 10.12, *))
+    if (__builtin_available(iOS 10.0, *))
     {
-        err = clock_gettime(CLOCK_MONOTONIC, ts);
+        err = clock_gettime(CLOCK_REALTIME, ts);
     }
     else
     {
