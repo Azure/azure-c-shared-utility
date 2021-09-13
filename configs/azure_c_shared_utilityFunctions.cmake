@@ -497,11 +497,16 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
         include_directories(${sharedutil_include_directories})
     endif()
 
+    if(NOT disable_logging_pal)
+        set(LOGGING_PAL_FILE ${CMAKE_CURRENT_LIST_DIR}/../../pal/agenttime.c)
+    endif()
+    message(STATUS "disable_logging_pal=${disable_logging_pal} whatIsBuilding=${whatIsBuilding}  ${LOGGING_PAL_FILE}")
+
     #setting logging_files
     if(DEFINED SHARED_UTIL_SRC_FOLDER)
-        set(logging_files ${XLOGGING_C_FILE} ${LOGGING_C_FILE})
+        set(logging_files ${XLOGGING_C_FILE} ${LOGGING_C_FILE} ${LOGGING_PAL_FILE})
     elseif(DEFINED SHARED_UTIL_FOLDER)
-        set(logging_files ${XLOGGING_C_FILE} ${LOGGING_C_FILE})
+        set(logging_files ${XLOGGING_C_FILE} ${LOGGING_C_FILE} ${LOGGING_PAL_FILE})
     else()
         message(FATAL_ERROR "No Shared Utility folder defined for includes/src.")
     endif()
@@ -673,6 +678,7 @@ endfunction()
 # This function focuses on setting files which are unique to a given hardware platform.
 # The choice of tlsio is not unique per-platform, and is set in the main CMakeLists.txt
 function(set_platform_files c_shared_dir)
+
     if(WIN32)
         if(${use_condition})
             set(CONDITION_C_FILE ${c_shared_dir}/adapters/condition_win32.c PARENT_SCOPE)
@@ -716,7 +722,7 @@ function(set_platform_files c_shared_dir)
         set(DNS_C_FILE ${c_shared_dir}/src/dns_resolver_sync.c PARENT_SCOPE)
     else()
         set(XLOGGING_C_FILE ${c_shared_dir}/src/xlogging.c PARENT_SCOPE)
-        set(LOGGING_C_FILE ${c_shared_dir}/src/consolelogger.c PARENT_SCOPE)
+        set(LOGGING_C_FILE ${c_shared_dir}/src/consolelogger.c ${LOGGING_PAL_FILE} PARENT_SCOPE)
         set(LOGGING_H_FILE ${c_shared_dir}/inc/azure_c_shared_utility/consolelogger.h PARENT_SCOPE)
         
         if(${use_condition})

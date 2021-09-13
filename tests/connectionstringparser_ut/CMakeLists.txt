@@ -23,6 +23,8 @@ set(${theseTestsName}_h_files
     ../real_test_files/real_strings.h
 )
 
+set(disable_logging_pal TRUE)
+
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
 compile_c_test_artifacts_as(${theseTestsName} C99)
