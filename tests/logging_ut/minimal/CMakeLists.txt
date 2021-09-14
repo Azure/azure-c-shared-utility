@@ -28,7 +28,7 @@ endif()
 
 if(${use_etw} STREQUAL "OFF")
         set(XLOGGING_C_FILE ../../../src/xlogging.c PARENT_SCOPE)
-        set(LOGGING_C_FILE ../../../src/consolelogger.c ../../../src/consolelogger.c PARENT_SCOPE)
+        set(LOGGING_C_FILE ../../../src/consolelogger.c PARENT_SCOPE)
         set(LOGGING_H_FILE ../../../inc/azure_c_shared_utility/consolelogger.h PARENT_SCOPE)
     elseif(${use_etw} STREQUAL "TRACELOGGING")
         set(XLOGGING_C_FILE ../../../src/etwxlogging.c PARENT_SCOPE)
@@ -48,7 +48,6 @@ add_executable(${exeName}
     ${LOGGING_C_FILE}
     ${LOGGING_H_FILE}
     ${LOGGING_RC_FILE}
-    ../../../pal/agenttime.c
     minimal.c)
 
 if(${logerror_captures_stack_traces_value})
