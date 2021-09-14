@@ -497,10 +497,7 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
         include_directories(${sharedutil_include_directories})
     endif()
 
-    if(NOT disable_logging_pal)
-        set(LOGGING_PAL_FILE ${CMAKE_CURRENT_LIST_DIR}/../../pal/agenttime.c)
-    endif()
-    message(STATUS "disable_logging_pal=${disable_logging_pal} whatIsBuilding=${whatIsBuilding}  ${LOGGING_PAL_FILE}")
+    add_definitions(-DLOGGER_DISABLE_PAL)
 
     #setting logging_files
     if(DEFINED SHARED_UTIL_SRC_FOLDER)

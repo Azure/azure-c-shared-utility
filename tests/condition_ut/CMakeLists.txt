@@ -22,8 +22,6 @@ endif()
 set(${theseTestsName}_h_files
 )
 
-set(disable_logging_pal TRUE)
-
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")
 
 if(WIN32)
