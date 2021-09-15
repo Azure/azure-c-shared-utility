@@ -220,6 +220,7 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
     endif()
 
     #setting logging_files
+    add_definitions(-DLOGGER_DISABLE_PAL)
     if(DEFINED SHARED_UTIL_SRC_FOLDER)
         set(logging_files ${XLOGGING_C_FILE} ${LOGGING_C_FILE})
     elseif(DEFINED SHARED_UTIL_FOLDER)
@@ -496,6 +497,8 @@ function(build_c_test_artifacts whatIsBuilding use_gballoc folder)
     else()
         include_directories(${sharedutil_include_directories})
     endif()
+
+    add_definitions(-DLOGGER_DISABLE_PAL)
 
     #setting logging_files
     if(DEFINED SHARED_UTIL_SRC_FOLDER)
