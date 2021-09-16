@@ -161,7 +161,13 @@
     REQUIRED_FUNCTION_1_0_2(sk_push) \
     REQUIRED_FUNCTION_1_0_2(sk_value) \
     REQUIRED_FUNCTION(d2i_X509_CRL_bio) \
-    REQUIRED_FUNCTION(i2d_X509_CRL_bio)
+    REQUIRED_FUNCTION(i2d_X509_CRL_bio) \
+    REQUIRED_FUNCTION(X509_VERIFY_PARAM_set_hostflags) \
+    REQUIRED_FUNCTION(X509_VERIFY_PARAM_set1_host) \
+    REQUIRED_FUNCTION(SSL_set_verify) \
+    REQUIRED_FUNCTION(X509_STORE_set_verify_cb) \
+    REQUIRED_FUNCTION(X509_STORE_CTX_get_error) \
+    REQUIRED_FUNCTION(SSL_get0_param)
 
 #if USE_OPENSSL_1_1_0_OR_UP
 #define REQUIRED_FUNCTION_1_1_0 REQUIRED_FUNCTION
@@ -251,6 +257,12 @@ FOR_ALL_OPENSSL_FUNCTIONS
 #define X509_get_ext_d2i X509_get_ext_d2i_ptr
 #define X509_get_issuer_name X509_get_issuer_name_ptr
 #define X509_get_subject_name X509_get_subject_name_ptr
+#define X509_VERIFY_PARAM_set_hostflags X509_VERIFY_PARAM_set_hostflags_ptr
+#define X509_VERIFY_PARAM_set1_host X509_VERIFY_PARAM_set1_host_ptr
+#define SSL_set_verify SSL_set_verify_ptr
+#define X509_STORE_set_verify_cb X509_STORE_set_verify_cb_ptr
+#define X509_STORE_CTX_get_error X509_STORE_CTX_get_error_ptr
+#define SSL_get0_param SSL_get0_param_ptr
 
 #if USE_OPENSSL_1_0_2
 #define ASN1_STRING_data ASN1_STRING_data_ptr
