@@ -158,7 +158,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_SAS_ExecuteRequest(HTTPAPIEX_SAS_HANDLE sasHandle, HT
                     {
                         /*Codes_SRS_HTTPAPIEXSAS_06_011: [SASToken_Create shall be invoked.]*/
                         /*Codes_SRS_HTTPAPIEXSAS_06_012: [If the return result of SASToken_Create is NULL then fallthrough.]*/
-                        uint64_t expiry = (uint64_t)(difftime(currentTime, 0) + 3600);
+                        uint64_t expiry = (uint64_t)(get_difftime(currentTime, 0) + 3600);
                         newSASToken = SASToken_CreateString(state->key, state->uriResource, state->keyName, expiry);
                     }
 
