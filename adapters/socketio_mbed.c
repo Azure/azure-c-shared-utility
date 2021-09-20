@@ -339,7 +339,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             else
             {
                 int send_result = tcpsocketconnection_send(socket_io_instance->tcp_socket_connection, buffer, size);
-                if (send_result != size)
+                if ((size_t)send_result != size)
                 {
                     if (send_result < 0)
                     {
@@ -393,7 +393,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 }
 
                 int send_result = tcpsocketconnection_send(socket_io_instance->tcp_socket_connection, (const char*)pending_socket_io->bytes, pending_socket_io->size);
-                if (send_result != pending_socket_io->size)
+                if ((size_t)send_result != pending_socket_io->size)
                 {
                     if (send_result < 0)
                     {
@@ -459,6 +459,9 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, const void* value)
 {
     /* Not implementing any options */
+    (void)socket_io;
+    (void)optionName;
+    (void)value;
     return MU_FAILURE;
 }
 
