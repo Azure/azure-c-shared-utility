@@ -564,7 +564,7 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             }
             else
             {
-                ssize_t send_result = send(socket_io_instance->socket, (const char*)buffer, (int)size, 0);
+                int send_result = send(socket_io_instance->socket, (const char*)buffer, (int)size, 0);
                 if ((size_t)send_result != size)
                 {
                     int last_error = WSAGetLastError();
@@ -626,7 +626,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
                 /* TODO: we need to do more than a cast here to be 100% clean
                 The following bug was filed: [WarnL4] socketio_win32 does not account for already sent bytes and there is a truncation of size from size_t to int */
-                ssize_t send_result = send(socket_io_instance->socket, (const char*)pending_socket_io->bytes, (int)pending_socket_io->size, 0);
+                int send_result = send(socket_io_instance->socket, (const char*)pending_socket_io->bytes, (int)pending_socket_io->size, 0);
                 if ((size_t)send_result != pending_socket_io->size)
                 {
                     int last_error = WSAGetLastError();
