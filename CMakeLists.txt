@@ -688,7 +688,7 @@ install (TARGETS ${targets} EXPORT aziotsharedutilTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
 )
-install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
+install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility)
 install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
 
 
