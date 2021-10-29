@@ -951,7 +951,7 @@ static void* http_proxy_io_clone_option(const char* name, const void* value)
     {
         if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
         {
-            result = (void*)value;
+            result = (void*)OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
         }
         else
         {
