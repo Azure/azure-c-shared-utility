@@ -197,15 +197,15 @@ extern "C"
 {
 #endif
 
-pfCloneOption tlsio_cyclonessl_clone_option;
-pfDestroyOption tlsio_cyclonessl_destroy_option;
+pfCloneOption tlsio_clone_option;
+pfDestroyOption tlsio_destroy_option;
 
 OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOption destroyOption, pfSetOption setOption)
 {
     (void)setOption;
 
-    tlsio_cyclonessl_clone_option = cloneOption;
-    tlsio_cyclonessl_destroy_option = destroyOption;
+    tlsio_clone_option = cloneOption;
+    tlsio_destroy_option = destroyOption;
     return TEST_OPTION_HANDLER;
 }
 
@@ -1569,6 +1569,70 @@ TEST_FUNCTION(http_proxy_io_retrieve_options_calls_the_underlying_retrieve_optio
 
     // assert
     ASSERT_ARE_EQUAL(void_ptr, TEST_OPTION_HANDLER, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+#define OPTION_UNDERLYING_IO_OPTIONS "underlying_io_options"
+
+/* GitHub PR 564 */
+TEST_FUNCTION(http_proxy_io_clone_option_succeeds)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    OPTIONHANDLER_HANDLE options;
+
+    http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
+
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    options = http_proxy_io_get_interface_description()->concrete_io_retrieveoptions(http_io);
+
+    ASSERT_IS_NOT_NULL(tlsio_clone_option);
+
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(OptionHandler_Clone(TEST_OPTION_HANDLER))
+        .SetReturn(TEST_OPTION_HANDLER);
+
+    // act
+    void* cloned_value = tlsio_clone_option(OPTION_UNDERLYING_IO_OPTIONS, TEST_OPTION_HANDLER);
+
+    // assert
+    ASSERT_IS_NOT_NULL(cloned_value);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* GitHub PR 564 */
+TEST_FUNCTION(http_proxy_io_destroy_option_succeeds)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    OPTIONHANDLER_HANDLE options;
+
+    http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&default_http_proxy_io_config);
+
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    options = http_proxy_io_get_interface_description()->concrete_io_retrieveoptions(http_io);
+
+    ASSERT_IS_NOT_NULL(tlsio_destroy_option);
+
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_OPTION_HANDLER));
+
+    // act
+    tlsio_destroy_option(OPTION_UNDERLYING_IO_OPTIONS, TEST_OPTION_HANDLER);
+
+    // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
