@@ -68,6 +68,7 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(IO_SEND_RESULT, IO_SEND_RESULT_VALUES);
 #define TEST_SOCKETIO_INTERFACE_DESCRIPTION     (const IO_INTERFACE_DESCRIPTION*)0x4242
 #define TEST_IO_HANDLE                          (XIO_HANDLE)0x4243
 #define TEST_STRING_HANDLE                      (STRING_HANDLE)0x4244
+#define OPTION_UNDERLYING_IO_OPTIONS            "underlying_io_options"
 
 MOCK_FUNCTION_WITH_CODE(, void, test_on_io_open_complete, void*, context, IO_OPEN_RESULT, open_result)
 MOCK_FUNCTION_END();
@@ -1574,8 +1575,6 @@ TEST_FUNCTION(http_proxy_io_retrieve_options_calls_the_underlying_retrieve_optio
     // cleanup
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
-
-#define OPTION_UNDERLYING_IO_OPTIONS "underlying_io_options"
 
 /* GitHub PR 564 */
 TEST_FUNCTION(http_proxy_io_clone_option_succeeds)
