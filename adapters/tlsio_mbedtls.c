@@ -581,8 +581,6 @@ void tlsio_mbedtls_destroy(CONCRETE_IO_HANDLE tls_io)
 
         mbedtls_uninit(tls_io_instance);
 
-        xio_close(tls_io_instance->socket_io, NULL, NULL);
-
         if (tls_io_instance->socket_io_read_bytes != NULL)
         {
             free(tls_io_instance->socket_io_read_bytes);
