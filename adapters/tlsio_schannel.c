@@ -397,7 +397,6 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
         if (init_security_buffers[1].pvBuffer != NULL)
         {
             FreeContextBuffer(init_security_buffers[1].pvBuffer);
-
         }
     }
 }
