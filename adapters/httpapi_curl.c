@@ -333,7 +333,10 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
 #endif
         else
         {
-        	httpHandleData->config = *((mbedtls_ssl_config*)ssl_ctx);
+
+#if USE_MBEDTLS
+            httpHandleData->config = *((mbedtls_ssl_config*)ssl_ctx);
+#endif
             result = CURLE_OK;
         }
     }
