@@ -574,7 +574,6 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mbedtls_pk_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(xio_destroy(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
