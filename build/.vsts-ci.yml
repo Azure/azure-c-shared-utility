@@ -277,6 +277,10 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - script: |
+     chmod +x jenkins/linux_mbed_clang_buildonly.sh
+     ./jenkins/linux_mbed_clang_buildonly.sh
+     displayName: 'clang build'      
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
@@ -287,7 +291,7 @@ jobs:
       name: 'sdk-c--ubuntu-18'
   displayName: 'wolfssl'
   steps:
-  - script: |
+   - script: |
      cmake --version
      cc --version
      gcc --version
@@ -317,6 +321,10 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - script: |
+     chmod +x jenkins/linux_wolfssl_clang_buildonly.sh
+     ./jenkins/linux_wolfssl_clang_buildonly.sh
+     displayName: 'clang build'
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
@@ -356,6 +364,10 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
+  - script: |
+     chmod +x jenkins/linux_bear_clang_buildonly.sh
+     ./jenkins/linux_bear_clang_buildonly.sh
+     displayName: 'clang build'
 - job: windowsx64
   pool:
     vmImage: 'vs2017-win2016'
