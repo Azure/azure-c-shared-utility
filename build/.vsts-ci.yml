@@ -280,7 +280,7 @@ jobs:
   - script: |
      chmod +x jenkins/linux_mbed_clang_buildonly.sh
      ./jenkins/linux_mbed_clang_buildonly.sh
-     displayName: 'clang build'      
+    displayName: 'clang build'      
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
@@ -324,7 +324,7 @@ jobs:
   - script: |
      chmod +x jenkins/linux_wolfssl_clang_buildonly.sh
      ./jenkins/linux_wolfssl_clang_buildonly.sh
-     displayName: 'clang build'
+    displayName: 'clang build'
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
@@ -361,13 +361,13 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
   - script: |
      chmod +x jenkins/linux_bear_clang_buildonly.sh
      ./jenkins/linux_bear_clang_buildonly.sh
-     displayName: 'clang build'
+    displayName: 'clang build'
+  - script: sudo rm -rf $(Agent.BuildDirectory)/*
+    displayName: 'cleanup'
+    condition: always()
 - job: windowsx64
   pool:
     vmImage: 'vs2017-win2016'
