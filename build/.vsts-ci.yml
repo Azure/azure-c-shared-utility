@@ -291,7 +291,7 @@ jobs:
       name: 'sdk-c--ubuntu-18'
   displayName: 'wolfssl'
   steps:
-   - script: |
+  - script: |
      cmake --version
      cc --version
      gcc --version
