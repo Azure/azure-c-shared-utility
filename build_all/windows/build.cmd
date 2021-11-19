@@ -97,6 +97,14 @@ rem no error checking
 
 pushd %build-root%\cmake\%CMAKE_DIR%
 
+echo ***checking msbuild***
+where /q msbuild
+IF ERRORLEVEL 1 (
+echo ***setting VC paths***
+    IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsMSBuildCmd.bat" call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsMSBuildCmd.bat"
+)
+where msbuild
+
 if %MAKE_NUGET_PKG% == yes (
 	echo ***Running CMAKE for Win32 ***
 	cmake %build-root%
