@@ -254,6 +254,10 @@ jobs:
   displayName: 'linux_mbed'
   steps:
   - script: |
+     chmod +x jenkins/linux_mbed_clang_buildonly.sh
+     ./jenkins/linux_mbed_clang_buildonly.sh
+    displayName: 'clang build'      
+  - script: |
       if [ -f "jenkins/debian_c.sh" ]
       then
         sudo chmod 755 jenkins/linux_mbed.sh
@@ -277,10 +281,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: |
-     chmod +x jenkins/linux_mbed_clang_buildonly.sh
-     ./jenkins/linux_mbed_clang_buildonly.sh
-    displayName: 'clang build'      
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
@@ -291,6 +291,10 @@ jobs:
       name: 'sdk-c--ubuntu-18'
   displayName: 'wolfssl'
   steps:
+  - script: |
+     chmod +x jenkins/linux_wolfssl_clang_buildonly.sh
+     ./jenkins/linux_wolfssl_clang_buildonly.sh
+    displayName: 'clang build'
   - script: |
      cmake --version
      cc --version
@@ -321,10 +325,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: |
-     chmod +x jenkins/linux_wolfssl_clang_buildonly.sh
-     ./jenkins/linux_wolfssl_clang_buildonly.sh
-    displayName: 'clang build'
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
@@ -335,6 +335,10 @@ jobs:
       name: 'sdk-c--ubuntu-18'
   displayName: 'bearssl'
   steps:
+  - script: |
+     chmod +x jenkins/linux_bearssl_clang_buildonly.sh
+     ./jenkins/linux_bearssl_clang_buildonly.sh
+    displayName: 'clang build'
   - script: |
       LD_LIBRARY_PATH=/usr/local/lib
       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
@@ -361,10 +365,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: |
-     chmod +x jenkins/linux_bear_clang_buildonly.sh
-     ./jenkins/linux_bear_clang_buildonly.sh
-    displayName: 'clang build'
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
