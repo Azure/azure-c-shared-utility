@@ -248,7 +248,7 @@ jobs:
     condition: always()
 - job: linux_mbed
   variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-mbed"
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-mbed"
   pool: 
       name: 'sdk-c--ubuntu-18'
   displayName: 'linux_mbed'
@@ -286,7 +286,7 @@ jobs:
     condition: always()
 - job: wolfssl
   variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-wolfssl"
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-wolfssl"
   pool: 
       name: 'sdk-c--ubuntu-18'
   displayName: 'wolfssl'
@@ -330,7 +330,7 @@ jobs:
     condition: always()
 - job: bearssl
   variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-bearssl"
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-bearssl"
   pool: 
       name: 'sdk-c--ubuntu-18'
   displayName: 'bearssl'
