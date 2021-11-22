@@ -69,7 +69,7 @@ void gbnetwork_deinit(void)
     gbnetworkState = GBNETWORK_STATE_NOT_INIT;
 }
 
-void gbnetwork_resetMetrics()
+void gbnetwork_resetMetrics(void)
 {
     if (gbnetworkState != GBNETWORK_STATE_INIT)
     {
@@ -190,7 +190,7 @@ uint64_t gbnetwork_getNumSends(void)
     return result;
 }
 
-uint64_t gbnetwork_getBytesRecv()
+uint64_t gbnetwork_getBytesRecv(void)
 {
     uint64_t result;
 
@@ -212,7 +212,7 @@ uint64_t gbnetwork_getBytesRecv()
     return result;
 }
 
-uint64_t gbnetwork_getNumRecv()
+uint64_t gbnetwork_getNumRecv(void)
 {
     uint64_t result;
 

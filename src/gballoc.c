@@ -427,7 +427,7 @@ size_t gballoc_getAllocationCount(void)
     return result;
 }
 
-void gballoc_resetMetrics()
+void gballoc_resetMetrics(void)
 {
     /* Codes_SRS_GBALLOC_07_005: [ If gballoc was not initialized gballoc_reset Metrics shall do nothing.] */
     if (gballocState != GBALLOC_STATE_INIT)
