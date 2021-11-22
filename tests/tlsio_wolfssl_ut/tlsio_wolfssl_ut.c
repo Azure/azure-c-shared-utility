@@ -839,6 +839,26 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_succeed)
     //clean
     tlsio_wolfssl_destroy(io_handle);
 }
+
+TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_disable_fail)
+{
+    //arrange
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    umock_c_reset_all_calls();
+
+    //act
+    int debugLogEnable = false;
+    int test_result = tlsio_wolfssl_setoption(io_handle, "debugLog", &debugLogEnable);
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, test_result);
+
+    //clean
+    tlsio_wolfssl_destroy(io_handle);
+}
 #endif
 
 TEST_FUNCTION(tlsio_wolfssl_on_underlying_io_bytes_received_ctx_NULL_succeess)

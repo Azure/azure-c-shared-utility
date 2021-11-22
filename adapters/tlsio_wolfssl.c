@@ -1033,6 +1033,11 @@ int tlsio_wolfssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                     result = 0;
                 }
             }
+            else
+            {
+                LogError("tlsio WolfSSL layer does not support disabling debug_logs after they have been enabled.");
+                result = MU_FAILURE;
+            }
         }
 #endif // LIBWOLFSSL_VERSION_HEX >= 0x04000000
         else
