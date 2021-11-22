@@ -831,7 +831,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_succeed)
 
     //act
     int debugLogEnable = true;
-    int test_result = tlsio_wolfssl_setoption(io_handle, "debugLog", &debugLogEnable);
+    int test_result = tlsio_wolfssl_setoption(io_handle, "debug_log", &debugLogEnable);
 
     //assert
     ASSERT_ARE_EQUAL(int, 0, test_result);
@@ -851,7 +851,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_disable_fail)
 
     //act
     int debugLogEnable = false;
-    int test_result = tlsio_wolfssl_setoption(io_handle, "debugLog", &debugLogEnable);
+    int test_result = tlsio_wolfssl_setoption(io_handle, "debug_log", &debugLogEnable);
 
     //assert
     ASSERT_ARE_NOT_EQUAL(int, 0, test_result);
