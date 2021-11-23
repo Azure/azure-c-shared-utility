@@ -141,7 +141,9 @@ int singlylinkedlist_remove(SINGLYLINKEDLIST_HANDLE list, LIST_ITEM_HANDLE item)
             current_item = (LIST_ITEM_INSTANCE*)current_item->next;
         }
 
+#pragma warning(disable:6001) // Using uninitialized memory 'current_item'
         if (current_item == NULL)
+#pragma warning (default:6001)
         {
             /* Codes_SRS_LIST_01_025: [If the item item_handle is not found in the list, then singlylinkedlist_remove shall fail and return a non-zero value.] */
             result = MU_FAILURE;

@@ -223,7 +223,9 @@ void srw_lock_release_exclusive(SRW_LOCK_HANDLE handle)
     {
         if (!handle->doStatistics)
         {
+#pragma warning(disable:26110) // Warning C26110: Caller failing to hold lock 'handle->lock' before calling function 'ReleaseSRWLockExclusive'.
             ReleaseSRWLockExclusive(&handle->lock);
+#pragma warning (default:26110)
         }
         else
         {
@@ -234,7 +236,9 @@ void srw_lock_release_exclusive(SRW_LOCK_HANDLE handle)
 
             (void)QueryPerformanceCounter(&start);
             /*Codes_SRS_SRW_LOCK_02_010: [ srw_lock_release_exclusive shall call ReleaseSRWLockExclusive. ]*/
+#pragma warning(disable:26110) // Warning C26110: Caller failing to hold lock 'handle->lock' before calling function 'ReleaseSRWLockExclusive'.
             ReleaseSRWLockExclusive(&handle->lock);
+#pragma warning (default:26110)
             (void)QueryPerformanceCounter(&stop); /*measure release time*/
 
             (void)InterlockedAdd64(&handle->totalCounts_ReleaseSRWLockExclusive, (stop.QuadPart - start.QuadPart));

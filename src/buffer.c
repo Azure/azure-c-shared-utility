@@ -210,7 +210,7 @@ int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_
         if (handle->buffer == NULL)
         {
             /* Codes_SRS_BUFFER_07_030: [ if handle->buffer is NULL BUFFER_append_build shall allocate the a buffer of size bytes... ] */
-            if (BUFFER_safemalloc(handle, size) != 0)
+            if (BUFFER_safemalloc(handle, size) != 0 || handle->buffer == NULL)
             {
                 /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
                 LogError("Failure with BUFFER_safemalloc");
@@ -540,7 +540,7 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
         else
         {
             //put b2 ahead of b1: [b2][b1], return b1
-            if (b2->size == 0)
+            if (b2->size == 0 || (b1->size + b2->size) == 0)
             {
                 // do nothing
                 result = 0;

@@ -171,7 +171,7 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
     result = NULL;
     memset(&osvi, 0, sizeof(osvi));
     osvi.dwOSVersionInfoSize = sizeof(osvi);
-#pragma warning(disable:4996)
+#pragma warning(disable:4996 28159)
     if (GetVersionEx(&osvi))
     {
         DWORD product_type;
@@ -186,7 +186,7 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
         DWORD dwVersion = GetVersion();
         result = STRING_construct_sprintf("(native; WindowsProduct:Windows NT %d.%d; %s", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
     }
-#pragma warning(default:4996)
+#pragma warning(default:4996 28159)
 
     if (result == NULL)
     {

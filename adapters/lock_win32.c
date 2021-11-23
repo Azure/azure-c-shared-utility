@@ -78,7 +78,9 @@ LOCK_RESULT Unlock(LOCK_HANDLE handle)
     }
     else
     {
+#pragma warning(disable:26110) // Warning C26110: Caller failing to hold lock 'handle' before calling function 'ReleaseSRWLockExclusive'.
         ReleaseSRWLockExclusive((SRWLOCK*)handle);
+#pragma warning (default:26110)
         /* Codes_SRS_LOCK_10_009: [Unlock on success shall return LOCK_OK] */
         result = LOCK_OK;
 

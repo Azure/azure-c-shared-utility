@@ -240,6 +240,13 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     size_t currentPosition = 0;
     neededSize += (size == 0) ? (0) : ((((size - 1) / 3) + 1) * 4);
     neededSize += 1; /*+1 because \0 at the end of the string*/
+
+    if (neededSize == 0)
+    {
+        LogError("Azure_Base64_Encode:: Invalid size parameter.");
+        return NULL;
+    }
+
     /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Azure_Base64_Encode shall return NULL.]*/
     encoded = (char*)malloc(neededSize);
     if (encoded == NULL)
@@ -270,6 +277,12 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
                 source[currentPosition + 2] & 0x3F
             );
             currentPosition += 3;
+
+            if ((destinationPosition + 3) > neededSize)
+            {
+                LogError("Azure_Base64_Encode:: Invalid buffer size.");
+                return NULL;
+            }
             encoded[destinationPosition++] = c1;
             encoded[destinationPosition++] = c2;
             encoded[destinationPosition++] = c3;
@@ -278,6 +291,12 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
         }
         if (size - currentPosition == 2)
         {
+            if ((destinationPosition + 3) > neededSize)
+            {
+                LogError("Azure_Base64_Encode:: Invalid buffer size.");
+                return NULL;
+            }
+
             char c1 = base64char(source[currentPosition] >> 2);
             char c2 = base64char(
                 ((source[currentPosition] & 0x03) << 4) |
@@ -291,6 +310,12 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
         }
         else if (size - currentPosition == 1)
         {
+            if ((destinationPosition + 3) > neededSize)
+            {
+                LogError("Azure_Base64_Encode:: Invalid buffer size.");
+                return NULL;
+            }
+
             char c1 = base64char(source[currentPosition] >> 2);
             char c2 = base64b8(source[currentPosition] & 0x03);
             encoded[destinationPosition++] = c1;
