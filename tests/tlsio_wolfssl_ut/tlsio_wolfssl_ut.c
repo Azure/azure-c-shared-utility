@@ -826,15 +826,36 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_succeed)
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(wolfSSL_Debugging_ON()).SetReturn(0);
-    STRICT_EXPECTED_CALL(wolfSSL_SetLoggingCb(IGNORED_PTR_ARG)).SetReturn(0);
+    STRICT_EXPECTED_CALL(wolfSSL_Debugging_ON()).SetReturn(1);
+    STRICT_EXPECTED_CALL(wolfSSL_SetLoggingCb(IGNORED_PTR_ARG)).SetReturn(1);
 
     //act
     int debugLogEnable = true;
-    int test_result = tlsio_wolfssl_setoption(io_handle, "debugLog", &debugLogEnable);
+    int test_result = tlsio_wolfssl_setoption(io_handle, "debug_log", &debugLogEnable);
 
     //assert
     ASSERT_ARE_EQUAL(int, 0, test_result);
+
+    //clean
+    tlsio_wolfssl_destroy(io_handle);
+}
+
+TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_disable_fail)
+{
+    //arrange
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    umock_c_reset_all_calls();
+
+    //act
+    // Unlike standard option handlers, turning debug_log off is done via NULL instead of a non-zero int.
+    int* debugLogEnable = NULL;
+    int test_result = tlsio_wolfssl_setoption(io_handle, "debug_log", NULL);
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, test_result);
 
     //clean
     tlsio_wolfssl_destroy(io_handle);
