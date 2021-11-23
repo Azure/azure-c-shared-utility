@@ -389,12 +389,12 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
             }
         }
 
-        if (init_security_buffers[0].pvBuffer != null)
+        if (init_security_buffers[0].pvBuffer != NULL)
         {
             FreeContextBuffer(init_security_buffers[0].pvBuffer);
         }
 
-        if (init_security_buffers[1].pvBuffer != null)
+        if (init_security_buffers[1].pvBuffer != NULL)
         {
             FreeContextBuffer(init_security_buffers[1].pvBuffer);
         }
@@ -836,12 +836,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     break;
                 }
 
-                if (output_buffers[0].pvBuffer != null)
+                if (output_buffers[0].pvBuffer != NULL)
                 {
                     FreeContextBuffer(output_buffers[0].pvBuffer);
                 }
 
-                if (output_buffers[1].pvBuffer != null)
+                if (output_buffers[1].pvBuffer != NULL)
                 {
                     FreeContextBuffer(output_buffers[1].pvBuffer);
                 }
@@ -986,12 +986,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         }
                     }
 
-                    if (output_buffers[0].pvBuffer != null)
+                    if (output_buffers[0].pvBuffer != NULL)
                     {
                         FreeContextBuffer(output_buffers[0].pvBuffer);
                     }
 
-                    if (output_buffers[1].pvBuffer != null)
+                    if (output_buffers[1].pvBuffer != NULL)
                     {
                         FreeContextBuffer(output_buffers[1].pvBuffer);
                     }                    break;
