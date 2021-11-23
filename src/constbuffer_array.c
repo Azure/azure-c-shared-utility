@@ -18,7 +18,7 @@ typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG
     bool created_with_moved_memory;
     CONSTBUFFER_HANDLE* buffers;
 #ifdef _MSC_VER
-    /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
+    /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/library/b6fae073.aspx*/
 #pragma warning(disable:4200)
 #endif
     CONSTBUFFER_HANDLE buffers_memory[];
