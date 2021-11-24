@@ -75,6 +75,7 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
     /* Codes_SRS_BASE32_07_009: [ base32_encode_impl shall allocate the buffer to the size of the encoding value. ] */
     if (output_len == 0 || (result = (char*)malloc(output_len)) == NULL)
     {
+        result = NULL;
         LogError("Failure allocating output buffer");
     }
     else
