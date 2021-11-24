@@ -146,7 +146,7 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
                     break;
             }
 
-            if ((result_len + 7) > output_len)
+            if ((result_len + 8) > output_len)
             {
                 LogError("result buffer is to small");
                 return result;

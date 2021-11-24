@@ -310,7 +310,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
         }
         else if (size - currentPosition == 1)
         {
-            if ((destinationPosition + 3) > neededSize)
+            if ((destinationPosition + 4) > neededSize)
             {
                 LogError("Azure_Base64_Encode:: Invalid buffer size.");
                 return NULL;
