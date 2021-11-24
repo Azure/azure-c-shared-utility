@@ -72,10 +72,14 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
 
     // Allocate target buffer
     size_t output_len = base32_encoding_length(src_size) + 1;
-    /* Codes_SRS_BASE32_07_009: [ base32_encode_impl shall allocate the buffer to the size of the encoding value. ] */
-    if (output_len == 0 || (result = (char*)malloc(output_len)) == NULL)
+    if (output_len == 0)
     {
         result = NULL;
+        LogError("invalid src_size");
+    }
+    /* Codes_SRS_BASE32_07_009: [ base32_encode_impl shall allocate the buffer to the size of the encoding value. ] */
+    else if ((result = (char*)malloc(output_len)) == NULL)
+    {
         LogError("Failure allocating output buffer");
     }
     else
@@ -96,7 +100,7 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
 
         // Go through the source buffer sectioning off blocks of 5
         /* Codes_SRS_BASE32_07_010: [ base32_encode_impl shall look through source and separate each block into 5 bit chunks ] */
-        while (src_size >= 1 && result != NULL)
+        while (src_size >= 1)
         {
             pos1 = pos2 = pos3 = pos4 = pos5 = pos6 = pos7 = pos8 = 0;
             block_len = src_size > TARGET_BLOCK_SIZE ? TARGET_BLOCK_SIZE : src_size;
