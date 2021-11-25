@@ -85,7 +85,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                 }
                 else
                 {
-                    size_t all_buffers_array_end = (size_t)(all_buffers + malloc_size);
+                    size_t all_buffers_array_end = ((size_t)all_buffers) + malloc_size;
                     uint32_t current_index = 0;
 
                     /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_008: [ constbuffer_array_batcher_batch shall populate the first handle in the newly allocated handles array with the header buffer handle. ]*/
