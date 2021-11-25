@@ -497,7 +497,7 @@ int SHA512Input(SHA512Context *context,
         }
         else
         {
-            result = context->Corrupted = shaBadParam;
+            context->Corrupted = shaBadParam;
         }
     }
 
