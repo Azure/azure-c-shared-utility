@@ -564,9 +564,15 @@ int BUFFER_prepend(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
                 {
                     /* Codes_SRS_BUFFER_01_004: [ BUFFER_prepend concatenates handle1 onto handle2 without modifying handle1 and shall return zero on success. ]*/
                     // Append the BUFFER
+#ifdef _MSC_VER
+#pragma warning(disable:6386) // Using uninitialized memory 'curr'
+#endif
                     (void)memcpy(temp, b2->buffer, b2->size);
                     // start from b1->size to append b1
                     (void)memcpy(&temp[b2->size], b1->buffer, b1->size);
+#ifdef _MSC_VER
+#pragma warning (default:6386)
+#endif
                     free(b1->buffer);
                     b1->buffer = temp;
                     b1->size += b2->size;

@@ -278,9 +278,10 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
             );
             currentPosition += 3;
 
-            if ((destinationPosition + 3) > neededSize)
+            if ((destinationPosition + 4) > neededSize)
             {
                 LogError("Azure_Base64_Encode:: Invalid buffer size.");
+                free(encoded);
                 return NULL;
             }
             encoded[destinationPosition++] = c1;
@@ -291,9 +292,10 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
         }
         if (size - currentPosition == 2)
         {
-            if ((destinationPosition + 3) > neededSize)
+            if ((destinationPosition + 4) > neededSize)
             {
                 LogError("Azure_Base64_Encode:: Invalid buffer size.");
+                free(encoded);
                 return NULL;
             }
 
@@ -313,6 +315,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
             if ((destinationPosition + 4) > neededSize)
             {
                 LogError("Azure_Base64_Encode:: Invalid buffer size.");
+                free(encoded);
                 return NULL;
             }
 
@@ -325,7 +328,14 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
         }
 
         /*null terminating the string*/
+        if ((destinationPosition + 1) > neededSize)
+        {
+            LogError("Azure_Base64_Encode:: Invalid buffer size.");
+            free(encoded);
+            return NULL;
+        }
         encoded[destinationPosition] = '\0';
+
         /*Codes_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
         result = STRING_new_with_memory(encoded);
         if (result == NULL)

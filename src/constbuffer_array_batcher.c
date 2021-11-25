@@ -73,7 +73,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
 
                 /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_007: [ constbuffer_array_batcher_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
                 uint32_t all_buffers_array_size = total_buffer_count + 1;                
-                size_t malloc_size = sizeof(CONSTBUFFER_HANDLE) * ((size_t)all_buffers_array_size);             
+                size_t malloc_size = sizeof(CONSTBUFFER_HANDLE) * ((size_t)all_buffers_array_size);
                 if (malloc_size == 0)
                 {
                     LogError("malloc size is invalid");
@@ -85,6 +85,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                 }
                 else
                 {
+                    size_t all_buffers_array_end = all_buffers + malloc_size;
                     uint32_t current_index = 0;
 
                     /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_008: [ constbuffer_array_batcher_batch shall populate the first handle in the newly allocated handles array with the header buffer handle. ]*/
@@ -108,14 +109,14 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
 
                             (void)constbuffer_array_get_buffer_count(payloads[i], &buffer_count);
 
-                            for (j = 0; j < buffer_count; j++)
+                            for (j = 0; j < buffer_count && (all_buffers + current_index) < all_buffers_array_end; j++)
                             {
                                 all_buffers[current_index++] = constbuffer_array_get_buffer(payloads[i], j);
                             }
                         }
 
                         result = constbuffer_array_create(all_buffers, all_buffers_array_size);
-                        for (i = 0; i < all_buffers_array_size; i++)
+                        for (i = 0; i < all_buffers_array_size && (all_buffers + i) < all_buffers_array_end; i++)
                         {
                             CONSTBUFFER_DecRef(all_buffers[i]);
                         }
@@ -127,7 +128,6 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                         else
                         {
                             free(all_buffers);
-
                             goto all_ok;
                         }
                     }
