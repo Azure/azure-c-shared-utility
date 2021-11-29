@@ -88,9 +88,12 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                     size_t all_buffers_array_end = ((size_t)all_buffers) + malloc_size;
                     uint32_t current_index = 0;
 
-                    /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_008: [ constbuffer_array_batcher_batch shall populate the first handle in the newly allocated handles array with the header buffer handle. ]*/
-                    all_buffers[current_index] = CONSTBUFFER_CreateWithMoveMemory((void*)header_memory, sizeof(uint32_t) * (count + 1));
-                    if (all_buffers[current_index] == NULL)
+                    size_t move_memory_size = sizeof(uint32_t) * (count + 1);
+                    if (move_memory_size == 0)
+                    {
+                        LogError("CONSTBUFFER_CreateWithMoveMemory failed");
+                    }
+                    else if ((all_buffers[current_index] = CONSTBUFFER_CreateWithMoveMemory((void*)header_memory, move_memory_size)) == NULL)
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_010: [ If any error occurrs, constbuffer_array_batcher_batch shall fail and return NULL. ]*/
                         LogError("CONSTBUFFER_CreateWithMoveMemory failed");
@@ -109,14 +112,14 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
 
                             (void)constbuffer_array_get_buffer_count(payloads[i], &buffer_count);
 
-                            for (j = 0; j < buffer_count && (size_t)(all_buffers + current_index) < all_buffers_array_end; j++)
+                            for (j = 0; j < buffer_count && (size_t)(&all_buffers[current_index]) < all_buffers_array_end; j++)
                             {
                                 all_buffers[current_index++] = constbuffer_array_get_buffer(payloads[i], j);
                             }
                         }
 
                         result = constbuffer_array_create(all_buffers, all_buffers_array_size);
-                        for (i = 0; i < all_buffers_array_size && (size_t)(all_buffers + i) < all_buffers_array_end; i++)
+                        for (i = 0; i < all_buffers_array_size && (size_t)(&all_buffers[i]) < all_buffers_array_end; i++)
                         {
                             CONSTBUFFER_DecRef(all_buffers[i]);
                         }
