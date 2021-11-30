@@ -85,7 +85,6 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                 }
                 else
                 {
-                    size_t all_buffers_array_end = ((size_t)all_buffers) + malloc_size;
                     uint32_t current_index = 0;
 
                     size_t move_memory_size = sizeof(uint32_t) * (count + 1);
@@ -112,16 +111,28 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
 
                             (void)constbuffer_array_get_buffer_count(payloads[i], &buffer_count);
 
-                            for (j = 0; j < buffer_count && (size_t)(&all_buffers[current_index]) < all_buffers_array_end; j++)
+                            for (j = 0; j < buffer_count; j++)
                             {
+#ifdef _MSC_VER
+#pragma warning(disable:6386) // warning C6386: Buffer overrun while writing to 'all_buffers'
+#endif
                                 all_buffers[current_index++] = constbuffer_array_get_buffer(payloads[i], j);
+#ifdef _MSC_VER
+#pragma warning (default:6386)
+#endif
                             }
                         }
 
                         result = constbuffer_array_create(all_buffers, all_buffers_array_size);
-                        for (i = 0; i < all_buffers_array_size && (size_t)(&all_buffers[i]) < all_buffers_array_end; i++)
+                        for (i = 0; i < all_buffers_array_size; i++)
                         {
+#ifdef _MSC_VER
+#pragma warning(disable:6385) // warning C6385: Reading invalid data from 'all_buffers'
+#endif
                             CONSTBUFFER_DecRef(all_buffers[i]);
+#ifdef _MSC_VER
+#pragma warning (default:6385)
+#endif
                         }
 
                         if (result == NULL)
