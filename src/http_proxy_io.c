@@ -631,8 +631,14 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         case HTTP_PROXY_IO_STATE_WAITING_FOR_CONNECT_RESPONSE:
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_065: [ When bytes are received and the response to the CONNECT request was not yet received, the bytes shall be accumulated until a double new-line is detected. ]*/
-            unsigned char* new_receive_buffer = (unsigned char*)realloc(http_proxy_io_instance->receive_buffer, http_proxy_io_instance->receive_buffer_size + size + 1);
-            if (new_receive_buffer == NULL)
+            size_t malloc_size = http_proxy_io_instance->receive_buffer_size + size + 1;
+            unsigned char* new_receive_buffer = NULL;
+            if (malloc_size == 0)
+            {
+                LogError("Invalid memory size for received data");
+                indicate_open_complete_error_and_close(http_proxy_io_instance);
+            }
+            else if ((new_receive_buffer = (unsigned char*)realloc(http_proxy_io_instance->receive_buffer, malloc_size)) == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_067: [ If allocating memory for the buffered bytes fails, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
                 LogError("Cannot allocate memory for received data");

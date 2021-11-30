@@ -24,11 +24,12 @@ static size_t* get_delimiters_lengths(const char** delimiters, size_t n_delims)
 {
     size_t* result;
 
-    if ((result = malloc(sizeof(size_t) * n_delims)) == NULL)
+    size_t malloc_size = sizeof(size_t) * n_delims;
+    if ((result = malloc(malloc_size)) == NULL)
     {
         LogError("Failed to allocate array for delimiters lengths");
     }
-    else
+    else if (malloc_size > 0)
     {
         size_t i;
         for (i = 0; i < n_delims; i++)

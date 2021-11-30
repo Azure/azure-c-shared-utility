@@ -55,7 +55,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
 
                     (void)memcpy(double_hex_digit, uuid_string + i, 2);
 
-                    if (sscanf(double_hex_digit, "%02hhx", uuid_bytes + j) != 1)
+                    if (sscanf(double_hex_digit, "%02hhx", (short*)(uuid_bytes + j)) != 1)
                     {
                         // Codes_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
                         LogError("Failed decoding UUID string (%lu)", (unsigned long)i);
