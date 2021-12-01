@@ -637,14 +637,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             {
                 LogError("Invalid memory size for received data");
                 indicate_open_complete_error_and_close(http_proxy_io_instance);
-                break;
             }
             else if ((new_receive_buffer = (unsigned char*)realloc(http_proxy_io_instance->receive_buffer, malloc_size)) == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_067: [ If allocating memory for the buffered bytes fails, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
                 LogError("Cannot allocate memory for received data");
                 indicate_open_complete_error_and_close(http_proxy_io_instance);
-                break;
             }
             else
             {
@@ -653,12 +651,17 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 http_proxy_io_instance->receive_buffer_size += size;
             }
 
-            if (http_proxy_io_instance->receive_buffer_size >= 4 && http_proxy_io_instance->receive_buffer_size < malloc_size)
+            if (http_proxy_io_instance->receive_buffer_size >= 4)
             {
                 const char* request_end_ptr;
 
+#ifdef _MSC_VER
+#pragma warning(disable:6386) // Warning C6386: Buffer overrun while writing to 'http_proxy_io_instance->receive_buffer'
+#endif
                 http_proxy_io_instance->receive_buffer[http_proxy_io_instance->receive_buffer_size] = 0;
-
+#ifdef _MSC_VER
+#pragma warning (default:6386)
+#endif
                 /* Codes_SRS_HTTP_PROXY_IO_01_066: [ When a double new-line is detected the response shall be parsed in order to extract the status code. ]*/
                 if ((http_proxy_io_instance->receive_buffer_size >= 4) &&
                     ((request_end_ptr = strstr((const char*)http_proxy_io_instance->receive_buffer, "\r\n\r\n")) != NULL))
