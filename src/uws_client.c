@@ -1095,7 +1095,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 /* Codes_SRS_UWS_CLIENT_01_378: [ When on_underlying_io_bytes_received is called while the uws is OPENING, the received bytes shall be accumulated in order to attempt parsing the WebSocket Upgrade response. ]*/
                 unsigned char* new_received_bytes;
                 size_t realloc_size = uws_client->stream_buffer_count + size + 1;
-                if (realloc_size == 0 || (new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, realloc_size)) == NULL)
+                if (realloc_size <= 1 || (new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, realloc_size)) == NULL)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the on_ws_open_complete callback passed to uws_client_open_async with WS_OPEN_ERROR_NOT_ENOUGH_MEMORY. ]*/
                     indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_NOT_ENOUGH_MEMORY);
