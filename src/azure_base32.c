@@ -8,6 +8,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 #include "azure_c_shared_utility/azure_base32.h"
 
@@ -71,8 +72,8 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
     char* result;
 
     // Allocate target buffer
-    size_t output_len = base32_encoding_length(src_size) + 1;
-    if (output_len == 0)
+    size_t output_len = safe_add_size_t(base32_encoding_length(src_size), 1);
+    if (output_len == SIZE_MAX)
     {
         result = NULL;
         LogError("invalid src_size");

@@ -172,7 +172,7 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
     memset(&osvi, 0, sizeof(osvi));
     osvi.dwOSVersionInfoSize = sizeof(osvi);
 #ifdef _MSC_VER
-#pragma warning(disable:4996 28159)
+#pragma warning(disable:4996 28159)  // GetVersionEx is deprecated 
 #endif
     if (GetVersionEx(&osvi))
     {
