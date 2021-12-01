@@ -45,7 +45,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_003: [ Otherwise constbuffer_array_batcher_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
 
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_004: [ constbuffer_array_batcher_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
-            header_memory = malloc(sizeof(uint32_t) * (count + 1));
+            header_memory = malloc(sizeof(uint32_t) * ((size_t)count + 1));
             if (header_memory == NULL)
             {
                 /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_010: [ If any error occurrs, constbuffer_array_batcher_batch shall fail and return NULL. ]*/
@@ -87,7 +87,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                 {
                     uint32_t current_index = 0;
 
-                    size_t move_memory_size = sizeof(uint32_t) * (count + 1);
+                    size_t move_memory_size = sizeof(uint32_t) * ((size_t)count + 1);
                     if (move_memory_size == 0)
                     {
                         LogError("CONSTBUFFER_CreateWithMoveMemory failed");

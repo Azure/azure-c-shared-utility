@@ -23,7 +23,7 @@ typedef struct STRING_TOKEN_TAG
 static size_t* get_delimiters_lengths(const char** delimiters, size_t n_delims)
 {
     size_t malloc_size = sizeof(size_t) * n_delims;
-    size_t result[] = malloc(malloc_size);
+    size_t* result = malloc(malloc_size);
     if (result == NULL)
     {
         LogError("Failed to allocate array for delimiters lengths");
@@ -41,15 +41,9 @@ static size_t* get_delimiters_lengths(const char** delimiters, size_t n_delims)
                 result = NULL;
                 break;
             }
-            else
+            else if (((i+1) * sizeof(size_t)) < malloc_size)
             {
-#ifdef _MSC_VER
-//#pragma warning(disable:6386) // warning C6386: Buffer overrun while writing to 'result'
-#endif
                 result[i] = strlen(delimiters[i]);
-#ifdef _MSC_VER
-//#pragma warning (default:6386)
-#endif
             }
         }
     }
