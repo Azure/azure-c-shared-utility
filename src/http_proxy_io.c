@@ -651,7 +651,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 http_proxy_io_instance->receive_buffer_size += size;
             }
 
-            if (http_proxy_io_instance->receive_buffer_size >= 4)
+            if (http_proxy_io_instance->receive_buffer_size >= 4 && http_proxy_io_instance->receive_buffer_size < malloc_size)
             {
                 const char* request_end_ptr;
 
