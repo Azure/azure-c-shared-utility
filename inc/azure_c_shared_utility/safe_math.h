@@ -8,6 +8,6 @@
 #define SIZE_MAX ((size_t)~(size_t)0)
 #endif
 
-#define safe_add_size_t(size_t a, size_t b) (a < SIZE_MAX - b) ? a + b : SIZE_MAX;
+#define safe_add_size_t(a, b) (a < SIZE_MAX - b) ? a + b : SIZE_MAX;
 
 #endif // SAFE_MATH_H
