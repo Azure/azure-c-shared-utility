@@ -245,7 +245,7 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
         }
         else
         {
-            DWORD supportedProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | // TLS 1.0 is support for back-compat reasons (https://docs.microsoft.com/en-us/azure/iot-fundamentals/iot-security-deployment)
+            DWORD supportedProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | // TLS 1.0 is support for back-compat reasons (https://docs.microsoft.com/azure/iot-fundamentals/iot-security-deployment)
                 WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 |
                 WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
 
