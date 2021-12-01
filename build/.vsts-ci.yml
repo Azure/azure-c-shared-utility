@@ -23,11 +23,11 @@ jobs:
     displayName: 'build'
 - job: windowsx86
   pool:
-    vmImage: 'vs2017-win2016'
+    name: 'sdk-c--win-vs2017'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd)
     displayName: 'build'
     env:
@@ -80,11 +80,11 @@ jobs:
     condition: always()
 - job: windowsdynamic
   pool:
-    vmImage: 'vs2017-win2016'
+    name: 'sdk-c--win-vs2017'
   steps:
   - script: |
      if exist jenkins\windows_c_build_as_dynamic.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c_build_as_dynamic.cmd)
     displayName: 'build'
     env:
@@ -370,12 +370,12 @@ jobs:
     condition: always()
 - job: windowsx64
   pool:
-    vmImage: 'vs2017-win2016'
+    name: 'sdk-c--win-vs2017'
   displayName: 'windowsx64'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd --platform x64)
     displayName: 'build'
     env:
