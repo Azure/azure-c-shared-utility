@@ -25,6 +25,7 @@
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/map.h"
 #include "azure_c_shared_utility/shared_util_options.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 static const char* UWS_CLIENT_OPTIONS = "uWSClientOptions";
 
