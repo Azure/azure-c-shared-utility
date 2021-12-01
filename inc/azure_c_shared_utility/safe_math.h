@@ -10,4 +10,6 @@
 
 #define safe_add_size_t(a, b) (((a) < (SIZE_MAX - (b))) ? ((a) + (b)) : SIZE_MAX)
 
+#define safe_multiply_size_t(a, b) (((a) == 0 || (b) == 0) ? 0 : (((SIZE_MAX / (a)) >= (b)) ? (a) * (b) : SIZE_MAX))
+
 #endif // SAFE_MATH_H

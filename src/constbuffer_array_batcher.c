@@ -6,6 +6,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/constbuffer_array_batcher.h"
 #include "azure_c_shared_utility/memory_data.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDLE* payloads, uint32_t count)
 {
@@ -72,9 +73,10 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                 }
 
                 /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_007: [ constbuffer_array_batcher_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
-                uint32_t all_buffers_array_size = total_buffer_count + 1;                
-                size_t malloc_size = sizeof(CONSTBUFFER_HANDLE) * ((size_t)all_buffers_array_size);
-                if (malloc_size == 0)
+                size_t all_buffers_array_size = safe_add_size_t(total_buffer_count, 1);
+                size_t malloc_size = safe_multiply_size_t(sizeof(CONSTBUFFER_HANDLE), (all_buffers_array_size));
+
+                if (malloc_size == SIZE_MAX)
                 {
                     LogError("malloc size is invalid");
                 }
@@ -87,8 +89,8 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                 {
                     uint32_t current_index = 0;
 
-                    size_t move_memory_size = sizeof(uint32_t) * ((size_t)count + 1);
-                    if (move_memory_size == 0)
+                    size_t move_memory_size = safe_multiply_size_t(sizeof(uint32_t), ((size_t)count + 1));
+                    if (move_memory_size == SIZE_MAX)
                     {
                         LogError("CONSTBUFFER_CreateWithMoveMemory failed");
                     }
@@ -123,7 +125,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                             }
                         }
 
-                        result = constbuffer_array_create(all_buffers, all_buffers_array_size);
+                        result = constbuffer_array_create(all_buffers, (uint32_t)all_buffers_array_size);
                         for (i = 0; i < all_buffers_array_size; i++)
                         {
 #ifdef _MSC_VER
@@ -142,6 +144,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                         else
                         {
                             free(all_buffers);
+
                             goto all_ok;
                         }
                     }
