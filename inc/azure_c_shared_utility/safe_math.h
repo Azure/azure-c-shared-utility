@@ -8,7 +8,7 @@
 #define SIZE_MAX ((size_t)((size_t)~(size_t)0))
 #endif
 
-#define safe_add_size_t(a, b) (((size_t)(a) < (size_t)(SIZE_MAX - (size_t)(b))) ? ((size_t)(a) + (size_t)(b)) : SIZE_MAX)
+#define safe_add_size_t(a, b) ((((size_t)(a)) < ((size_t)(SIZE_MAX - ((size_t)(b))))) ? ((size_t)(a) + (size_t)(b)) : SIZE_MAX)
 
 #define safe_subtract_size_t(a, b) (((a) >= (b)) ? ((size_t)(a) - (size_t)(b)) : SIZE_MAX)
 
