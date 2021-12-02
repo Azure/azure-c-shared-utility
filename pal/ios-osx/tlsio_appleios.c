@@ -15,7 +15,8 @@
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/tlsio_options.h"
-
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreFoundation/CFError.h>
@@ -608,12 +609,12 @@ static void dowork_poll_socket(TLS_IO_INSTANCE* tls_io_instance)
     CFStreamCreatePairWithSocketToHost(NULL, tls_io_instance->hostname, tls_io_instance->port, &tls_io_instance->sockRead, &tls_io_instance->sockWrite);
     if (tls_io_instance->sockRead != NULL && tls_io_instance->sockWrite != NULL)
     {
-        
+
         CFStringRef keys[1] = {kCFStreamPropertySocketSecurityLevel};
         CFStringRef values[1] = {kCFStreamSocketSecurityLevelNegotiatedSSL};
 
         CFDictionaryRef tls_io_dictionary = CFDictionaryCreate(NULL , (void *)keys , (void *)values , 1,  NULL , NULL);
-        
+
         if (CFReadStreamSetProperty(tls_io_instance->sockRead, kCFStreamPropertySSLSettings, tls_io_dictionary))
 
         {
@@ -725,14 +726,39 @@ static int tlsio_appleios_setoption(CONCRETE_IO_HANDLE tls_io, const char* optio
         /* Codes_SRS_TLSIO_30_122: [ If the value parameter is NULL, tlsio_appleios_setoption shall do nothing except log an error and return FAILURE. ]*/
         /* Codes_SRS_TLSIO_OPENSSL_COMPACT_30_520 [ The tlsio_setoption shall do nothing and return FAILURE. ]*/
         TLSIO_OPTIONS_RESULT options_result = tlsio_options_set(&tls_io_instance->options, optionName, value);
-        if (options_result != TLSIO_OPTIONS_RESULT_SUCCESS)
+        if (options_result == TLSIO_OPTIONS_RESULT_SUCCESS)
         {
-            LogError("Failed tlsio_options_set");
-            result = __FAILURE__;
+            result = 0;
+        }
+        else if (options_result == TLSIO_OPTIONS_RESULT_NOT_HANDLED)
+        {
+            /* Pass through */
+            if (strcmp(optionName, "tcp_nodelay") == 0)
+            {
+                CFDataRef inputRawData = CFReadStreamCopyProperty(tls_io_instance->sockRead, kCFStreamPropertySocketNativeHandle);
+                CFSocketNativeHandle inputRawHandle;
+                CFDataGetBytes(inputRawData, CFRangeMake(0, sizeof(CFSocketNativeHandle)), (UInt8 *)&inputRawHandle);
+                CFRelease(inputRawData);
+                int errInput = setsockopt(inputRawHandle, IPPROTO_TCP, TCP_NODELAY, value, sizeof(int));
+                if (errInput != 0)
+                {
+                    LogError("Failed to set TCP_NODELAY option on socket");
+                    result = __FAILURE__;
+                }
+                else
+                {
+                    result = 0;
+                }
+            }
+            else
+            {
+                result = __FAILURE__;
+            }
         }
         else
         {
-            result = 0;
+            LogError("Failed tlsio_options_set");
+            result = __FAILURE__;
         }
     }
     return result;
