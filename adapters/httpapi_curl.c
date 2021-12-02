@@ -297,6 +297,10 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             result = CURLE_SSL_CERTPROBLEM;
         }
 #elif USE_MBEDTLS
+        
+        // save ssl context
+        httpHandleData->config = *((mbedtls_ssl_config*)ssl_ctx);
+         
         // set device cert and key
         if (
             (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
@@ -333,10 +337,6 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
 #endif
         else
         {
-
-#if USE_MBEDTLS
-            httpHandleData->config = *((mbedtls_ssl_config*)ssl_ctx);
-#endif
             result = CURLE_OK;
         }
     }
