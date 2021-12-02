@@ -10,6 +10,7 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 static const char hexToASCII[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
@@ -297,8 +298,18 @@ STRING_HANDLE STRING_new_JSON(const char* source)
         }
         else
         {
-            size_t malloc_len = vlen + 5 * nControlCharacters + nEscapeCharacters + 3;
-            if ((result = (STRING*)malloc(sizeof(STRING))) == NULL)
+            //size_t malloc_len = vlen + 5 * nControlCharacters + nEscapeCharacters + 3;
+            size_t malloc_len = safe_multiply_size_t(5, nControlCharacters);
+            malloc_len = safe_add_size_t(malloc_len, vlen);
+            malloc_len = safe_add_size_t(malloc_len, nEscapeCharacters);
+            malloc_len = safe_add_size_t(malloc_len, 3);
+
+            if (malloc_len == SIZE_MAX)
+            {
+                result = NULL;
+                LogError("malloc len overflow");
+            }
+            else if ((result = (STRING*)malloc(sizeof(STRING))) == NULL)
             {
                 /*Codes_SRS_STRING_02_021: [If the complete JSON representation cannot be produced, then STRING_new_JSON shall fail and return NULL.] */
                 LogError("malloc json failure");

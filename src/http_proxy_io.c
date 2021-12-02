@@ -12,6 +12,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/http_proxy_io.h"
 #include "azure_c_shared_utility/azure_base64.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
 
@@ -631,9 +632,11 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         case HTTP_PROXY_IO_STATE_WAITING_FOR_CONNECT_RESPONSE:
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_065: [ When bytes are received and the response to the CONNECT request was not yet received, the bytes shall be accumulated until a double new-line is detected. ]*/
-            size_t malloc_size = http_proxy_io_instance->receive_buffer_size + size + 1;
+            // size_t malloc_size = http_proxy_io_instance->receive_buffer_size + size + 1;
+            size_t realloc_size = safe_add_size_t(safe_add_size_t(http_proxy_io_instance->receive_buffer_size, size), 1);
+
             unsigned char* new_receive_buffer = NULL;
-            if (malloc_size == 0)
+            if (malloc_size == SIZE_MAX)
             {
                 LogError("Invalid memory size for received data");
                 indicate_open_complete_error_and_close(http_proxy_io_instance);
