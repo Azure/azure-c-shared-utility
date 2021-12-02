@@ -636,12 +636,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             size_t realloc_size = safe_add_size_t(safe_add_size_t(http_proxy_io_instance->receive_buffer_size, size), 1);
 
             unsigned char* new_receive_buffer = NULL;
-            if (malloc_size == SIZE_MAX)
+            if (realloc_size == SIZE_MAX)
             {
                 LogError("Invalid memory size for received data");
                 indicate_open_complete_error_and_close(http_proxy_io_instance);
             }
-            else if ((new_receive_buffer = (unsigned char*)realloc(http_proxy_io_instance->receive_buffer, malloc_size)) == NULL)
+            else if ((new_receive_buffer = (unsigned char*)realloc(http_proxy_io_instance->receive_buffer, realloc_size)) == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_067: [ If allocating memory for the buffered bytes fails, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
                 LogError("Cannot allocate memory for received data");

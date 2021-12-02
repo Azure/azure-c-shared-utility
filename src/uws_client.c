@@ -1100,7 +1100,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 //size_t realloc_size = uws_client->stream_buffer_count + size + 1; **using safe int**
                 uws_client->stream_buffer_size = safe_add_size_t(safe_add_size_t(uws_client->stream_buffer_count, size), 1);
                 if (uws_client->stream_buffer_size == SIZE_MAX || 
-                    (new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, realloc_size)) == NULL)
+                    (new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, uws_client->stream_buffer_size)) == NULL)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the on_ws_open_complete callback passed to uws_client_open_async with WS_OPEN_ERROR_NOT_ENOUGH_MEMORY. ]*/
                     indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_NOT_ENOUGH_MEMORY);
