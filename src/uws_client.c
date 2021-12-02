@@ -1242,7 +1242,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         {
                             /* Codes_SRS_UWS_CLIENT_01_165: [ If 126, the following 2 bytes interpreted as a 16-bit unsigned integer are the payload length. ]*/
                             needed_bytes += 2;
-                            if (uws_client->stream_buffer_count >= needed_bytes)
+                            if (uws_client->stream_buffer_count >= needed_bytes && uws_client->stream_buffer_size >= 3)
                             {
                                 /* Codes_SRS_UWS_CLIENT_01_167: [ Multibyte length quantities are expressed in network byte order. ]*/
                                 length = ((size_t)(uws_client->stream_buffer[2]) << 8) + (size_t)uws_client->stream_buffer[3];
@@ -1268,11 +1268,16 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             needed_bytes += 8;
                             if (uws_client->stream_buffer_count >= needed_bytes)
                             {
-                                if (uws_client->stream_buffer_size < 10 || (uws_client->stream_buffer[2] & 0x80) != 0)
+                                if (uws_client->stream_buffer_size < 10 || && uws_client->stream_buffer_size < 2 || (uws_client->stream_buffer[2] & 0x80) != 0)
                                 {
                                     LogError("Bad frame: received a 64 bit length frame with the highest bit set");
 
                                     /* Codes_SRS_UWS_CLIENT_01_419: [ If there is an error decoding the WebSocket frame, an error shall be indicated by calling the on_ws_error callback with WS_ERROR_BAD_FRAME_RECEIVED. ]*/
+                                    indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
+                                    has_error = 1;
+                                }
+                                else if (&& uws_client->stream_buffer_size < 9)
+                                {
                                     indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
                                     has_error = 1;
                                 }
