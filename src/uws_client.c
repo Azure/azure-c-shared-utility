@@ -1221,12 +1221,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                     /* Codes_SRS_UWS_CLIENT_01_277: [ To receive WebSocket data, an endpoint listens on the underlying network connection. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_278: [ Incoming data MUST be parsed as WebSocket frames as defined in Section 5.2. ]*/
-                    if (uws_client->stream_buffer_count >= needed_bytes && uws_client->stream_buffer_size >= 2)
+                    if (uws_client->stream_buffer_count >= needed_bytes)
                     {
                         unsigned char has_error = 0;
 
                         /* Codes_SRS_UWS_CLIENT_01_160: [ Defines whether the "Payload data" is masked. ]*/
-                        if ((uws_client->stream_buffer[1] & 0x80) != 0)
+                        if (uws_client->stream_buffer_size < 2 || (uws_client->stream_buffer[1] & 0x80) != 0)
                         {
                             /* Codes_SRS_UWS_CLIENT_01_144: [ A client MUST close a connection if it detects a masked frame. ]*/
                             /* Codes_SRS_UWS_CLIENT_01_145: [ In this case, it MAY use the status code 1002 (protocol error) as defined in Section 7.4.1. (These rules might be relaxed in a future specification.) ]*/
@@ -1268,7 +1268,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             needed_bytes += 8;
                             if (uws_client->stream_buffer_count >= needed_bytes)
                             {
-                                if ((uws_client->stream_buffer[2] & 0x80) != 0)
+                                if (uws_client->stream_buffer_size < 10 || (uws_client->stream_buffer[2] & 0x80) != 0)
                                 {
                                     LogError("Bad frame: received a 64 bit length frame with the highest bit set");
 
