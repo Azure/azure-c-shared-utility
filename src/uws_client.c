@@ -1242,7 +1242,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         {
                             /* Codes_SRS_UWS_CLIENT_01_165: [ If 126, the following 2 bytes interpreted as a 16-bit unsigned integer are the payload length. ]*/
                             needed_bytes += 2;
-                            if (uws_client->stream_buffer_count >= needed_bytes && uws_client->stream_buffer_size >= 3)
+                            if (uws_client->stream_buffer_count >= needed_bytes && uws_client->stream_buffer_size >= 4)
                             {
                                 /* Codes_SRS_UWS_CLIENT_01_167: [ Multibyte length quantities are expressed in network byte order. ]*/
                                 length = ((size_t)(uws_client->stream_buffer[2]) << 8) + (size_t)uws_client->stream_buffer[3];
