@@ -1280,7 +1280,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                     indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
                                     has_error = 1;
                                 }
-                                else if (uws_client->stream_buffer_size < 9)  // validate access upto stream_buffer[9] below
+                                else if (uws_client->stream_buffer_size <= 9)  // validate access upto stream_buffer[9] below
                                 {
                                     indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
                                     has_error = 1;
