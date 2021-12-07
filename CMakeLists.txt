@@ -375,6 +375,7 @@ set(source_h_files
     ./inc/azure_c_shared_utility/tlsio.h
     ./inc/azure_c_shared_utility/optionhandler.h
     ./inc/azure_c_shared_utility/memory_data.h
+    ./inc/azure_c_shared_utility/safe_math.h    
     ${LOGGING_STACKTRACE_H_FILE}
 )
 
