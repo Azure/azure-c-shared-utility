@@ -835,8 +835,18 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     }
                     break;
                 }
-                FreeContextBuffer(output_buffers[0].pvBuffer);
-                FreeContextBuffer(output_buffers[1].pvBuffer);
+
+                if (output_buffers[0].pvBuffer != NULL)
+                {
+                    FreeContextBuffer(output_buffers[0].pvBuffer);
+                    output_buffers[0].pvBuffer = NULL;
+                }
+
+                if (output_buffers[1].pvBuffer != NULL)
+                {
+                    FreeContextBuffer(output_buffers[1].pvBuffer);
+                    output_buffers[1].pvBuffer = NULL;
+                }
             }
             else if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
             {
@@ -977,8 +987,18 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             }
                         }
                     }
-                    FreeContextBuffer(output_buffers[0].pvBuffer);
-                    FreeContextBuffer(output_buffers[1].pvBuffer);
+
+                    if (output_buffers[0].pvBuffer != NULL)
+                    {
+                        FreeContextBuffer(output_buffers[0].pvBuffer);
+                        output_buffers[0].pvBuffer = NULL;
+                    }
+
+                    if (output_buffers[1].pvBuffer != NULL)
+                    {
+                        FreeContextBuffer(output_buffers[1].pvBuffer);
+                        output_buffers[1].pvBuffer = NULL;
+                    }
                     break;
                 }
 
