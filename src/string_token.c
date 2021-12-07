@@ -34,7 +34,7 @@ static size_t* get_delimiters_lengths(const char** delimiters, size_t n_delims)
     {
         LogError("Failed to allocate array for delimiters lengths");
     }
-    else if (malloc_size > 0)
+    else
     {
         size_t i;
         for (i = 0; i < n_delims; i++)

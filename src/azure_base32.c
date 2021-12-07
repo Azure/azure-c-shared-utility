@@ -149,9 +149,10 @@ static char* base32_encode_impl(const unsigned char* source, size_t src_size)
 
             if ((result_len + 8) > output_len)
             {
-                LogError("result buffer is to small");
+                LogError("result buffer is too small");
                 free(result);
-                return NULL;
+                result = NULL;
+                break;
             }
 
             /* Codes_SRS_BASE32_07_011: [ base32_encode_impl shall then map the 5 bit chunks into one of the BASE32 values (a-z,2,3,4,5,6,7) values. ] */

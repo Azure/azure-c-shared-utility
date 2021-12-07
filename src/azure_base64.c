@@ -236,6 +236,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
 {
     STRING_HANDLE result;
     size_t neededSize = 0;
+    bool isBufferOverflow = false;
     char* encoded;
     size_t currentPosition = 0;
     neededSize += (size == 0) ? (0) : ((((size - 1) / 3) + 1) * 4);
@@ -243,13 +244,11 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
 
     if (neededSize == 0)
     {
+        result = NULL;
         LogError("Azure_Base64_Encode:: Invalid size parameter.");
-        return NULL;
     }
-
     /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Azure_Base64_Encode shall return NULL.]*/
-    encoded = (char*)malloc(neededSize);
-    if (encoded == NULL)
+    else if ((encoded = (char*)malloc(neededSize)) == NULL)
     {
         result = NULL;
         LogError("Azure_Base64_Encode:: Allocation failed.");
@@ -281,8 +280,8 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
             if ((destinationPosition + 4) > neededSize)
             {
                 LogError("Azure_Base64_Encode:: Invalid buffer size.");
-                free(encoded);
-                return NULL;
+                isBufferOverflow = true;
+                break;
             }
             encoded[destinationPosition++] = c1;
             encoded[destinationPosition++] = c2;
@@ -290,58 +289,74 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
             encoded[destinationPosition++] = c4;
 
         }
-        if (size - currentPosition == 2)
+
+        if (!isBufferOverflow && size - currentPosition == 2)
         {
             if ((destinationPosition + 4) > neededSize)
             {
                 LogError("Azure_Base64_Encode:: Invalid buffer size.");
-                free(encoded);
-                return NULL;
+                isBufferOverflow = true;
             }
-
-            char c1 = base64char(source[currentPosition] >> 2);
-            char c2 = base64char(
-                ((source[currentPosition] & 0x03) << 4) |
+            else
+            {
+                char c1 = base64char(source[currentPosition] >> 2);
+                char c2 = base64char(
+                    ((source[currentPosition] & 0x03) << 4) |
                     (source[currentPosition + 1] >> 4)
-            );
-            char c3 = base64b16(source[currentPosition + 1] & 0x0F);
-            encoded[destinationPosition++] = c1;
-            encoded[destinationPosition++] = c2;
-            encoded[destinationPosition++] = c3;
-            encoded[destinationPosition++] = '=';
+                );
+                char c3 = base64b16(source[currentPosition + 1] & 0x0F);
+                encoded[destinationPosition++] = c1;
+                encoded[destinationPosition++] = c2;
+                encoded[destinationPosition++] = c3;
+                encoded[destinationPosition++] = '=';
+            }
         }
-        else if (size - currentPosition == 1)
+        else if (!isBufferOverflow && size - currentPosition == 1)
         {
             if ((destinationPosition + 4) > neededSize)
             {
                 LogError("Azure_Base64_Encode:: Invalid buffer size.");
-                free(encoded);
-                return NULL;
+                isBufferOverflow = true;
             }
-
-            char c1 = base64char(source[currentPosition] >> 2);
-            char c2 = base64b8(source[currentPosition] & 0x03);
-            encoded[destinationPosition++] = c1;
-            encoded[destinationPosition++] = c2;
-            encoded[destinationPosition++] = '=';
-            encoded[destinationPosition++] = '=';
+            else
+            {
+                char c1 = base64char(source[currentPosition] >> 2);
+                char c2 = base64b8(source[currentPosition] & 0x03);
+                encoded[destinationPosition++] = c1;
+                encoded[destinationPosition++] = c2;
+                encoded[destinationPosition++] = '=';
+                encoded[destinationPosition++] = '=';
+            }
         }
 
         /*null terminating the string*/
-        if ((destinationPosition + 1) > neededSize)
+        if (!isBufferOverflow)
         {
-            LogError("Azure_Base64_Encode:: Invalid buffer size.");
-            free(encoded);
-            return NULL;
+            if ((destinationPosition + 1) > neededSize)
+            {
+                LogError("Azure_Base64_Encode:: Invalid buffer size.");
+                isBufferOverflow = true;
+            }
+            else
+            {
+                encoded[destinationPosition] = '\0';
+            }
         }
-        encoded[destinationPosition] = '\0';
 
-        /*Codes_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
-        result = STRING_new_with_memory(encoded);
-        if (result == NULL)
+        if (isBufferOverflow)
         {
             free(encoded);
-            LogError("Azure_Base64_Encode:: Allocation failed for return value.");
+            result = NULL;
+        }
+        else
+        {
+            /*Codes_SRS_BASE64_06_007: [Otherwise Azure_Base64_Encode shall return a pointer to STRING, that string contains the base 64 encoding of input.]*/
+            result = STRING_new_with_memory(encoded);
+            if (result == NULL)
+            {
+                free(encoded);
+                LogError("Azure_Base64_Encode:: Allocation failed for return value.");
+            }
         }
     }
     return result;

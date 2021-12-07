@@ -92,7 +92,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                     size_t move_memory_size = safe_multiply_size_t(sizeof(uint32_t), ((size_t)count + 1));
                     if (move_memory_size == SIZE_MAX)
                     {
-                        LogError("CONSTBUFFER_CreateWithMoveMemory failed");
+                        LogError("invalid malloc size in CONSTBUFFER_CreateWithMoveMemory");
                     }
                     else if ((all_buffers[current_index] = CONSTBUFFER_CreateWithMoveMemory((void*)header_memory, move_memory_size)) == NULL)
                     {

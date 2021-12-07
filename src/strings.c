@@ -328,7 +328,7 @@ STRING_HANDLE STRING_new_JSON(const char* source)
                 result->s[pos++] = '"';
                 for (i = 0; i < vlen; i++)
                 {
-                    if (source[i] <= 0x1F && (pos + 6) <= malloc_len)
+                    if ((source[i] <= 0x1F) && ((pos + 6) <= malloc_len))
                     {
                         /*Codes_SRS_STRING_02_019: [If the character code is less than 0x20 then it shall be represented as \u00xx, where xx is the hex representation of the character code.]*/
                         result->s[pos++] = '\\';
@@ -338,19 +338,19 @@ STRING_HANDLE STRING_new_JSON(const char* source)
                         result->s[pos++] = hexToASCII[(source[i] & 0xF0) >> 4]; /*high nibble*/
                         result->s[pos++] = hexToASCII[source[i] & 0x0F]; /*low nibble*/
                     }
-                    else if (source[i] == '"' && (pos + 2) <= malloc_len)
+                    else if ((source[i] == '"') && ((pos + 2) <= malloc_len))
                     {
                         /*Codes_SRS_STRING_02_016: [If the character is " (quote) then it shall be repsented as \".] */
                         result->s[pos++] = '\\';
                         result->s[pos++] = '"';
                     }
-                    else if (source[i] == '\\' && (pos + 2) <= malloc_len)
+                    else if ((source[i] == '\\') && ((pos + 2) <= malloc_len))
                     {
                         /*Codes_SRS_STRING_02_017: [If the character is \ (backslash) then it shall represented as \\.] */
                         result->s[pos++] = '\\';
                         result->s[pos++] = '\\';
                     }
-                    else if (source[i] == '/' && (pos + 2) <= malloc_len)
+                    else if ((source[i] == '/') && ((pos + 2) <= malloc_len))
                     {
                         /*Codes_SRS_STRING_02_018: [If the character is / (slash) then it shall be represented as \/.] */
                         result->s[pos++] = '\\';
@@ -361,14 +361,27 @@ STRING_HANDLE STRING_new_JSON(const char* source)
                         /*Codes_SRS_STRING_02_013: [The string shall copy the characters of source "as they are" (until the '\0' character) with the following exceptions:] */
                         result->s[pos++] = source[i];
                     }
+                    else
+                    {
+                        free(result->s);
+                        free(result);
+                        result = NULL;
+                        break;
+                    }
                 }
 
-                if ((pos + 2) <= malloc_len)
+                if ((pos + 1) < malloc_len)
                 {
                     /*Codes_SRS_STRING_02_020: [The string shall end with " (quote).] */
                     result->s[pos++] = '"';
                     /*zero terminating it*/
                     result->s[pos] = '\0';
+                }
+                else
+                {
+                    free(result->s);
+                    free(result);
+                    result = NULL;
                 }
             }
         }
