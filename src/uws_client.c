@@ -1272,7 +1272,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             needed_bytes += 8;
                             if (uws_client->stream_buffer_count >= needed_bytes)
                             {
-                                if (uws_client->stream_buffer_size < 2 || (uws_client->stream_buffer[2] & 0x80) != 0)
+                                if (uws_client->stream_buffer_size <= 2 || (uws_client->stream_buffer[2] & 0x80) != 0)
                                 {
                                     LogError("Bad frame: received a 64 bit length frame with the highest bit set");
 

@@ -47,6 +47,13 @@ static size_t* get_delimiters_lengths(const char** delimiters, size_t n_delims)
                 result = NULL;
                 break;
             }
+            else if (((i+1) * sizeof(size_t)) > malloc_size)
+            {
+                LogError("buffer overflow");
+                free(result);
+                result = NULL;
+                break;
+            }
             else 
             {
                 result[i] = strlen(delimiters[i]);
