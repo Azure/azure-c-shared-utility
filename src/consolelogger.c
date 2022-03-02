@@ -14,7 +14,7 @@
 static char* vprintf_alloc(const char* format, va_list va)
 {
 #pragma warning(push)
-#pragma warning(disable:26451)
+#pragma warning(disable:26451 6386)
     char* result;
     int neededSize = vsnprintf(NULL, 0, format, va);
     if (neededSize < 0)
@@ -37,7 +37,7 @@ static char* vprintf_alloc(const char* format, va_list va)
             }
         }
     }
-#pragma warning(pop) // C26451
+#pragma warning(pop) // C26451 C6386
     return result;
 }
 
