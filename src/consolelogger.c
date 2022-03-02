@@ -15,7 +15,6 @@ static char* vprintf_alloc(const char* format, va_list va)
 {
 #pragma warning(push)
 #pragma warning(disable:26451)
-//#pragma warning(disable:6386)
     char* result;
     int neededSize = vsnprintf(NULL, 0, format, va);
     if (neededSize <= 0)
