@@ -37,7 +37,7 @@ static char* vprintf_alloc(const char* format, va_list va)
             }
         }
     }
-#pragma warning(pop) // C26451 C6386
+#pragma warning(pop) // C26451
     return result;
 }
 
