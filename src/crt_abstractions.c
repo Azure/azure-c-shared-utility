@@ -655,7 +655,13 @@ long double strtold_s(const char* nptr, char** endptr)
             break;
         case FST_NAN:
             /*Codes_SRS_CRT_ABSTRACTIONS_21_034: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtold_s must return 0.0 and points endptr to the first character after the 'NAN' sequence.]*/
+#ifdef _MSC_VER
+#pragma warning(disable:26451) // warning C26451: overflow in constant arithmetic
+#endif
             result = (long double)NAN;
+#ifdef _MSC_VER
+#pragma warning (default:26451)
+#endif
             break;
         case FST_NUMBER:
             if ((exponential != DBL_MAX_10_EXP || (fraction <= 1.7976931348623158)) &&

@@ -23,11 +23,11 @@ jobs:
     displayName: 'build'
 - job: windowsx86
   pool:
-    vmImage: 'vs2017-win2016'
+    name: 'sdk-c--win-vs2017'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd)
     displayName: 'build'
     env:
@@ -80,11 +80,11 @@ jobs:
     condition: always()
 - job: windowsdynamic
   pool:
-    vmImage: 'vs2017-win2016'
+    name: 'sdk-c--win-vs2017'
   steps:
   - script: |
      if exist jenkins\windows_c_build_as_dynamic.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c_build_as_dynamic.cmd)
     displayName: 'build'
     env:
@@ -248,11 +248,15 @@ jobs:
     condition: always()
 - job: linux_mbed
   variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-mbed"
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-mbed"
   pool: 
       name: 'sdk-c--ubuntu-18'
   displayName: 'linux_mbed'
   steps:
+  - script: |
+     chmod +x jenkins/linux_mbed_clang_buildonly.sh
+     ./jenkins/linux_mbed_clang_buildonly.sh
+    displayName: 'clang build'      
   - script: |
       if [ -f "jenkins/debian_c.sh" ]
       then
@@ -282,11 +286,15 @@ jobs:
     condition: always()
 - job: wolfssl
   variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-wolfssl"
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-wolfssl"
   pool: 
       name: 'sdk-c--ubuntu-18'
   displayName: 'wolfssl'
   steps:
+  - script: |
+     chmod +x jenkins/linux_wolfssl_clang_buildonly.sh
+     ./jenkins/linux_wolfssl_clang_buildonly.sh
+    displayName: 'clang build'
   - script: |
      cmake --version
      cc --version
@@ -322,11 +330,15 @@ jobs:
     condition: always()
 - job: bearssl
   variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-bearssl"
+    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-bearssl"
   pool: 
       name: 'sdk-c--ubuntu-18'
   displayName: 'bearssl'
   steps:
+  - script: |
+     chmod +x jenkins/linux_bearssl_clang_buildonly.sh
+     ./jenkins/linux_bearssl_clang_buildonly.sh
+    displayName: 'clang build'
   - script: |
       LD_LIBRARY_PATH=/usr/local/lib
       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
@@ -358,12 +370,12 @@ jobs:
     condition: always()
 - job: windowsx64
   pool:
-    vmImage: 'vs2017-win2016'
+    name: 'sdk-c--win-vs2017'
   displayName: 'windowsx64'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd --platform x64)
     displayName: 'build'
     env:
