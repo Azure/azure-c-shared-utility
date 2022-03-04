@@ -157,12 +157,15 @@ void consolelogger_log_with_GetLastError(const char* file, const char* func, int
     timeString = get_ctime(&t);
 #endif // LOGGER_DISABLE_PAL
 
-    systemMessage = printf_alloc("Error: Time:%.24s File:%s Func:%s Line:%d %s", timeString == NULL ? "<NO TIME IMPL>" : timeString, file, func, line, lastErrorAsString);
+    // In case time is not implemented
+    timeString = timeString == NULL ? "<NO TIME IMPL>" : timeString;
+
+    systemMessage = printf_alloc("Error: Time:%.24s File:%s Func:%s Line:%d %s", timeString, file, func, line, lastErrorAsString);
 
     if (systemMessage == NULL)
     {
         systemMessage = "";
-        (void)printf("Error: [FAILED] Time:%.24s File : %s Func : %s Line : %d %s", timeString == NULL ? "<NO TIME IMPL>" : timeString, file, func, line, lastErrorAsString);
+        (void)printf("Error: [FAILED] Time:%.24s File : %s Func : %s Line : %d %s", timeString, file, func, line, lastErrorAsString);
         systemMessage_should_be_freed = 0;
     }
     else
@@ -221,13 +224,16 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
     timeString = get_ctime(&t);
 #endif // LOGGER_DISABLE_PAL
 
+    // In case time is not implemented
+    timeString = timeString == NULL ? "<NO TIME IMPL>" : timeString;
+
     switch (log_category)
     {
     case AZ_LOG_INFO:
         (void)printf("Info: ");
         break;
     case AZ_LOG_ERROR:
-        (void)printf("Error: Time:%.24s File:%s Func:%s Line:%d ", timeString == NULL ? "<NO TIME IMPL>" : timeString, file, func, line);
+        (void)printf("Error: Time:%.24s File:%s Func:%s Line:%d ", timeString, file, func, line);
         break;
     default:
         break;
