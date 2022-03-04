@@ -157,6 +157,9 @@ void consolelogger_log_with_GetLastError(const char* file, const char* func, int
     timeString = get_ctime(&t);
 #endif // LOGGER_DISABLE_PAL
 
+    // In case time is not implemented
+    timeString = timeString == NULL ? "<NO TIME IMPL>" : timeString;
+
     systemMessage = printf_alloc("Error: Time:%.24s File:%s Func:%s Line:%d %s", timeString, file, func, line, lastErrorAsString);
 
     if (systemMessage == NULL)
@@ -220,6 +223,9 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
     t = get_time(NULL);
     timeString = get_ctime(&t);
 #endif // LOGGER_DISABLE_PAL
+
+    // In case time is not implemented
+    timeString = timeString == NULL ? "<NO TIME IMPL>" : timeString;
 
     switch (log_category)
     {
