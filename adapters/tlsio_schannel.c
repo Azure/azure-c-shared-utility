@@ -941,6 +941,8 @@ static void on_underlying_io_error(void* context)
 {
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
 
+    int originalErrorCode = (int)tls_io_instance->tlsio_state;
+
     switch (tls_io_instance->tlsio_state)
     {
     default:
@@ -954,7 +956,7 @@ static void on_underlying_io_error(void* context)
         tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
         if (tls_io_instance->on_io_open_complete != NULL)
         {
-            IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_ERROR, __FAILURE__ };
+            IO_OPEN_RESULT_DETAILED error_result = { IO_OPEN_ERROR, originalErrorCode };
             tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, error_result);
         }
         break;

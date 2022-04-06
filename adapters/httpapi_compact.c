@@ -57,6 +57,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
 
     XIO_HANDLE      xio_handle;
     size_t          received_bytes_count;
+    int             inner_error_code;
     unsigned char*  received_bytes;
     unsigned int    is_io_error : 1;
     unsigned int    is_connected : 1;
@@ -311,6 +312,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection_Advanced(const char* hostName, int port, bo
                     http_instance->certificate = NULL;
                     http_instance->x509ClientCertificate = NULL;
                     http_instance->x509ClientPrivateKey = NULL;
+                    http_instance->inner_error_code = 0;
                 }
             }
         }
@@ -420,10 +422,12 @@ static void on_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED open_resu
         {
             http_instance->is_connected = 1;
             http_instance->is_io_error = 0;
+            http_instance->inner_error_code = 0;
         }
         else
         {
             http_instance->is_io_error = 1;
+            http_instance->inner_error_code = open_result_detailed.code;
         }
     }
 }
@@ -1315,7 +1319,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest_Internal(HTTP_HANDLE handle, HTTPAPI_REQUE
     /*Codes_SRS_HTTPAPI_COMPACT_21_024: [ The HTTPAPI_ExecuteRequest shall open the transport connection with the host to send the request. ]*/
     else if ((result = OpenXIOConnection(http_instance)) != HTTPAPI_OK)
     {
-        LogError("Open HTTP connection failed (result = %s)", ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("Open HTTP connection failed (result = %s, error = %ld)", ENUM_TO_STRING(HTTPAPI_RESULT, result), http_instance->inner_error_code);
     }
     /*Codes_SRS_HTTPAPI_COMPACT_21_026: [ If the open process succeed, the HTTPAPI_ExecuteRequest shall send the request message to the host. ]*/
     else if ((result = SendHeadsToXIO(http_instance, requestType, relativePath, httpHeadersHandle, headersCount)) != HTTPAPI_OK)
@@ -1574,4 +1578,22 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         LogInfo("unknown option %s", optionName);
     }
     return result;
+}
+
+HTTPAPI_RESULT HTTPAPI_GetLastError(HTTP_HANDLE handle, int* errorCode)
+{
+    HTTP_HANDLE_DATA* http_instance = (HTTP_HANDLE_DATA*)handle;
+
+    if (
+        (http_instance == NULL) ||
+        (errorCode == NULL)
+        )
+    {
+        return HTTPAPI_INVALID_ARG;
+    }
+    else
+    {
+        *errorCode = http_instance->inner_error_code;
+        return HTTPAPI_OK;
+    }
 }
