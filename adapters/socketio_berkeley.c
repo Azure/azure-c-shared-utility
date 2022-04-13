@@ -939,14 +939,14 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
                 ssize_t send_result = send(socket_io_instance->socket, buffer, size, MSG_NOSIGNAL);
                 if ((size_t)send_result != size)
                 {
-                    if (send_result == SOCKET_SEND_FAILURE && errno != EAGAIN)
+                    if (send_result == SOCKET_SEND_FAILURE && errno != EAGAIN && errno != ENOBUFS)
                     {
                         LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
                         result = MU_FAILURE;
                     }
                     else
                     {
-                        /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
+                        /*send says "come back later" with EAGAIN, ENOBUFS - likely the socket buffer cannot accept more data*/
                         /* queue data */
                         size_t bytes_sent = (send_result < 0 ? 0 : send_result);
 
@@ -1002,7 +1002,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 {
                     if (send_result == INVALID_SOCKET)
                     {
-                        if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
+                        if (errno == EAGAIN  || errno == ENOBUFS) /*send says "come back later" with EAGAIN, ENOBUFS - likely the socket buffer cannot accept more data*/
                         {
                             /*do nothing until next dowork */
                             break;
