@@ -43,6 +43,10 @@ int platform_init(void)
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 {
+#ifdef EXCLUDE_AZIOTSHAREDUTIL_NETWORKING
+    LogError("TLS IO interface not supported");
+    return (IO_INTERFACE_DESCRIPTION*)NULL;
+#else
 #ifdef USE_OPENSSL
     return tlsio_openssl_get_interface_description();
 #elif USE_CYCLONESSL
@@ -55,6 +59,7 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
 #else
     LogError("TLS IO interface currently not supported on WEC 2013");
     return (IO_INTERFACE_DESCRIPTION*)NULL;
+#endif
 #endif
 #endif
 }
