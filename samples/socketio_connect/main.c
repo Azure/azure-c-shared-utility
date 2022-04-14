@@ -14,12 +14,12 @@ static void on_send_complete(void* context, IO_SEND_RESULT send_result)
     (void)send_result;
 }
 
-static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
+static void on_io_open_complete(void* context, IO_OPEN_RESULT_DETAILED open_result)
 {
     (void)context, (void)open_result;
     (void)printf("Open complete called\r\n");
 
-    if (open_result == IO_OPEN_OK)
+    if (open_result.result == IO_OPEN_OK)
     {
         XIO_HANDLE socketio = (XIO_HANDLE)context;
         const char to_send[] = "GET / HTTP/1.1\r\n"
