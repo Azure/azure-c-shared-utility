@@ -1025,18 +1025,29 @@ static OPTIONHANDLER_HANDLE http_proxy_io_retrieve_options(CONCRETE_IO_HANDLE ht
             OPTIONHANDLER_HANDLE underlying_io_options;
 
             /* Codes_SRS_HTTP_PROXY_IO_01_046: [ http_proxy_io_retrieve_options shall return an OPTIONHANDLER_HANDLE obtained by calling xio_retrieveoptions on the underlying IO created in http_proxy_io_create. ]*/
-            if ((underlying_io_options = xio_retrieveoptions(http_proxy_io_instance->underlying_io)) == NULL ||
-                OptionHandler_AddOption(result, OPTION_UNDERLYING_IO_OPTIONS, underlying_io_options) != OPTIONHANDLER_OK)
+            if ((underlying_io_options = xio_retrieveoptions(http_proxy_io_instance->underlying_io)) == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_048: [ If xio_retrieveoptions fails, http_proxy_io_retrieve_options shall return NULL. ]*/
-                LogError("unable to save underlying_io options");
-                OptionHandler_Destroy(underlying_io_options);
+                LogError("unable to retrieve underlying_io options");  
                 OptionHandler_Destroy(result);
                 result = NULL;
             }
-            else
+            else 
             {
-                // All is fine.
+                if (OptionHandler_AddOption(result, OPTION_UNDERLYING_IO_OPTIONS, underlying_io_options) != OPTIONHANDLER_OK)
+                {
+                    /* Codes_SRS_HTTP_PROXY_IO_01_048: [ If xio_retrieveoptions fails, http_proxy_io_retrieve_options shall return NULL. ]*/
+                    LogError("unable to save underlying_io options");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else
+                {
+                    // All is fine. 
+                }
+
+                // Must destroy since OptionHandler_AddOption creates a copy of it.
+                OptionHandler_Destroy(underlying_io_options);
             }
         }
     }

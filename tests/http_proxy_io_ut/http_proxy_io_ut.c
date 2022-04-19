@@ -1564,6 +1564,7 @@ TEST_FUNCTION(http_proxy_io_retrieve_options_calls_the_underlying_retrieve_optio
     STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE));
     STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG));
 
     // act
     result = http_proxy_io_get_interface_description()->concrete_io_retrieveoptions(http_io);
@@ -1665,7 +1666,6 @@ TEST_FUNCTION(when_xio_retrieveoptions_fails_then_http_proxy_io_retrieve_options
     STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_retrieveoptions(TEST_IO_HANDLE))
         .SetReturn(NULL);
-    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG));
 
     // act
