@@ -326,7 +326,13 @@ void gballoc_free(void* ptr)
             curr = (ALLOCATION*)curr->next;
         }
 
+#ifdef _MSC_VER
+#pragma warning(disable:6001) // Using uninitialized memory 'curr'
+#endif
         if ((curr == NULL) && (ptr != NULL))
+#ifdef _MSC_VER
+#pragma warning (default:6001)
+#endif
         {
             /* Codes_SRS_GBALLOC_01_019: [When the ptr pointer cannot be found in the pointers tracked by gballoc, gballoc_free shall not free any memory.] */
 
@@ -418,7 +424,7 @@ size_t gballoc_getAllocationCount(void)
     return result;
 }
 
-void gballoc_resetMetrics()
+void gballoc_resetMetrics(void)
 {
     /* Codes_SRS_GBALLOC_07_005: [ If gballoc was not initialized gballoc_reset Metrics shall do nothing.] */
     if (gballocState != GBALLOC_STATE_INIT)
