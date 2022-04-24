@@ -48,6 +48,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     mbedtls_x509_crt cert;
     mbedtls_pk_context key;
     mbedtls_x509_crt trusted_certificates;
+    mbedtls_ssl_config* ssl_config_ptr; // Used to later free memory of ssl_ctx, since curl_easy_free() does not appear to free everything mbedtls library might allocate.
 #endif
 } HTTP_HANDLE_DATA;
 
@@ -148,7 +149,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         mbedtls_x509_crt_init(&httpHandleData->cert);
                         mbedtls_pk_init(&httpHandleData->key);
                         mbedtls_x509_crt_init(&httpHandleData->trusted_certificates);
-#endif
+ #endif
                     }
                 }
                 else
@@ -170,12 +171,13 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
     if (httpHandleData != NULL)
     {
         free(httpHandleData->hostURL);
-        curl_easy_cleanup(httpHandleData->curl);
 #if USE_MBEDTLS
         mbedtls_x509_crt_free(&httpHandleData->cert);
         mbedtls_pk_free(&httpHandleData->key);
         mbedtls_x509_crt_free(&httpHandleData->trusted_certificates);
+        mbedtls_ssl_config_free(httpHandleData->ssl_config_ptr);
 #endif
+        curl_easy_cleanup(httpHandleData->curl);
         free(httpHandleData);
     }
 }
@@ -294,13 +296,16 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             result = CURLE_SSL_CERTPROBLEM;
         }
 #elif USE_MBEDTLS
+        // save memory address of ssl_ctx for later memory deallocation via mbedtls_config_free.
+        httpHandleData->ssl_config_ptr = (mbedtls_ssl_config*)ssl_ctx;
+
         // set device cert and key
         if (
             (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
             !(
                 (mbedtls_x509_crt_parse(&httpHandleData->cert, (const unsigned char *)httpHandleData->x509certificate, (int)(strlen(httpHandleData->x509certificate) + 1)) == 0) &&
                 (mbedtls_pk_parse_key(&httpHandleData->key, (const unsigned char *)httpHandleData->x509privatekey, (int)(strlen(httpHandleData->x509privatekey) + 1), NULL, 0) == 0) &&
-                (mbedtls_ssl_conf_own_cert(ssl_ctx, &httpHandleData->cert, &httpHandleData->key) == 0)
+                (mbedtls_ssl_conf_own_cert(ssl_ctx, &httpHandleData->cert, &httpHandleData->key) == 0) // extra memory allocation occurs within mbedtls here.
                 )
             )
         {
