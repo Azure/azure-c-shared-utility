@@ -27,6 +27,7 @@ resources:
     image: csdkcontainerregistry.azurecr.io/raspberrypi-c-buster:brown
 jobs:
 - job: checksubmodule
+  displayName: Check Submodule
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
@@ -45,6 +46,7 @@ jobs:
       ./../../node_modules/.bin/check_submodules . master
     displayName: 'build'
 - job: windowsx86
+  displayName: Windows x86
   pool:
     name: 'sdk-c--win-vs2017'
   steps:
@@ -72,10 +74,10 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: raspberrypi
+  displayName: Raspberry Pi
   container: raspberrypi-c-buster
   pool: 
     name: 'sdk-c--ubuntu-18'
-  displayName: raspberrypi
   steps:
   - script: |
      chmod +x jenkins/raspberrypi_c_buster.sh
@@ -84,10 +86,10 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
 - job: linuxoptions
+  displayName: 'Linux Ubuntu 20.04 with Options'
   container: linux-c-ubuntu-2004
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'linux-options'
   steps:
   - script: |
      if [ -f "jenkins/linux_c_option_test.sh" ]
@@ -100,6 +102,7 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: windowsdynamic
+  displayName: Windows Dynamic
   pool:
     name: 'sdk-c--win-vs2017'
   steps:
@@ -129,6 +132,7 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: OSX
+  displayName: OSX
   pool:
     name: OSX
   steps:
@@ -163,7 +167,7 @@ jobs:
   container: linux-c-ubuntu-clang
   pool:
       name: 'sdk-c--ubuntu-18'
-  displayName: 'clang'
+  displayName: 'Linux Ubuntu Clang'
   steps:
   - script: |
      if [ -f "jenkins/ubuntu_clang.sh" ]
@@ -198,7 +202,7 @@ jobs:
   container: linux-c-ubuntu-1804
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'Ubuntu 18.04'
+  displayName: 'Linux Ubuntu 18.04'
   steps:
   - script: |
      if [ -f "jenkins/ubuntu1604_c.sh" ]
@@ -233,7 +237,7 @@ jobs:
   container: linux-c-debian
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'debian'
+  displayName: 'Linux Debian'
   steps:
   - script: |
      if [ -f "jenkins/debian_c.sh" ]
@@ -386,7 +390,7 @@ jobs:
 - job: windowsx64
   pool:
     name: 'sdk-c--win-vs2017'
-  displayName: 'windowsx64'
+  displayName: 'Windows x64'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
@@ -415,6 +419,7 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: xcodenative
+  displayName: XCode Native
   pool:
     name: OSX
   steps:
