@@ -1,7 +1,30 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 resources:
-- repo: self
-  clean: true
+  containers:
+  - container: linux-c-ubuntu-2004
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-2004:latest
+  - container: linux-c-ubuntu-1804
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-1804:latest
+  - container: linux-c-ubuntu-clang
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-clang:latest
+  - container: linux-c-ubuntu-wolfssl
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-wolfssl:latest
+  - container: linux-c-ubuntu-bearssl
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-bearssl:latest
+  - container: linux-c-ubuntu-mbed
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-mbed:latest
+  - container: linux-c-debian
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-debian:latest
+  - container: raspberrypi-c-buster
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/raspberrypi-c-buster:brown
 jobs:
 - job: checksubmodule
   pool:
@@ -49,8 +72,7 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: raspberrypi
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c-buster:brown"
+  container: raspberrypi-c-buster
   pool: 
     name: 'sdk-c--ubuntu-18'
   displayName: raspberrypi
@@ -62,8 +84,7 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
 - job: linuxoptions
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-linux-c-ubuntu"
+  container: linux-c-ubuntu-2004
   pool: 
       name: 'sdk-c--ubuntu-18'
   displayName: 'linux-options'
@@ -139,8 +160,7 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: clang
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/ubuntu-clang"
+  container: linux-c-ubuntu-clang
   pool:
       name: 'sdk-c--ubuntu-18'
   displayName: 'clang'
@@ -174,12 +194,11 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
-- job: ubuntu1604
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu"
+- job: ubuntu1804
+  container: linux-c-ubuntu-1804
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'ubuntu1604'
+  displayName: 'Ubuntu 18.04'
   steps:
   - script: |
      if [ -f "jenkins/ubuntu1604_c.sh" ]
@@ -211,8 +230,7 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: debian
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/c-debian"
+  container: linux-c-debian
   pool: 
       name: 'sdk-c--ubuntu-18'
   displayName: 'debian'
@@ -247,11 +265,10 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: linux_mbed
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-mbed"
+  container: linux-c-ubuntu-mbed
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'linux_mbed'
+  displayName: 'mbedTLS'
   steps:
   - script: |
      chmod +x jenkins/linux_mbed_clang_buildonly.sh
@@ -285,11 +302,10 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: wolfssl
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-wolfssl"
+  container: linux-c-ubuntu-wolfssl
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'wolfssl'
+  displayName: 'WolfSSL'
   steps:
   - script: |
      chmod +x jenkins/linux_wolfssl_clang_buildonly.sh
@@ -329,11 +345,10 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: bearssl
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-bearssl"
+  container: linux-c-ubuntu-bearssl
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'bearssl'
+  displayName: 'BearSSL'
   steps:
   - script: |
      chmod +x jenkins/linux_bearssl_clang_buildonly.sh
