@@ -7,7 +7,7 @@ set -e
 build_root=$(cd "$(dirname "$0")/.." && pwd)
 cd $build_root
 
-build_folder=$build_root"/cmake/shared-util_linux"
+build_folder=$build_root"/cmake"
 
 # Set the default cores
 CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
