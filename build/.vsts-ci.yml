@@ -1,9 +1,33 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 resources:
-- repo: self
-  clean: true
+  containers:
+  - container: linux-c-ubuntu-2004
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-2004:latest
+  - container: linux-c-ubuntu-1804
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-1804:latest
+  - container: linux-c-ubuntu-clang
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-clang:latest
+  - container: linux-c-ubuntu-wolfssl
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-wolfssl:latest
+  - container: linux-c-ubuntu-bearssl
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-bearssl:latest
+  - container: linux-c-ubuntu-mbed
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-mbed:latest
+  - container: linux-c-debian
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-debian:latest
+  - container: raspberrypi-c-buster
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/raspberrypi-c-buster:brown
 jobs:
 - job: checksubmodule
+  displayName: Check Submodule
   pool:
     vmImage: 'ubuntu-20.04'
   steps:
@@ -22,6 +46,7 @@ jobs:
       ./../../node_modules/.bin/check_submodules . master
     displayName: 'build'
 - job: windowsx86
+  displayName: Windows x86
   pool:
     name: 'sdk-c--win-vs2017'
   steps:
@@ -48,37 +73,39 @@ jobs:
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
     displayName: 'cleanup'
     condition: always()
-- job: raspberrypi
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c-buster:brown"
-  pool: 
-    name: 'sdk-c--ubuntu-18'
-  displayName: raspberrypi
+- job: windowsx64
+  pool:
+    name: 'sdk-c--win-vs2017'
+  displayName: 'Windows x64'
   steps:
   - script: |
-     chmod +x jenkins/raspberrypi_c_buster.sh
-     ./jenkins/raspberrypi_c_buster.sh
+     if exist jenkins\windows_c.cmd (
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+      call jenkins\windows_c.cmd --platform x64)
     displayName: 'build'
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-- job: linuxoptions
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-linux-c-ubuntu"
-  pool: 
-      name: 'sdk-c--ubuntu-18'
-  displayName: 'linux-options'
-  steps:
-  - script: |
-     if [ -f "jenkins/linux_c_option_test.sh" ]
-     then
-      sudo ./jenkins/linux_c_option_test.sh
-     fi
-    displayName: 'build'
-    condition: always()
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
+    env:
+      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
+      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
+      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
+      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
+      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
+      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
+      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
+      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
+      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
+      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
+      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
+      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
+      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
     displayName: 'cleanup'
     condition: always()
 - job: windowsdynamic
+  displayName: Windows Dynamic
   pool:
     name: 'sdk-c--win-vs2017'
   steps:
@@ -107,43 +134,11 @@ jobs:
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
     displayName: 'cleanup'
     condition: always()
-- job: OSX
-  pool:
-    name: OSX
-  steps:
-  - script: |
-     if [ -f "jenkins/osx_gcc_openssl.sh" ]
-     then
-      ./jenkins/osx_gcc_openssl.sh
-     fi
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
 - job: clang
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/ubuntu-clang"
+  container: linux-c-ubuntu-clang
   pool:
       name: 'sdk-c--ubuntu-18'
-  displayName: 'clang'
+  displayName: 'Linux Ubuntu Clang'
   steps:
   - script: |
      if [ -f "jenkins/ubuntu_clang.sh" ]
@@ -174,19 +169,18 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
-- job: ubuntu1604
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu"
+- job: ubuntu1804
+  container: linux-c-ubuntu-1804
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'ubuntu1604'
+  displayName: 'Linux Ubuntu 18.04'
   steps:
   - script: |
-     if [ -f "jenkins/ubuntu1604_c.sh" ]
+     if [ -f "jenkins/ubuntu_c.sh" ]
      then
       export OPENSSL_ia32cap=0x00000000
       sudo chmod -R 755 .
-      sudo -E ./jenkins/ubuntu1604_c.sh
+      sudo -E ./jenkins/ubuntu_c.sh
      fi
     displayName: 'build'
     env:
@@ -210,12 +204,62 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
-- job: debian
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/c-debian"
+- job: ubuntu2004
+  container: linux-c-ubuntu-2004
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'debian'
+  displayName: 'Linux Ubuntu 20.04'
+  steps:
+  - script: |
+     if [ -f "jenkins/ubuntu_c.sh" ]
+     then
+      export OPENSSL_ia32cap=0x00000000
+      sudo chmod -R 755 .
+      sudo -E ./jenkins/ubuntu_c.sh
+     fi
+    displayName: 'build'
+    env:
+      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
+      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
+      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
+      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
+      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
+      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
+      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
+      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
+      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
+      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
+      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
+      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
+      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - script: sudo rm -rf $(Agent.BuildDirectory)/*
+    displayName: 'cleanup'
+    condition: always()
+- job: linuxoptions
+  displayName: 'Linux Ubuntu 20.04 with Options'
+  container: linux-c-ubuntu-2004
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  steps:
+  - script: |
+     if [ -f "jenkins/linux_c_option_test.sh" ]
+     then
+      sudo ./jenkins/linux_c_option_test.sh
+     fi
+    displayName: 'build'
+    condition: always()
+  - script: sudo rm -rf $(Agent.BuildDirectory)/*
+    displayName: 'cleanup'
+    condition: always()
+- job: debian
+  container: linux-c-debian
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux Debian'
   steps:
   - script: |
      if [ -f "jenkins/debian_c.sh" ]
@@ -247,11 +291,10 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: linux_mbed
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-mbed"
+  container: linux-c-ubuntu-mbed
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'linux_mbed'
+  displayName: 'mbedTLS'
   steps:
   - script: |
      chmod +x jenkins/linux_mbed_clang_buildonly.sh
@@ -285,11 +328,10 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: wolfssl
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-wolfssl"
+  container: linux-c-ubuntu-wolfssl
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'wolfssl'
+  displayName: 'WolfSSL'
   steps:
   - script: |
      chmod +x jenkins/linux_wolfssl_clang_buildonly.sh
@@ -329,11 +371,10 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: bearssl
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-bearssl"
+  container: linux-c-ubuntu-bearssl
   pool: 
       name: 'sdk-c--ubuntu-18'
-  displayName: 'bearssl'
+  displayName: 'BearSSL'
   steps:
   - script: |
      chmod +x jenkins/linux_bearssl_clang_buildonly.sh
@@ -368,15 +409,16 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
-- job: windowsx64
+- job: OSX
+  displayName: OSX
   pool:
-    name: 'sdk-c--win-vs2017'
-  displayName: 'windowsx64'
+    name: OSX
   steps:
   - script: |
-     if exist jenkins\windows_c.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
-      call jenkins\windows_c.cmd --platform x64)
+     if [ -f "jenkins/osx_gcc_openssl.sh" ]
+     then
+      ./jenkins/osx_gcc_openssl.sh
+     fi
     displayName: 'build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
@@ -396,10 +438,11 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
+  - script: rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
 - job: xcodenative
+  displayName: XCode Native
   pool:
     name: OSX
   steps:
@@ -431,3 +474,15 @@ jobs:
   - script: rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
+- job: raspberrypi
+  displayName: Raspberry Pi
+  container: raspberrypi-c-buster
+  pool: 
+    name: 'sdk-c--ubuntu-18'
+  steps:
+  - script: |
+     chmod +x jenkins/raspberrypi_c_buster.sh
+     ./jenkins/raspberrypi_c_buster.sh
+    displayName: 'build'
+  - script: sudo rm -rf $(Agent.BuildDirectory)/*
+    displayName: 'cleanup'
