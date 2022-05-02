@@ -174,9 +174,6 @@ if %MAKE_NUGET_PKG% == yes (
 		msbuild /m %SOLUTION_NAME%.sln /p:Configuration=%build-config%
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	)
-
-	ctest -C "debug" -V
-	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
 popd

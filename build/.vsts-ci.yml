@@ -10,6 +10,9 @@ resources:
   - container: linux-c-ubuntu-clang
     endpoint: csdk-containers
     image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-clang:latest
+  - container: linux-c-ubuntu-c-ares
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-c-ares:latest
   - container: linux-c-ubuntu-wolfssl
     endpoint: csdk-containers
     image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-wolfssl:latest
@@ -40,11 +43,11 @@ jobs:
       pkg-config
       sudo curl -sL https://deb.nodesource.com/setup_16.x | bash -
       sudo apt-get install -y nodejs
-    displayName: 'setup'
+    displayName: 'Setup'
   - script: |
       npm install check_submodules
       ./../../node_modules/.bin/check_submodules . master
-    displayName: 'build'
+    displayName: 'Build'
 - job: windowsx86
   displayName: Windows x86
   pool:
@@ -54,7 +57,10 @@ jobs:
      if exist jenkins\windows_c.cmd (
       call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd)
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j 16 --schedule-random
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -71,7 +77,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: windowsx64
   pool:
@@ -82,7 +88,10 @@ jobs:
      if exist jenkins\windows_c.cmd (
       call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd --platform x64)
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j 16 --schedule-random
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -102,7 +111,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: windowsdynamic
   displayName: Windows Dynamic
@@ -113,7 +122,7 @@ jobs:
      if exist jenkins\windows_c_build_as_dynamic.cmd (
       call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c_build_as_dynamic.cmd)
-    displayName: 'build'
+    displayName: 'Build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -132,7 +141,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: clang
   container: linux-c-ubuntu-clang
@@ -147,7 +156,10 @@ jobs:
       sudo chmod -R 755 .
       sudo -E ./jenkins/ubuntu_clang.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -167,7 +179,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: ubuntu1804
   container: linux-c-ubuntu-1804
@@ -182,7 +194,10 @@ jobs:
       sudo chmod -R 755 .
       sudo -E ./jenkins/ubuntu_c.sh
      fi
-    displayName: 'build'
+    displayName: "Build"
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -202,7 +217,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: ubuntu2004
   container: linux-c-ubuntu-2004
@@ -217,7 +232,10 @@ jobs:
       sudo chmod -R 755 .
       sudo -E ./jenkins/ubuntu_c.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -237,7 +255,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: linuxoptions
   displayName: 'Linux Ubuntu 20.04 with Options'
@@ -250,10 +268,87 @@ jobs:
      then
       sudo ./jenkins/linux_c_option_test.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
     condition: always()
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
+    condition: always()
+- job: linux_installed_deps
+  container: linux-c-ubuntu-2004
+  pool: 
+    name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux with Installed Deps'
+  steps:
+  - script: |
+      export OPENSSL_ia32cap=0x00000000
+      sudo chmod -R 755 .
+      sudo -E ./jenkins/linux_install_deps.sh
+    displayName: 'Build'
+    env:
+      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
+      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
+      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
+      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
+      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
+      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
+      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
+      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
+      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
+      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
+      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
+      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+      IOT_DPS_INDIVIDUAL_X509_CERTIFICATE: $(IOTHUB-E2E-X509-ECC-CERT-BASE64)
+      IOT_DPS_INDIVIDUAL_X509_KEY: $(IOTHUB-E2E-X509-ECC-PRIVATE-KEY-BASE64)
+      IOT_DPS_INDIVIDUAL_REGISTRATION_ID: $(IOT-DPS-INDIVIDUAL-REGISTRATION-ID)
+  - script: sudo rm -rf $(Agent.BuildDirectory)/*
+    displayName: 'Cleanup'
+    condition: always()
+- job: cares
+  container: linux-c-ubuntu-c-ares
+  pool: 
+    name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux with C-Ares'
+  steps:
+  - script: |
+      sudo -E bash jenkins/linux_cares.sh
+    displayName: 'Build'
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
+    env:
+      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
+      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
+      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
+      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
+      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
+      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
+      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
+      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
+      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
+      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
+      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
+      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+      IOT_DPS_INDIVIDUAL_X509_CERTIFICATE: $(IOTHUB-E2E-X509-ECC-CERT-BASE64)
+      IOT_DPS_INDIVIDUAL_X509_KEY: $(IOTHUB-E2E-X509-ECC-PRIVATE-KEY-BASE64)
+      IOT_DPS_INDIVIDUAL_REGISTRATION_ID: $(IOT-DPS-INDIVIDUAL-REGISTRATION-ID)
+  - task: PublishTestResults@2
+    displayName: 'Publish C Ares Results'
+    inputs:
+      testRunner: CTest
+      testResultsFiles: '**/Test.xml'
+      mergeTestResults: true
+      testRunTitle: 'cares'
+    condition: succeededOrFailed()
+  - script: sudo rm -rf $(Agent.BuildDirectory)/*
+    displayName: 'Cleanup'
     condition: always()
 - job: debian
   container: linux-c-debian
@@ -268,7 +363,10 @@ jobs:
       sudo -E ./debian_c.sh
       sudo jenkins/debian_c.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -288,7 +386,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: linux_mbed
   container: linux-c-ubuntu-mbed
@@ -299,14 +397,14 @@ jobs:
   - script: |
      chmod +x jenkins/linux_mbed_clang_buildonly.sh
      ./jenkins/linux_mbed_clang_buildonly.sh
-    displayName: 'clang build'      
+    displayName: 'Clang Build'
   - script: |
       if [ -f "jenkins/debian_c.sh" ]
       then
         sudo chmod 755 jenkins/linux_mbed.sh
         sudo -E ./jenkins/linux_mbed.sh
       fi
-    displayName: 'build'
+    displayName: 'Build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -325,7 +423,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: wolfssl
   container: linux-c-ubuntu-wolfssl
@@ -336,7 +434,7 @@ jobs:
   - script: |
      chmod +x jenkins/linux_wolfssl_clang_buildonly.sh
      ./jenkins/linux_wolfssl_clang_buildonly.sh
-    displayName: 'clang build'
+    displayName: 'Clang Build'
   - script: |
      cmake --version
      cc --version
@@ -348,7 +446,7 @@ jobs:
       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
       sudo jenkins/linux_wolfssl.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -368,7 +466,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: bearssl
   container: linux-c-ubuntu-bearssl
@@ -379,7 +477,7 @@ jobs:
   - script: |
      chmod +x jenkins/linux_bearssl_clang_buildonly.sh
      ./jenkins/linux_bearssl_clang_buildonly.sh
-    displayName: 'clang build'
+    displayName: 'Clang Build'
   - script: |
       LD_LIBRARY_PATH=/usr/local/lib
       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
@@ -387,7 +485,7 @@ jobs:
       bearsslDir=/beary
       export bearsslDir
       sudo bash jenkins/linux_bearssl.sh
-    displayName: 'build'
+    displayName: 'Build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -407,7 +505,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: OSX
   displayName: OSX
@@ -419,7 +517,10 @@ jobs:
      then
       ./jenkins/osx_gcc_openssl.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j 8 --schedule-random
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -439,7 +540,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: xcodenative
   displayName: XCode Native
@@ -452,7 +553,11 @@ jobs:
       DYLD_LIBRARY_PATH=/usr/local/Cellar/curl/7.61.0/lib
       ./jenkins/osx_xcode_native.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      export DYLD_LIBRARY_PATH=/usr/local/Cellar/curl/7.61.0/lib
+      cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j $TEST_JOB_COUNT --schedule-random
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -472,7 +577,7 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
 - job: raspberrypi
   displayName: Raspberry Pi
@@ -483,6 +588,6 @@ jobs:
   - script: |
      chmod +x jenkins/raspberrypi_c_buster.sh
      ./jenkins/raspberrypi_c_buster.sh
-    displayName: 'build'
+    displayName: 'Build'
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
