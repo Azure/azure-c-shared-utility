@@ -759,11 +759,14 @@ void engine_destroy(TLS_IO_INSTANCE* tls)
 {
     if(tls->engine != NULL)
     {
+        #ifndef OPENSSL_NO_ENGINE
         ENGINE_free(tls->engine); // Release structural reference.
+        #endif
         tls->engine = NULL;
     }
 }
 
+#ifndef OPENSSL_NO_ENGINE
 int engine_load(TLS_IO_INSTANCE* tls)
 {
     int result;
@@ -782,6 +785,7 @@ int engine_load(TLS_IO_INSTANCE* tls)
 
     return result;
 }
+#endif
 
 static void close_openssl_instance(TLS_IO_INSTANCE* tls_io_instance)
 {
@@ -1077,6 +1081,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         log_ERR_get_error("Failed allocating OpenSSL context.");
         result = MU_FAILURE;
     }
+    #ifndef OPENSSL_NO_ENGINE
     else if ((tlsInstance->engine_id != NULL) &&
              (engine_load(tlsInstance) != 0))
     {
@@ -1084,6 +1089,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
         tlsInstance->ssl_context = NULL;
         result = MU_FAILURE;
     }
+    #endif
     else if ((tlsInstance->cipher_list != NULL) &&
              (SSL_CTX_set_cipher_list(tlsInstance->ssl_context, tlsInstance->cipher_list)) != 1)
     {
@@ -1719,6 +1725,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 }
             }
         }
+        #ifndef OPENSSL_NO_ENGINE
         else if (strcmp(OPTION_OPENSSL_ENGINE, optionName) == 0)
         {
             ENGINE_load_builtin_engines();
@@ -1733,6 +1740,7 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
                 result = 0;
             }
         }
+        #endif
         else if (strcmp(OPTION_OPENSSL_PRIVATE_KEY_TYPE, optionName) == 0)
         {
             const OPTION_OPENSSL_KEY_TYPE type = *(const OPTION_OPENSSL_KEY_TYPE*)value;
