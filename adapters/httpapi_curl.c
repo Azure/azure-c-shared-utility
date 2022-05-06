@@ -48,7 +48,6 @@ typedef struct HTTP_HANDLE_DATA_TAG
     mbedtls_x509_crt cert;
     mbedtls_pk_context key;
     mbedtls_x509_crt trusted_certificates;
-    mbedtls_ssl_config* ssl_config_ptr; // Used to later free memory of ssl_ctx, since curl_easy_free() does not appear to free everything mbedtls library might allocate.
 #endif
 } HTTP_HANDLE_DATA;
 
@@ -114,20 +113,76 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
         {
             size_t hostURL_size = strlen("https://") + strlen(hostName) + 1;
             httpHandleData->hostURL = malloc(hostURL_size);
+
             if (httpHandleData->hostURL == NULL)
             {
                 LogError("unable to malloc");
                 free(httpHandleData);
                 httpHandleData = NULL;
             }
+            else if ((strcpy_s(httpHandleData->hostURL, hostURL_size, "https://") != 0) ||
+                    (strcat_s(httpHandleData->hostURL, hostURL_size, hostName) != 0))
+            {
+                LogError("unable to set hostURL");
+                free(httpHandleData->hostURL);
+                free(httpHandleData);
+                httpHandleData = NULL;
+            }
+            else if ((httpHandleData->curl = curl_easy_init()) == NULL)
+            {
+                LogError("unable to init cURL structure");
+                free(httpHandleData->hostURL);
+                free(httpHandleData);
+                httpHandleData = NULL;
+            }
             else
             {
-                if ((strcpy_s(httpHandleData->hostURL, hostURL_size, "https://") == 0) &&
-                    (strcat_s(httpHandleData->hostURL, hostURL_size, hostName) == 0))
+                // Check correct TLS library has been configured for cURL.
+                const struct curl_tlssessioninfo *info = NULL;
+                CURLcode result = curl_easy_getinfo(httpHandleData->curl, CURLINFO_TLS_SSL_PTR, &info);
+
+                if (result != CURLE_OK || info == NULL)
                 {
-                    httpHandleData->curl = curl_easy_init();
-                    if (httpHandleData->curl == NULL)
+                    LogError("unable to get cURL backend SSL info");
+                    free(httpHandleData->hostURL);
+                    free(httpHandleData);
+                    httpHandleData = NULL;
+                }
+                else if ((info->backend != CURLSSLBACKEND_OPENSSL) && (info->backend != CURLSSLBACKEND_WOLFSSL) &&
+                         (info->backend != CURLSSLBACKEND_MBEDTLS))
+                {
+                    LogError("curl_sslbackend (%d) currently used by cURL is not supported by the C SDK. Please configure and compile cURL to use OpenSSL, wolfSSL, or mbedTLS.",
+                              info->backend);
+                    free(httpHandleData->hostURL);
+                    free(httpHandleData);
+                    httpHandleData = NULL;
+                }
+                else
+                {
+                    // Check correct TLS library has been configured for C SDK.
+                    int32_t SDKSSL = CURLSSLBACKEND_NONE;
+                    char* SDKSSLName = "Unsupported C SDK TLS platform";
+#ifdef USE_OPENSSL
+                    SDKSSL = CURLSSLBACKEND_OPENSSL;
+                    SDKSSLName = "OpenSSL";
+#elif USE_WOLFSSL
+                    SDKSSL = CURLSSLBACKEND_WOLFSSL;
+                    SDKSSLName = "wolfSSL";
+#elif USE_MBEDTLS
+                    SDKSSL = CURLSSLBACKEND_MBEDTLS;
+                    SDKSSLName = "mbedTLS";
+#endif
+                    if (SDKSSL == CURLSSLBACKEND_NONE)
                     {
+                        LogError("C SDK TLS platform is not supported to use with cURL. Please configure and compile C SDK to use OpenSSL, wolfSSL, or mbedTLS.");
+                        free(httpHandleData->hostURL);
+                        free(httpHandleData);
+                        httpHandleData = NULL;
+                    }
+                    else if (SDKSSL != (int32_t)info->backend)
+                    {
+                        LogError("curl_sslbackend (%d) currently used by cURL does not match TLS platform (%s) used by C SDK. Please configure and compile cURL to use %s.",
+                                  info->backend, SDKSSLName, SDKSSLName);
                         free(httpHandleData->hostURL);
                         free(httpHandleData);
                         httpHandleData = NULL;
@@ -135,8 +190,8 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                     else
                     {
                         httpHandleData->timeout = 242 * 1000; /*242 seconds seems like a nice enough time. Reasone for 242:
-                                                                1. http://curl.haxx.se/libcurl/c/CURLOPT_TIMEOUT.html says Normally, name lookups can take a considerable time and limiting operations to less than a few minutes risk aborting perfectly normal operations.
-                                                                2. 256KB of data... at 9600 bps transfers in about 218 seconds. Add to that a buffer of 10%... round it up to 242 :)*/
+                                                            1. http://curl.haxx.se/libcurl/c/CURLOPT_TIMEOUT.html says Normally, name lookups can take a considerable time and limiting operations to less than a few minutes risk aborting perfectly normal operations.
+                                                            2. 256KB of data... at 9600 bps transfers in about 218 seconds. Add to that a buffer of 10%... round it up to 242 :)*/
                         httpHandleData->lowSpeedTime = 0;
                         httpHandleData->lowSpeedLimit = 0;
                         httpHandleData->forbidReuse = 0;
@@ -145,18 +200,12 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         httpHandleData->x509certificate = NULL;
                         httpHandleData->x509privatekey = NULL;
                         httpHandleData->certificates = NULL;
-#if USE_MBEDTLS
+#ifdef USE_MBEDTLS
                         mbedtls_x509_crt_init(&httpHandleData->cert);
                         mbedtls_pk_init(&httpHandleData->key);
                         mbedtls_x509_crt_init(&httpHandleData->trusted_certificates);
- #endif
+#endif
                     }
-                }
-                else
-                {
-                    free(httpHandleData->hostURL);
-                    free(httpHandleData);
-                    httpHandleData = NULL;
                 }
             }
         }
@@ -171,13 +220,13 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
     if (httpHandleData != NULL)
     {
         free(httpHandleData->hostURL);
+
+        curl_easy_cleanup(httpHandleData->curl);
 #if USE_MBEDTLS
         mbedtls_x509_crt_free(&httpHandleData->cert);
         mbedtls_pk_free(&httpHandleData->key);
         mbedtls_x509_crt_free(&httpHandleData->trusted_certificates);
-        mbedtls_ssl_config_free(httpHandleData->ssl_config_ptr);
 #endif
-        curl_easy_cleanup(httpHandleData->curl);
         free(httpHandleData);
     }
 }
@@ -296,16 +345,13 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             result = CURLE_SSL_CERTPROBLEM;
         }
 #elif USE_MBEDTLS
-        // save memory address of ssl_ctx for later memory deallocation via mbedtls_config_free.
-        httpHandleData->ssl_config_ptr = (mbedtls_ssl_config*)ssl_ctx;
-
         // set device cert and key
         if (
             (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
             !(
                 (mbedtls_x509_crt_parse(&httpHandleData->cert, (const unsigned char *)httpHandleData->x509certificate, (int)(strlen(httpHandleData->x509certificate) + 1)) == 0) &&
                 (mbedtls_pk_parse_key(&httpHandleData->key, (const unsigned char *)httpHandleData->x509privatekey, (int)(strlen(httpHandleData->x509privatekey) + 1), NULL, 0) == 0) &&
-                (mbedtls_ssl_conf_own_cert(ssl_ctx, &httpHandleData->cert, &httpHandleData->key) == 0) // extra memory allocation occurs within mbedtls here.
+                (mbedtls_ssl_conf_own_cert(ssl_ctx, &httpHandleData->cert, &httpHandleData->key) == 0)
                 )
             )
         {
