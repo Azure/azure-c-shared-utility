@@ -137,8 +137,29 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             }
             else
             {
+                int32_t SDKSSL = CURLSSLBACKEND_NONE;
+#ifdef USE_OPENSSL
+                SDKSSL = CURLSSLBACKEND_OPENSSL;
+                char* SDKSSLName = "OpenSSL";
+#elif USE_WOLFSSL
+                SDKSSL = CURLSSLBACKEND_WOLFSSL;
+                char* SDKSSLName = "wolfSSL";
+#elif USE_MBEDTLS
+                SDKSSL = CURLSSLBACKEND_MBEDTLS;
+                char* SDKSSLName = "mbedTLS";
+#elif USE_BEARSSL
+                // Gate testing currently supports cURL 7.60, which is prior to cURL's BearSSL support.
+                // To pass Gates, cannot directly reference cURL's BearSSL support, i.e. CURLSSLBACKEND_BEARSSL.
+                LogInfo("If using BearSSL with the C SDK, please confirm cURL is also configured to use BearSSL.");
+                //SDKSSL = CURLSSLBACKEND_BEARSSL;
+                //char* SDKSSLName = "BearSSL";
+#else
+    // Schannel will be used only on win32, not Linux. If using win32 and not httpapi_compact.c,
+    // will not use httpapi_curl.c, but instead httpapi_winhttp.c
+    // See configs/azure_c_shared_utilityFunctions.cmake and CMakeLists.txt for more detail.
+#endif
                 // Check correct TLS library has been configured for cURL.
-                const struct curl_tlssessioninfo *info = NULL;
+                const struct curl_tlssessioninfo* info = NULL;
                 CURLcode result = curl_easy_getinfo(httpHandleData->curl, CURLINFO_TLS_SSL_PTR, &info);
 
                 if (result != CURLE_OK || info == NULL)
@@ -148,57 +169,42 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                     free(httpHandleData);
                     httpHandleData = NULL;
                 }
+#ifndef USE_BEARSSL // C SDK is using OpenSSL, wolfSSL, or mbedTLS
                 else if ((info->backend != CURLSSLBACKEND_OPENSSL) && (info->backend != CURLSSLBACKEND_WOLFSSL) &&
-                         (info->backend != CURLSSLBACKEND_MBEDTLS) && (info->backend != CURLSSLBACKEND_BEARSSL))
+                         (info->backend != CURLSSLBACKEND_MBEDTLS))// && (info->backend != CURLSSLBACKEND_BEARSSL))
                 {
                     LogError("curl_sslbackend (%d) currently used by cURL is not supported by the C SDK on Linux. "
-                             "Please configure and compile cURL to use OpenSSL, wolfSSL, mbedTLS, or BearSSL.",
+                             "Please configure and compile cURL to use OpenSSL, wolfSSL, or mbedTLS.",
                               info->backend);
                     free(httpHandleData->hostURL);
                     free(httpHandleData);
                     httpHandleData = NULL;
                 }
+#endif
                 else
                 {
-                    int32_t SDKSSL = CURLSSLBACKEND_NONE;
-#ifdef USE_OPENSSL
-                    SDKSSL = CURLSSLBACKEND_OPENSSL;
-                    char* SDKSSLName = "OpenSSL";
-#elif USE_WOLFSSL
-                    SDKSSL = CURLSSLBACKEND_WOLFSSL;
-                    char* SDKSSLName = "wolfSSL";
-#elif USE_MBEDTLS
-                    SDKSSL = CURLSSLBACKEND_MBEDTLS;
-                    char* SDKSSLName = "mbedTLS";
-#elif USE_BEARSSL
-                    SDKSSL = CURLSSLBACKEND_BEARSSL;
-                    char* SDKSSLName = "BearSSL";
-#else   
-    // Schannel will be used only on win32, not Linux. If using win32 and not httpapi_compact.c, 
-    // will not use httpapi_curl.c, but instead httpapi_winhttp.c
-    // See configs/azure_c_shared_utilityFunctions.cmake and CMakeLists.txt for more detail.
-#endif
+#ifndef USE_BEARSSL
                     // Check correct TLS library has been configured for C SDK on Linux.
-                    if (SDKSSL == CURLSSLBACKEND_NONE)
+                    if (SDKSSL == CURLSSLBACKEND_NONE) // A TLS library other than OpenSSL, wolfSSL, or mbedTLS is being used.
                     {
                         LogError("C SDK TLS platform is not supported to use with cURL on Linux. "
-                                 "Please configure and compile C SDK to use OpenSSL, wolfSSL, mbedTLS, or BearSSL.");
+                                 "Please configure and compile C SDK to use OpenSSL, wolfSSL, or mbedTLS.");
                         free(httpHandleData->hostURL);
                         free(httpHandleData);
                         httpHandleData = NULL;
                     }
                     else if (SDKSSL != (int32_t)info->backend)
                     {
-#if defined USE_OPENSSL || defined USE_WOLFSSL || defined USE_MBEDTLS || defined USE_BEARSSL
                         LogError("curl_sslbackend (%d) currently used by cURL does not match TLS platform (%s) "
                                  "used by C SDK on Linux. Please configure and compile cURL to use %s.",
                                   info->backend, SDKSSLName, SDKSSLName);
-#endif
+
                         free(httpHandleData->hostURL);
                         free(httpHandleData);
                         httpHandleData = NULL;
                     }
                     else
+#endif
                     {
                         httpHandleData->timeout = 242 * 1000; /*242 seconds seems like a nice enough time. Reasone for 242:
                                                                 1. http://curl.haxx.se/libcurl/c/CURLOPT_TIMEOUT.html says Normally, name lookups can take a considerable time and limiting operations to less than a few minutes risk aborting perfectly normal operations.
