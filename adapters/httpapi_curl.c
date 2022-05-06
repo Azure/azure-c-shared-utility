@@ -220,7 +220,6 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
     if (httpHandleData != NULL)
     {
         free(httpHandleData->hostURL);
-
         curl_easy_cleanup(httpHandleData->curl);
 #if USE_MBEDTLS
         mbedtls_x509_crt_free(&httpHandleData->cert);
