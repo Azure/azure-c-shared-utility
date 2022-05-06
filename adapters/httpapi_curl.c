@@ -180,7 +180,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                     }
                     else if (SDKSSL != (int32_t)info->backend)
                     {
-#ifdef USE_OPENSSL || USE_WOLFSSL || USE_MBEDTLS
+#if defined USE_OPENSSL || defined USE_WOLFSSL || defined USE_MBEDTLS
                         LogError("curl_sslbackend (%d) currently used by cURL does not match TLS platform (%s) used by C SDK. Please configure and compile cURL to use %s.",
                                   info->backend, SDKSSLName, SDKSSLName);
 #endif
