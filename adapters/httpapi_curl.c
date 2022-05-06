@@ -137,16 +137,20 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             }
             else
             {
+                
                 int32_t SDKSSL = CURLSSLBACKEND_NONE;
+#ifndef USE_BEARSSL
+                char* SDKSSLName = "Undefined";     
+#endif
 #ifdef USE_OPENSSL
                 SDKSSL = CURLSSLBACKEND_OPENSSL;
-                char* SDKSSLName = "OpenSSL";
+                SDKSSLName = "OpenSSL";
 #elif USE_WOLFSSL
                 SDKSSL = CURLSSLBACKEND_WOLFSSL;
-                char* SDKSSLName = "wolfSSL";
+                SDKSSLName = "wolfSSL";
 #elif USE_MBEDTLS
                 SDKSSL = CURLSSLBACKEND_MBEDTLS;
-                char* SDKSSLName = "mbedTLS";
+                SDKSSLName = "mbedTLS";
 #elif USE_BEARSSL
                 // Gate testing currently supports cURL 7.60, which is prior to cURL's BearSSL support.
                 // To pass Gates, cannot directly reference cURL's BearSSL support, i.e. CURLSSLBACKEND_BEARSSL.
