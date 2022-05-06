@@ -197,7 +197,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
     #elif USE_MBEDTLS
                 char* SDKSSLName = "mbedTLS";
     #else
-                char* SDKSSLName = "Unknown"
+                char* SDKSSLName = "Unknown";
     #endif
                         LogError("curl_sslbackend (%d) currently used by cURL does not match TLS platform (%s) "
                                  "used by C SDK on Linux. Please configure and compile cURL to use %s.",
