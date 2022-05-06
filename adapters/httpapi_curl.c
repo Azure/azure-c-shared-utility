@@ -161,16 +161,15 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 {
                     // Check correct TLS library has been configured for C SDK.
                     int32_t SDKSSL = CURLSSLBACKEND_NONE;
-                    char* SDKSSLName = "Unsupported C SDK TLS platform";
 #ifdef USE_OPENSSL
                     SDKSSL = CURLSSLBACKEND_OPENSSL;
-                    SDKSSLName = "OpenSSL";
+                    char* SDKSSLName = "OpenSSL";
 #elif USE_WOLFSSL
                     SDKSSL = CURLSSLBACKEND_WOLFSSL;
-                    SDKSSLName = "wolfSSL";
+                    char* SDKSSLName = "wolfSSL";
 #elif USE_MBEDTLS
                     SDKSSL = CURLSSLBACKEND_MBEDTLS;
-                    SDKSSLName = "mbedTLS";
+                    char* SDKSSLName = "mbedTLS";
 #endif
                     if (SDKSSL == CURLSSLBACKEND_NONE)
                     {
@@ -181,8 +180,10 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                     }
                     else if (SDKSSL != (int32_t)info->backend)
                     {
+#ifdef USE_OPENSSL || USE_WOLFSSL || USE_MBEDTLS
                         LogError("curl_sslbackend (%d) currently used by cURL does not match TLS platform (%s) used by C SDK. Please configure and compile cURL to use %s.",
                                   info->backend, SDKSSLName, SDKSSLName);
+#endif
                         free(httpHandleData->hostURL);
                         free(httpHandleData);
                         httpHandleData = NULL;
