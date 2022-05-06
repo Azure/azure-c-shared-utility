@@ -219,6 +219,7 @@ int x509_openssl_add_pem_file_key(SSL_CTX* ssl_ctx, const char* x509privatekey)
     return result;
 }
 
+#ifndef OPENSSL_NO_ENGINE
 int x509_openssl_add_engine_key(SSL_CTX* ssl_ctx, const char* x509privatekey_id, ENGINE* engine)
 {
     int result;
@@ -270,6 +271,7 @@ int x509_openssl_add_engine_key(SSL_CTX* ssl_ctx, const char* x509privatekey_id,
 
     return result;
 }
+#endif
 
 int x509_openssl_add_credentials(
     SSL_CTX* ssl_ctx,
@@ -297,10 +299,12 @@ int x509_openssl_add_credentials(
         {
             result = x509_openssl_add_pem_file_key(ssl_ctx, x509privatekey);
         }
+        #ifndef OPENSSL_NO_ENGINE
         else if (x509privatekeytype == KEY_TYPE_ENGINE)
         {
             result = x509_openssl_add_engine_key(ssl_ctx, x509privatekey, engine);
         }
+        #endif
         else
         {
             result = 0;
