@@ -113,26 +113,103 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
         {
             size_t hostURL_size = strlen("https://") + strlen(hostName) + 1;
             httpHandleData->hostURL = malloc(hostURL_size);
+
             if (httpHandleData->hostURL == NULL)
             {
                 LogError("unable to malloc");
                 free(httpHandleData);
                 httpHandleData = NULL;
             }
+            else if ((strcpy_s(httpHandleData->hostURL, hostURL_size, "https://") != 0) ||
+                    (strcat_s(httpHandleData->hostURL, hostURL_size, hostName) != 0))
+            {
+                LogError("unable to set hostURL");
+                free(httpHandleData->hostURL);
+                free(httpHandleData);
+                httpHandleData = NULL;
+            }
+            else if ((httpHandleData->curl = curl_easy_init()) == NULL)
+            {
+                LogError("unable to init cURL structure");
+                free(httpHandleData->hostURL);
+                free(httpHandleData);
+                httpHandleData = NULL;
+            }
             else
             {
-                if ((strcpy_s(httpHandleData->hostURL, hostURL_size, "https://") == 0) &&
-                    (strcat_s(httpHandleData->hostURL, hostURL_size, hostName) == 0))
+#ifdef USE_BEARSSL
+                // Gate testing currently supports cURL 7.60, which is prior to cURL's BearSSL support.
+                // To pass Gates, cannot directly reference cURL's BearSSL support, i.e. CURLSSLBACKEND_BEARSSL.
+                // Skipping validation of cURL's ssl backend to be BearSSL and comparison to C SDK's TLS platform.
+                LogInfo("If using BearSSL with the C SDK, please confirm cURL is also configured to use BearSSL.");
+#else // C SDK is using OpenSSL, wolfSSL, or mbedTLS, or other
+
+                // Check correct TLS library has been configured for cURL.
+                const struct curl_tlssessioninfo* info = NULL;
+                CURLcode result = curl_easy_getinfo(httpHandleData->curl, CURLINFO_TLS_SSL_PTR, &info);
+
+                if (result != CURLE_OK || info == NULL)
                 {
-                    httpHandleData->curl = curl_easy_init();
-                    if (httpHandleData->curl == NULL)
+                    LogError("unable to get cURL backend SSL info");
+                    free(httpHandleData->hostURL);
+                    free(httpHandleData);
+                    httpHandleData = NULL;
+                }
+                else if ((info->backend != CURLSSLBACKEND_OPENSSL) && (info->backend != CURLSSLBACKEND_WOLFSSL) &&
+                         (info->backend != CURLSSLBACKEND_MBEDTLS))// && (info->backend != CURLSSLBACKEND_BEARSSL))
+                {
+                    LogError("curl_sslbackend (%d) currently used by cURL is not supported by the C SDK on Linux. "
+                             "Please configure and compile cURL to use OpenSSL, wolfSSL, or mbedTLS.",
+                              info->backend);
+                    free(httpHandleData->hostURL);
+                    free(httpHandleData);
+                    httpHandleData = NULL;
+                }
+                else
+                {
+    #ifdef USE_OPENSSL
+                    int32_t SDKSSL = CURLSSLBACKEND_OPENSSL;
+    #elif USE_WOLFSSL
+                    int32_t SDKSSL = CURLSSLBACKEND_WOLFSSL;
+    #elif USE_MBEDTLS
+                    int32_t SDKSSL = CURLSSLBACKEND_MBEDTLS;
+    #else
+                    // Schannel will be used only on win32, not Linux. If using win32 and not httpapi_compact.c,
+                    // will not use httpapi_curl.c, but instead httpapi_winhttp.c
+                    // See configs/azure_c_shared_utilityFunctions.cmake and CMakeLists.txt for more detail.
+                    int32_t SDKSSL = CURLSSLBACKEND_NONE;   
+    #endif
+                    // Check correct TLS library has been configured for C SDK on Linux.
+                    if (SDKSSL == CURLSSLBACKEND_NONE) // A TLS library other than OpenSSL, wolfSSL, or mbedTLS is being used.
                     {
+                        LogError("C SDK TLS platform is not supported to use with cURL on Linux. "
+                                 "Please configure and compile C SDK to use OpenSSL, wolfSSL, or mbedTLS.");
+                        free(httpHandleData->hostURL);
+                        free(httpHandleData);
+                        httpHandleData = NULL;
+                    }
+                    else if (SDKSSL != (int32_t)info->backend) // Check C SDK TLS platform matches cURL's
+                    {
+    #ifdef USE_OPENSSL
+                char* SDKSSLName = "OpenSSL";
+    #elif USE_WOLFSSL
+                char* SDKSSLName = "wolfSSL";
+    #elif USE_MBEDTLS
+                char* SDKSSLName = "mbedTLS";
+    #else
+                char* SDKSSLName = "Unknown";
+    #endif
+                        LogError("curl_sslbackend (%d) currently used by cURL does not match TLS platform (%s) "
+                                 "used by C SDK on Linux. Please configure and compile cURL to use %s.",
+                                  info->backend, SDKSSLName, SDKSSLName);
+
                         free(httpHandleData->hostURL);
                         free(httpHandleData);
                         httpHandleData = NULL;
                     }
                     else
                     {
+#endif //ifdef USE_BEARSSL - else
                         httpHandleData->timeout = 242 * 1000; /*242 seconds seems like a nice enough time. Reasone for 242:
                                                                 1. http://curl.haxx.se/libcurl/c/CURLOPT_TIMEOUT.html says Normally, name lookups can take a considerable time and limiting operations to less than a few minutes risk aborting perfectly normal operations.
                                                                 2. 256KB of data... at 9600 bps transfers in about 218 seconds. Add to that a buffer of 10%... round it up to 242 :)*/
@@ -144,19 +221,15 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                         httpHandleData->x509certificate = NULL;
                         httpHandleData->x509privatekey = NULL;
                         httpHandleData->certificates = NULL;
-#if USE_MBEDTLS
+#ifdef USE_MBEDTLS
                         mbedtls_x509_crt_init(&httpHandleData->cert);
                         mbedtls_pk_init(&httpHandleData->key);
                         mbedtls_x509_crt_init(&httpHandleData->trusted_certificates);
 #endif
+#ifndef USE_BEARSSL
                     }
                 }
-                else
-                {
-                    free(httpHandleData->hostURL);
-                    free(httpHandleData);
-                    httpHandleData = NULL;
-                }
+#endif
             }
         }
     }
