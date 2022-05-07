@@ -3,10 +3,10 @@
 
 cmake_minimum_required (VERSION 3.5)
 
-set(theseTestsName x509_openssl_ut)
+set(theseTestsName x509_openssl_ut_engine)
 
 set(${theseTestsName}_test_files
-${theseTestsName}.c
+../x509_openssl_ut.c
 )
 
 if(LINUX)
@@ -19,7 +19,7 @@ if(LINUX)
 endif()
 
 set(${theseTestsName}_c_files
-../../adapters/x509_openssl.c
+../../../adapters/x509_openssl.c
 )
 
 set(${theseTestsName}_h_files

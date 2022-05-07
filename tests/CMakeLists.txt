@@ -48,7 +48,8 @@ if(${run_unittests})
 
     #normally, with proper include paths, the below tests can be run under windows too.
     if(${use_openssl})
-        add_subdirectory(x509_openssl_ut)
+        add_subdirectory(x509_openssl_ut/engine)
+        add_subdirectory(x509_openssl_ut/no_engine)
     endif()
 
     add_subdirectory(string_tokenizer_ut)
