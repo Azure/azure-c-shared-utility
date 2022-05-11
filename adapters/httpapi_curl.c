@@ -196,21 +196,21 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 }
 
 #endif //ifdef USE_BEARSSL - else
-                    httpHandleData->timeout = 242 * 1000; /*242 seconds seems like a nice enough time. Reasone for 242:
-                                                            1. http://curl.haxx.se/libcurl/c/CURLOPT_TIMEOUT.html says Normally, name lookups can take a considerable time and limiting operations to less than a few minutes risk aborting perfectly normal operations.
-                                                            2. 256KB of data... at 9600 bps transfers in about 218 seconds. Add to that a buffer of 10%... round it up to 242 :)*/
-                    httpHandleData->lowSpeedTime = 0;
-                    httpHandleData->lowSpeedLimit = 0;
-                    httpHandleData->forbidReuse = 0;
-                    httpHandleData->freshConnect = 0;
-                    httpHandleData->verbose = 0;
-                    httpHandleData->x509certificate = NULL;
-                    httpHandleData->x509privatekey = NULL;
-                    httpHandleData->certificates = NULL;
+                httpHandleData->timeout = 242 * 1000; /*242 seconds seems like a nice enough time. Reasone for 242:
+                                                        1. http://curl.haxx.se/libcurl/c/CURLOPT_TIMEOUT.html says Normally, name lookups can take a considerable time and limiting operations to less than a few minutes risk aborting perfectly normal operations.
+                                                        2. 256KB of data... at 9600 bps transfers in about 218 seconds. Add to that a buffer of 10%... round it up to 242 :)*/
+                httpHandleData->lowSpeedTime = 0;
+                httpHandleData->lowSpeedLimit = 0;
+                httpHandleData->forbidReuse = 0;
+                httpHandleData->freshConnect = 0;
+                httpHandleData->verbose = 0;
+                httpHandleData->x509certificate = NULL;
+                httpHandleData->x509privatekey = NULL;
+                httpHandleData->certificates = NULL;
 #ifdef USE_MBEDTLS
-                    mbedtls_x509_crt_init(&httpHandleData->cert);
-                    mbedtls_pk_init(&httpHandleData->key);
-                    mbedtls_x509_crt_init(&httpHandleData->trusted_certificates);
+                mbedtls_x509_crt_init(&httpHandleData->cert);
+                mbedtls_pk_init(&httpHandleData->key);
+                mbedtls_x509_crt_init(&httpHandleData->trusted_certificates);
 #endif
             }
         }
