@@ -156,8 +156,8 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                          (info->backend != CURLSSLBACKEND_MBEDTLS))// && (info->backend != CURLSSLBACKEND_BEARSSL))
                 {
                     LogError("curl_sslbackend (%d) currently used by cURL is not supported by the C SDK. "
-                            "Please configure and compile cURL to use OpenSSL, wolfSSL, or mbedTLS.",
-                            info->backend);
+                             "Please configure and compile cURL to use OpenSSL, wolfSSL, or mbedTLS.",
+                             info->backend);
 
                 }
 
