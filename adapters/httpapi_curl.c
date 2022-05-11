@@ -142,7 +142,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 // To pass Gates, cannot directly reference CURLSSLBACKEND_BEARSSL or CURLSSLBACKEND_SECURETRANSPORT.
                 // Skipping validation of cURL's ssl backend.
                 LogInfo("If using BearSSL with the C SDK, please confirm cURL is also configured to use BearSSL.");
-#elif defined USE_OPENSSL || defined USE_WOLF_SSL || defined USE_MBEDTLS
+#elif defined USE_OPENSSL || defined USE_WOLFSSL || defined USE_MBEDTLS
 
                 // Check C SDK TLS platform matches cURL's
                 const struct curl_tlssessioninfo* info = NULL;
