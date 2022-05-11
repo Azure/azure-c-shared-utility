@@ -155,8 +155,8 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 else if ((info->backend != CURLSSLBACKEND_OPENSSL) && (info->backend != CURLSSLBACKEND_WOLFSSL) &&
                          (info->backend != CURLSSLBACKEND_MBEDTLS))// && (info->backend != CURLSSLBACKEND_BEARSSL))
                 {
-                    LogError("curl_sslbackend (%d) currently used by cURL is not supported by the C SDK. "
-                             "Please configure and compile cURL to use OpenSSL, wolfSSL, or mbedTLS.",
+                    LogError("curl_sslbackend (%d) currently used by cURL is not supported by the C SDK on Linux or OSX. "
+                             "Please configure and compile cURL to use OpenSSL, wolfSSL, mbedTLS, or SecureTransport.",
                              info->backend);
 
                 }
@@ -171,15 +171,11 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 // Schannel will be used only on win32, not Linux. If using win32 and not httpapi_compact.c,
                 // will not use httpapi_curl.c, but instead httpapi_winhttp.c
                 // See configs/azure_c_shared_utilityFunctions.cmake and CMakeLists.txt for more detail.
-                int32_t SDKSSL = CURLSSLBACKEND_NONE;   
+                // SecureTransport for OSX is available.  Assuming must be that.
+                int32_t SDKSSL = CURLSSLBACKEND_SECURETRANSPORT;   
     #endif
-                // Check correct TLS library has been configured for C SDK on Linux.
-                if (SDKSSL == CURLSSLBACKEND_NONE) // A TLS library other than OpenSSL, wolfSSL, or mbedTLS is being used.
-                {
-                    LogError("C SDK TLS platform is not supported to use with cURL. "
-                                "Please configure and compile C SDK to use OpenSSL, wolfSSL, or mbedTLS.");
-                }
-                else if (SDKSSL != (int32_t)info->backend) // Check C SDK TLS platform matches cURL's
+                // Check C SDK TLS platform matches cURL's
+                if (SDKSSL != (int32_t)info->backend) 
                 {
     #ifdef USE_OPENSSL
                     char* SDKSSLName = "OpenSSL";
@@ -188,11 +184,11 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
     #elif USE_MBEDTLS
                     char* SDKSSLName = "mbedTLS";
     #else
-                    char* SDKSSLName = "Unknown";
+                    char* SDKSSLName = "SecureTransport";
     #endif
                     LogError("curl_sslbackend (%d) currently used by cURL does not match TLS platform (%s) "
-                                "used by C SDK on Linux. Please configure and compile cURL to use %s.",
-                                info->backend, SDKSSLName, SDKSSLName);
+                             "used by C SDK on Linux or OSX. Please configure and compile cURL to use %s.",
+                             info->backend, SDKSSLName, SDKSSLName);
                 }
 
 #endif //ifdef USE_BEARSSL - else
