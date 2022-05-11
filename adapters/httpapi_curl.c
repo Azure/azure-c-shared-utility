@@ -152,8 +152,10 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 {
                     LogError("unable to get cURL backend SSL info");
                 }
-                else if ((info->backend != CURLSSLBACKEND_OPENSSL) && (info->backend != CURLSSLBACKEND_WOLFSSL) &&
-                         (info->backend != CURLSSLBACKEND_MBEDTLS))// && (info->backend != CURLSSLBACKEND_BEARSSL))
+                else if ((info->backend != CURLSSLBACKEND_OPENSSL) && 
+                         (info->backend != CURLSSLBACKEND_WOLFSSL) &&
+                         (info->backend != CURLSSLBACKEND_MBEDTLS) && 
+                         (info->backend != CURLSSLBACKEND_SECURETRANSPORT)) // && (info->backend != CURLSSLBACKEND_BEARSSL))
                 {
                     LogError("curl_sslbackend (%d) currently used by cURL is not supported by the C SDK on Linux or OSX. "
                              "Please configure and compile cURL to use OpenSSL, wolfSSL, mbedTLS, or SecureTransport.",
