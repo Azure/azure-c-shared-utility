@@ -138,13 +138,13 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             else
             {
 #ifdef USE_BEARSSL
-                // Gate testing currently supports cURL 7.60, which is prior to cURL's BearSSL support.
-                // To pass Gates, cannot directly reference cURL's BearSSL support, i.e. CURLSSLBACKEND_BEARSSL.
-                // Skipping validation of cURL's ssl backend to be BearSSL and comparison to C SDK's TLS platform.
+                // Gate testing currently supports version of cURL prior to cURL's BearSSL or SecureTransport support.
+                // To pass Gates, cannot directly reference CURLSSLBACKEND_BEARSSL or CURLSSLBACKEND_SECURETRANSPORT.
+                // Skipping validation of cURL's ssl backend.
                 LogInfo("If using BearSSL with the C SDK, please confirm cURL is also configured to use BearSSL.");
-#else // C SDK is using OpenSSL, wolfSSL, or mbedTLS, or other
+#elif defined USE_OPENSSL || defined USE_WOLF_SSL || defined USE_MBEDTLS
 
-                // Check correct TLS library has been configured for cURL.
+                // Check C SDK TLS platform matches cURL's
                 const struct curl_tlssessioninfo* info = NULL;
                 CURLcode result = curl_easy_getinfo(httpHandleData->curl, CURLINFO_TLS_SSL_PTR, &info);
 
@@ -152,48 +152,34 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 {
                     LogError("unable to get cURL backend SSL info");
                 }
-                else if ((info->backend != CURLSSLBACKEND_OPENSSL) && 
-                         (info->backend != CURLSSLBACKEND_WOLFSSL) &&
-                         (info->backend != CURLSSLBACKEND_MBEDTLS) && 
-                         (info->backend != CURLSSLBACKEND_SECURETRANSPORT)) // && (info->backend != CURLSSLBACKEND_BEARSSL))
-                {
-                    LogError("curl_sslbackend (%d) currently used by cURL is not supported by the C SDK on Linux or OSX. "
-                             "Please configure and compile cURL to use OpenSSL, wolfSSL, mbedTLS, or SecureTransport.",
-                             info->backend);
-
-                }
-
-    #ifdef USE_OPENSSL
-                int32_t SDKSSL = CURLSSLBACKEND_OPENSSL;
-    #elif USE_WOLFSSL
-                int32_t SDKSSL = CURLSSLBACKEND_WOLFSSL;
-    #elif USE_MBEDTLS
-                int32_t SDKSSL = CURLSSLBACKEND_MBEDTLS;
-    #else
-                // Schannel will be used only on win32, not Linux. If using win32 and not httpapi_compact.c,
-                // will not use httpapi_curl.c, but instead httpapi_winhttp.c
-                // See configs/azure_c_shared_utilityFunctions.cmake and CMakeLists.txt for more detail.
-                // SecureTransport for OSX is available.  Assuming must be that.
-                int32_t SDKSSL = CURLSSLBACKEND_SECURETRANSPORT;   
-    #endif
-                // Check C SDK TLS platform matches cURL's
-                if (SDKSSL != (int32_t)info->backend) 
+                else
                 {
     #ifdef USE_OPENSSL
-                    char* SDKSSLName = "OpenSSL";
+                    if (CURLSSLBACKEND_OPENSSL != (int32_t)info->backend) 
+                    {
+                        char* SDKSSLName = "OpenSSL";
     #elif USE_WOLFSSL
-                    char* SDKSSLName = "wolfSSL";
+                    if (CURLSSLBACKEND_WOLFSSL != (int32_t)info->backend)
+                    {
+                        char* SDKSSLName = "wolfSSL";
     #elif USE_MBEDTLS
-                    char* SDKSSLName = "mbedTLS";
+                    if (CURLSSLBACKEND_MBEDTLS != (int32_t)info->backend)
+                    {
+                        char* SDKSSLName = "mbedTLS";
     #else
-                    char* SDKSSLName = "SecureTransport";
+                    // Should not get here.
     #endif
-                    LogError("curl_sslbackend (%d) currently used by cURL does not match TLS platform (%s) "
-                             "used by C SDK on Linux or OSX. Please configure and compile cURL to use %s.",
-                             info->backend, SDKSSLName, SDKSSLName);
+                        LogError("curl_sslbackend (%d) currently used by cURL does not match TLS platform (%s) "
+                                 "used by C SDK on Linux or OSX. Please configure and compile cURL to use %s.",
+                                 info->backend, SDKSSLName, SDKSSLName);
+                    }
                 }
-
-#endif //ifdef USE_BEARSSL - else
+#else // Other, possibly SecureTransport.
+                // Gate testing currently supports version of cURL prior to cURL's BearSSL or SecureTransport support.
+                // To pass Gates, cannot directly reference CURLSSLBACKEND_BEARSSL or CURLSSLBACKEND_SECURETRANSPORT.
+                // Skipping validation of cURL's ssl backend.
+                LogInfo("If using SecureTransport with the C SDK, please confirm cURL is also configured to use SecureTransport.");
+#endif 
                 httpHandleData->timeout = 242 * 1000; /*242 seconds seems like a nice enough time. Reasone for 242:
                                                         1. http://curl.haxx.se/libcurl/c/CURLOPT_TIMEOUT.html says Normally, name lookups can take a considerable time and limiting operations to less than a few minutes risk aborting perfectly normal operations.
                                                         2. 256KB of data... at 9600 bps transfers in about 218 seconds. Add to that a buffer of 10%... round it up to 242 :)*/
