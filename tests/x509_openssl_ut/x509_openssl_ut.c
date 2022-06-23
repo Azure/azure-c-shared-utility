@@ -34,7 +34,9 @@ static void my_gballoc_free(void* s)
 #include "openssl/bio.h"
 #include "openssl/rsa.h"
 #include "openssl/evp.h"
+#ifndef OPENSSL_NO_ENGINE
 #include "openssl/engine.h"
+#endif
 
 #include "azure_c_shared_utility/x509_openssl.h"
 #include "umock_c/umocktypes_charptr.h"
