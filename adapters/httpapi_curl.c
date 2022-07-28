@@ -312,18 +312,20 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
         if (httpHandleData->x509privatekeytype == KEY_TYPE_ENGINE) {
             ENGINE_load_builtin_engines();
             httpHandleData->engine = ENGINE_by_id(httpHandleData->engineId);
-            if (httpHandleData->engine == NULL)
-            {
-                LogError("unable to load engine by ID: %s", httpHandleData->engineId);
-            }
         }
-        if (
+        if (httpHandleData->x509privatekeytype == KEY_TYPE_ENGINE && httpHandleData->engine == NULL)
+        {
+            LogError("unable to load engine by ID: %s", httpHandleData->engineId);
+            result = CURLE_SSL_CERTPROBLEM;
+        }
+        else if (
             (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
             (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey, httpHandleData->x509privatekeytype, httpHandleData->engine) != 0)
            )
         {
             LogError("unable to x509_openssl_add_credentials");
             result = CURLE_SSL_CERTPROBLEM;
+            ENGINE_free(httpHandleData->engine);
         }
         /*trying to set CA certificates*/
         else if (
@@ -333,6 +335,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
         {
             LogError("failure in x509_openssl_add_certificates");
             result = CURLE_SSL_CERTPROBLEM;
+            ENGINE_free(httpHandleData->engine);
         }
 #elif USE_WOLFSSL
         if (
