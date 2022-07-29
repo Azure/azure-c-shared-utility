@@ -713,7 +713,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
     return result;
 }
 
-int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t size, ON_SEND_COMPLETE on_send_complete_obj, void *callback_context)
+int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t size, ON_SEND_COMPLETE on_send_complete_callback, void *callback_context)
 {
     int result = 0;
 
