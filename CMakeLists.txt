@@ -61,6 +61,13 @@ else()
     option(use_c_ares "set use_c_ares to ON if c-ares is to be used, set to OFF to not use c-ares" OFF)
 endif()
 
+set(compileOption_C "" CACHE STRING "passes a string to the command line of the C compiler")
+
+# If any compiler has a command line switch called "OFF" then it will need special care
+if (NOT "${compileOption_C}" STREQUAL "")
+    add_definitions(${compileOption_C})
+endif()
+
 option(no_logging "disable logging (default is OFF)" OFF)
 
 # The options setting for use_socketio is not reliable. If openssl is used, make sure it's on,
