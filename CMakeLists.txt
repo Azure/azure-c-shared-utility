@@ -458,6 +458,18 @@ endif()
 FILE(GLOB aziotsharedutil_md_files "devdoc/*.md")
 SOURCE_GROUP(devdoc FILES ${aziotsharedutil_md_files})
 
+# Add ignore deprecated functions so we may use 1.1.1 APIs
+# in OpenSSL 3
+if(LINUX)
+  set_property(
+    SOURCE
+      ${CMAKE_CURRENT_LIST_DIR}/adapters/tlsio_openssl.c
+      ${CMAKE_CURRENT_LIST_DIR}/adapters/x509_openssl.c
+    PROPERTY COMPILE_OPTIONS
+      -Wno-deprecated-declarations
+  )
+endif()
+
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files} ${aziotsharedutil_md_files})
 setTargetBuildProperties(aziotsharedutil)
