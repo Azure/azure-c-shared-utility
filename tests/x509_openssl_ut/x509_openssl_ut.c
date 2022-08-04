@@ -348,7 +348,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         STRICT_EXPECTED_CALL(BIO_new_mem_buf((void*)TEST_PUBLIC_CERTIFICATE, -1));
         STRICT_EXPECTED_CALL(PEM_read_bio_X509_AUX(IGNORED_PTR_ARG, NULL, NULL, NULL));
         STRICT_EXPECTED_CALL(SSL_CTX_use_certificate(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L) || defined(LIBRESSL_VERSION_NUMBER)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
         // Actual macro name: SSL_CTX_clear_extra_chain_certs:
         STRICT_EXPECTED_CALL(SSL_CTX_ctrl(TEST_SSL_CTX_STRUCTURE, SSL_CTRL_CLEAR_EXTRA_CHAIN_CERTS, 0, NULL));
 #endif
@@ -537,7 +537,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 
         umock_c_negative_tests_snapshot();
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && (OPENSSL_VERSION_NUMBER < 0x20000000L) || defined(LIBRESSL_VERSION_NUMBER)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
     #ifdef __APPLE__
         size_t calls_cannot_fail_rsa[] = { 4, 5, 6, 10, 12, 13, 14 };
         size_t calls_cannot_fail_ecc[] = { 3, 4, 8, 10, 11, 12} ;

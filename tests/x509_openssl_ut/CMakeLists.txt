@@ -9,6 +9,15 @@ set(${theseTestsName}_test_files
 ${theseTestsName}.c
 )
 
+if(LINUX)
+  set_property(
+    SOURCE
+      ../../adapters/x509_openssl.c
+    PROPERTY COMPILE_OPTIONS
+      -Wno-deprecated-declarations
+  )
+endif()
+
 set(${theseTestsName}_c_files
 ../../adapters/x509_openssl.c
 )
