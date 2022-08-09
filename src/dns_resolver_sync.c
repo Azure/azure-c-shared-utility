@@ -19,7 +19,7 @@
 // EXTRACT_IPV4 pulls the uint32_t IPv4 address out of an addrinfo struct
 // This will not be needed for the asynchronous design
 // The default definition handles lwIP. Please add comments for other systems tested.
-#define EXTRACT_IPV4(ptr) ((struct sockaddr_in *) ptr->ai_addr)->sin_addr.s_addr
+#define EXTRACT_IPV4(ptr) ((struct sockaddr_in6 *) ptr->ai_addr)->sin6_addr.s_addr
 
 typedef struct
 {
@@ -102,9 +102,10 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
             // Setup the hints address info structure
             // which is passed to the getaddrinfo() function
             memset(&hints, 0, sizeof(hints));
-            hints.ai_family = AF_INET;
+            hints.ai_family = AF_INET6;
             hints.ai_socktype = SOCK_STREAM;
-            hints.ai_protocol = 0;
+            // hints.ai_protocol = 0;
+            // hints.ai_flags = AI_DEFAULT;
 
             //--------------------------------
             // Call getaddrinfo(). If the call succeeds,
@@ -127,14 +128,15 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
                 {
                     switch (ptr->ai_family)
                     {
-                    case AF_INET:
+                    case AF_INET6:
                         /* Codes_SRS_dns_resolver_30_032: [ If dns_resolver_is_create_complete has returned true and the lookup process has succeeded, dns_resolver_get_ipv4 shall return the discovered IPv4 address. ]*/
-                        dns->ip_v4 = EXTRACT_IPV4(ptr);
+                        // dns->ip_v4 = EXTRACT_IPV4(ptr);
+                        dns->is_failed = false;
                         break;
                     }
                 }
                 /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-                dns->is_failed = (dns->ip_v4 == 0);
+                // dns->is_failed = (dns->ip_v4 == 0);
             }
             else
             {
