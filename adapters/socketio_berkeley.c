@@ -311,7 +311,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             else
             {
                 connect_addr = (struct sockaddr_in6*) addr->ai_addr;
-                connect_addr_len = sizeof(*addr->ai_addr);
+                connect_addr_len = sizeof(struct sockaddr_in6);
                 result = 0;
             }
         }
