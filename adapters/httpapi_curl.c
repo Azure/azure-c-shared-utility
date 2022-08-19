@@ -1075,7 +1075,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
 #ifdef USE_OPENSSL
         else if (strcmp(OPTION_OPENSSL_PRIVATE_KEY_TYPE, optionName) == 0)
         {
-            const OPTION_OPENSSL_KEY_TYPE type = **(const OPTION_OPENSSL_KEY_TYPE**)value;
+            const OPTION_OPENSSL_KEY_TYPE type = *(const OPTION_OPENSSL_KEY_TYPE*)value;
             if (type == KEY_TYPE_DEFAULT || type == KEY_TYPE_ENGINE)
             {
                 OPTION_OPENSSL_KEY_TYPE* temp = malloc(sizeof(OPTION_OPENSSL_KEY_TYPE));
@@ -1100,7 +1100,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         else if (strcmp(OPTION_OPENSSL_ENGINE, optionName) == 0)
         {
             /*this is getting the engine. In this case, value is a pointer to a const char* that contains the engine as a null terminated string*/
-            if (mallocAndStrcpy_s((char**)savedValue, *(const char**)value) != 0)
+            if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
             {
                 LogError("unable to clone %s", optionName);
                 result = HTTPAPI_ERROR;
