@@ -713,7 +713,7 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
     return result;
 }
 
-int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void *callback_context)
+int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t size, ON_SEND_COMPLETE on_send_complete_callback, void *callback_context)
 {
     int result = 0;
 
@@ -732,7 +732,7 @@ int tlsio_mbedtls_send(CONCRETE_IO_HANDLE tls_io, const void *buffer, size_t siz
         }
         else
         {
-            tls_io_instance->send_complete_info.on_send_complete = on_send_complete;
+            tls_io_instance->send_complete_info.on_send_complete = on_send_complete_callback;
             tls_io_instance->send_complete_info.on_send_complete_callback_context = callback_context;
             tls_io_instance->send_complete_info.last_fragmented_req_status = IO_SEND_OK;
             int out_left = (int)size;
