@@ -113,6 +113,7 @@ if(${use_openssl})
     # If OpenSSL::SSL OR OpenSSL::Crypto are not set then you need to run
     # the find package for openssl
     if (NOT TARGET OpenSSL::SSL OR NOT TARGET OpenSSL::Crypto OR NOT ${OPENSSL_INCLUDE_DIR})
+        message("FINDING WITH ${OPENSSL_ROOT_DIR}")
         find_package(OpenSSL REQUIRED)
     endif()
     include_directories(${OPENSSL_INCLUDE_DIR})
@@ -573,7 +574,8 @@ if(${use_bearssl})
 endif()
 
 if(${use_openssl})
-    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${OPENSSL_LIBRARIES})
+    link_directories(${OPENSSL_LIBRARIES})
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs})
     if (WIN32)
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 ws2_32 secur32)
     endif()
