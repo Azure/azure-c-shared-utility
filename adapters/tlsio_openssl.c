@@ -1218,6 +1218,7 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
 
 int tlsio_openssl_init(void)
 {
+
     (void)SSL_library_init();
 
     SSL_load_error_strings();
@@ -1231,6 +1232,7 @@ int tlsio_openssl_init(void)
     }
 
     openssl_dynamic_locks_install();
+
     return 0;
 }
 
@@ -1245,6 +1247,7 @@ void tlsio_openssl_deinit(void)
     CRYPTO_set_id_callback(NULL);
     ERR_free_strings();
     EVP_cleanup();
+    ENGINE_cleanup();
 
 #if   (OPENSSL_VERSION_NUMBER < 0x10000000L)
     ERR_remove_state(0);
