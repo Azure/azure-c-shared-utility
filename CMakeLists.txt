@@ -458,6 +458,7 @@ if(LINUX)
     SOURCE
       ${CMAKE_CURRENT_LIST_DIR}/adapters/tlsio_openssl.c
       ${CMAKE_CURRENT_LIST_DIR}/adapters/x509_openssl.c
+      ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_curl.c
     PROPERTY COMPILE_OPTIONS
       -Wno-deprecated-declarations
   )
