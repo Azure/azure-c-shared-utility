@@ -16,6 +16,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/x509_openssl.h"
+#include "openssl/engine.h"
 #elif USE_WOLFSSL
 #define WOLFSSL_OPTIONS_IGNORE_SYS
 #include "wolfssl/options.h"
@@ -44,7 +45,11 @@ typedef struct HTTP_HANDLE_DATA_TAG
     const char* x509privatekey;
     const char* x509certificate;
     const char* certificates; /*a list of CA certificates*/
-#if USE_MBEDTLS
+#if USE_OPENSSL
+    OPTION_OPENSSL_KEY_TYPE x509privatekeytype;
+    char* engineId;
+    ENGINE* engine;
+#elif USE_MBEDTLS
     mbedtls_x509_crt cert;
     mbedtls_pk_context key;
     mbedtls_x509_crt trusted_certificates;
@@ -191,7 +196,11 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 httpHandleData->x509certificate = NULL;
                 httpHandleData->x509privatekey = NULL;
                 httpHandleData->certificates = NULL;
-#ifdef USE_MBEDTLS
+#ifdef USE_OPENSSL
+                httpHandleData->x509privatekeytype = KEY_TYPE_DEFAULT;
+                httpHandleData->engineId = NULL;
+                httpHandleData->engine = NULL;
+#elif USE_MBEDTLS
                 mbedtls_x509_crt_init(&httpHandleData->cert);
                 mbedtls_pk_init(&httpHandleData->key);
                 mbedtls_x509_crt_init(&httpHandleData->trusted_certificates);
@@ -210,7 +219,19 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
     {
         free(httpHandleData->hostURL);
         curl_easy_cleanup(httpHandleData->curl);
-#if USE_MBEDTLS
+#ifdef USE_OPENSSL
+        if (httpHandleData->engine != NULL)
+        {
+            ENGINE_free(httpHandleData->engine);
+            httpHandleData->engine = NULL;
+        }
+
+        if (httpHandleData->engineId != NULL)
+        {
+            free(httpHandleData->engineId);
+            httpHandleData->engineId = NULL;
+        }
+#elif USE_MBEDTLS
         mbedtls_x509_crt_free(&httpHandleData->cert);
         mbedtls_pk_free(&httpHandleData->key);
         mbedtls_x509_crt_free(&httpHandleData->trusted_certificates);
@@ -294,13 +315,23 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
         HTTP_HANDLE_DATA *httpHandleData = (HTTP_HANDLE_DATA *)userptr;
 #ifdef USE_OPENSSL
         /*trying to set the x509 per device certificate*/
-        if (
+        if (httpHandleData->x509privatekeytype == KEY_TYPE_ENGINE) {
+            ENGINE_load_builtin_engines();
+            httpHandleData->engine = ENGINE_by_id(httpHandleData->engineId);
+        }
+        if (httpHandleData->x509privatekeytype == KEY_TYPE_ENGINE && httpHandleData->engine == NULL)
+        {
+            LogError("unable to load engine by ID: %s", httpHandleData->engineId);
+            result = CURLE_SSL_CERTPROBLEM;
+        }
+        else if (
             (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
-            (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey, KEY_TYPE_DEFAULT, NULL) != 0)
+            (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey, httpHandleData->x509privatekeytype, httpHandleData->engine) != 0)
            )
         {
             LogError("unable to x509_openssl_add_credentials");
             result = CURLE_SSL_CERTPROBLEM;
+            ENGINE_free(httpHandleData->engine);
         }
         /*trying to set CA certificates*/
         else if (
@@ -310,6 +341,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
         {
             LogError("failure in x509_openssl_add_certificates");
             result = CURLE_SSL_CERTPROBLEM;
+            ENGINE_free(httpHandleData->engine);
         }
 #elif USE_WOLFSSL
         if (
@@ -803,6 +835,34 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
             httpHandleData->verbose = *(const long*)value;
             result = HTTPAPI_OK;
         }
+#ifdef USE_OPENSSL
+        else if (strcmp(OPTION_OPENSSL_PRIVATE_KEY_TYPE, optionName) == 0)
+        {
+            const OPTION_OPENSSL_KEY_TYPE type = *(const OPTION_OPENSSL_KEY_TYPE*)value;
+            if (type == KEY_TYPE_DEFAULT || type == KEY_TYPE_ENGINE)
+            {
+                httpHandleData->x509privatekeytype = type;
+                result = HTTPAPI_OK;
+            }
+            else
+            {
+                LogError("Unknown x509PrivatekeyType: %i", type);
+                result = HTTPAPI_ERROR;
+            }
+        }
+        else if (strcmp(OPTION_OPENSSL_ENGINE, optionName) == 0)
+        {
+            if (mallocAndStrcpy_s((char**)&httpHandleData->engineId, value) != 0)
+            {
+                LogError("unable to mallocAndStrcpy_s x509PrivatekeyType");
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                result = HTTPAPI_OK;
+            }
+        }
+#endif
         else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
             httpHandleData->x509privatekey = value;
@@ -1014,10 +1074,50 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             }
             else
             {
-                /*return OK when the certificate has been clones successfully*/
+                /*return OK when the certificate has been cloned successfully*/
                 result = HTTPAPI_OK;
             }
         }
+#ifdef USE_OPENSSL
+        else if (strcmp(OPTION_OPENSSL_PRIVATE_KEY_TYPE, optionName) == 0)
+        {
+            const OPTION_OPENSSL_KEY_TYPE type = *(const OPTION_OPENSSL_KEY_TYPE*)value;
+            if (type == KEY_TYPE_DEFAULT || type == KEY_TYPE_ENGINE)
+            {
+                OPTION_OPENSSL_KEY_TYPE* temp = malloc(sizeof(OPTION_OPENSSL_KEY_TYPE));
+                if (temp == NULL)
+                {
+                    LogError("unable to clone x509PrivatekeyType");
+                    result = HTTPAPI_ERROR;
+                }
+                else
+                {
+                    *temp = type;
+                    *savedValue = temp;
+                    result = HTTPAPI_OK;
+                }
+            }
+            else
+            {
+                LogError("Unknown x509PrivatekeyType: %i", type);
+                result = HTTPAPI_ERROR;
+            }
+        }
+        else if (strcmp(OPTION_OPENSSL_ENGINE, optionName) == 0)
+        {
+            /*this is getting the engine. In this case, value is a pointer to a const char* that contains the engine as a null terminated string*/
+            if (mallocAndStrcpy_s((char**)savedValue, value) != 0)
+            {
+                LogError("unable to clone %s", optionName);
+                result = HTTPAPI_ERROR;
+            }
+            else
+            {
+                /*return OK when the engine has been cloned successfully*/
+                result = HTTPAPI_OK;
+            }
+        }
+#endif
         else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
             /*this is getting the x509 private key. In this case, value is a pointer to a const char* that contains the private key as a null terminated string*/
@@ -1028,7 +1128,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             }
             else
             {
-                /*return OK when the private key has been clones successfully*/
+                /*return OK when the private key has been cloned successfully*/
                 result = HTTPAPI_OK;
             }
         }
@@ -1041,7 +1141,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             }
             else
             {
-                /*return OK when the certificates have been clones successfully*/
+                /*return OK when the certificates have been cloned successfully*/
                 result = HTTPAPI_OK;
             }
         }
