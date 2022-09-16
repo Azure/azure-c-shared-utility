@@ -47,7 +47,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     const char* certificates; /*a list of CA certificates*/
 #if USE_OPENSSL
     OPTION_OPENSSL_KEY_TYPE x509privatekeytype;
-    const char* engineId;
+    char* engineId;
     ENGINE* engine;
 #elif USE_MBEDTLS
     mbedtls_x509_crt cert;
@@ -224,6 +224,12 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
         {
             ENGINE_free(httpHandleData->engine);
             httpHandleData->engine = NULL;
+        }
+
+        if (httpHandleData->engineId != NULL)
+        {
+            free(httpHandleData->engineId);
+            httpHandleData->engineId = NULL;
         }
 #elif USE_MBEDTLS
         mbedtls_x509_crt_free(&httpHandleData->cert);
