@@ -1049,7 +1049,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 ssize_t received = 0;
                 do
                 {
-                    received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, XIO_RECEIVE_BUFFER_SIZE, MSG_NOSIGNAL);
+                    received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, XIO_RECEIVE_BUFFER_SIZE, 0);
                     if (received > 0)
                     {
                         if (socket_io_instance->on_bytes_received != NULL)
