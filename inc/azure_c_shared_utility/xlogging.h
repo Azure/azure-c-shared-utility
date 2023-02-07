@@ -29,11 +29,7 @@
 
 #ifdef __cplusplus
 /* Some compilers do not want to play by the standard, specifically ARM CC */
-#ifdef MBED_BUILD_TIMESTAMP
-#include <stdio.h>
-#else
 #include <cstdio>
-#endif
 #else
 #include <stdio.h>
 #endif /* __cplusplus */

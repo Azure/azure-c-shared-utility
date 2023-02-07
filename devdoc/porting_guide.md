@@ -254,7 +254,7 @@ _Chained_ adapter implementations include:
 - [tlsio_openssl for Windows, Linux, and Mac](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_openssl.c)
 - [tlsio_schannel for Windows only](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_schannel.c)
 - [tlsio_wolfssl for embedded devices](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_wolfssl.c)
-- [tlsio_mbedtls for mbed](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_mbedtls.c)
+- [tlsio_mbedtls for embedded devices](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_mbedtls.c)
 
 #### Existing socketio implementations for _chained_ tlsio adapters
 There is no spec for socketio adapters, so it is necessary to copy the behavior of an existing one, and 
@@ -265,7 +265,6 @@ purge their pending io lists during socketio_destroy, which is incorrect. The pe
 lists should be purged during socketio_close instead.
 - [socketio_berkeley for Linux, easily adapted to any Berkeley socket](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/socketio_berkeley.c)
 - [socketio_win32 for Windows](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/socketio_win32.c)
-- [socketio_mbed for mbed](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/socketio_mbed.c)
 - [tlsio_cyclonessl_socket for use with cyclonessl](https://github.com/Azure/azure-c-shared-utility/blob/master/src/tlsio_cyclonessl_socket.c)
 
 ### Adding device support repositories
