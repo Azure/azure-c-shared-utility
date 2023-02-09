@@ -79,6 +79,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
     displayName: 'Cleanup'
     condition: always()
@@ -113,6 +115,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
     displayName: 'Cleanup'
     condition: always()
@@ -143,6 +147,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
     displayName: 'Cleanup'
     condition: always()
@@ -181,9 +187,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: ubuntu1804
   container: linux-c-ubuntu-1804
   pool: 
@@ -219,9 +222,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: ubuntu2004
   container: linux-c-ubuntu-2004
   pool: 
@@ -257,9 +257,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: ubuntu2204
   container: linux-c-ubuntu-2204
   pool: 
@@ -295,9 +292,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: linuxoptions
   displayName: 'Linux Ubuntu 20.04 with Options'
   container: linux-c-ubuntu-2004
@@ -310,9 +304,6 @@ jobs:
       sudo ./jenkins/linux_c_option_test.sh
      fi
     displayName: 'Build'
-    condition: always()
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
     condition: always()
 - job: linux_installed_deps
   container: linux-c-ubuntu-2004
@@ -345,9 +336,6 @@ jobs:
       IOT_DPS_INDIVIDUAL_X509_CERTIFICATE: $(IOTHUB-E2E-X509-ECC-CERT-BASE64)
       IOT_DPS_INDIVIDUAL_X509_KEY: $(IOTHUB-E2E-X509-ECC-PRIVATE-KEY-BASE64)
       IOT_DPS_INDIVIDUAL_REGISTRATION_ID: $(IOT-DPS-INDIVIDUAL-REGISTRATION-ID)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: cares
   container: linux-c-ubuntu-c-ares
   pool: 
@@ -388,9 +376,6 @@ jobs:
       mergeTestResults: true
       testRunTitle: 'cares'
     condition: succeededOrFailed()
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: debian
   container: linux-c-debian
   pool: 
@@ -426,9 +411,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: linux_mbed
   container: linux-c-ubuntu-mbed
   pool: 
@@ -463,9 +445,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: wolfssl
   container: linux-c-ubuntu-wolfssl
   pool: 
@@ -506,9 +485,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: bearssl
   container: linux-c-ubuntu-bearssl
   pool: 
@@ -545,9 +521,6 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: OSX
   displayName: OSX
   pool:
@@ -580,6 +553,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
   - script: rm -rf $(Agent.BuildDirectory)/*
     displayName: 'Cleanup'
     condition: always()
@@ -617,6 +592,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
   - script: rm -rf $(Agent.BuildDirectory)/*
     displayName: 'Cleanup'
     condition: always()
@@ -630,5 +607,3 @@ jobs:
      chmod +x jenkins/raspberrypi_c_buster.sh
      ./jenkins/raspberrypi_c_buster.sh
     displayName: 'Build'
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
