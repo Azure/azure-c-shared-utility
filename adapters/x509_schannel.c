@@ -296,6 +296,7 @@ static int set_rsa_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
             }
             else
             {
+                LogInfo("schannel set_rsa_certificate_info() succeeded");
                 result = 0;
             }
         }
@@ -349,6 +350,9 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
         }
         else
         {
+            LogInfo("schannel x509_schannel_create() setting cert %.50s", x509certificate);
+            LogInfo("schannel x509_schannel_create() setting key %.50s", x509privatekey);
+
             memset(result, 0, sizeof(X509_SCHANNEL_HANDLE_DATA));
             /*Codes_SRS_X509_SCHANNEL_02_002: [ x509_schannel_create shall convert the certificate to binary form by calling CryptStringToBinaryA. ]*/
             if ((binaryx509Certificate = convert_cert_to_binary(x509certificate, 0, &binaryx509certificateSize)) == NULL)
@@ -361,7 +365,7 @@ X509_SCHANNEL_HANDLE x509_schannel_create(const char* x509certificate, const cha
             /*at this moment x509 certificate is ready to be used in CertCreateCertificateContext*/
             else if ((binaryx509privatekey = convert_cert_to_binary(x509privatekey, 0, &binaryx509privatekeySize)) == NULL)
             {
-                LogError("Failure converting x509 certificate");
+                LogError("Failure converting x509 private key");
                 free(binaryx509Certificate);
                 free(result);
                 result = NULL;
