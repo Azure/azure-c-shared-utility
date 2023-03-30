@@ -130,11 +130,9 @@ static void* socketio_CloneOption(const char* name, const void* value)
                 {
                     LogError("Failed cloning option %s (malloc failed)", name);
                 }
-                else if (strcpy((char*)result, (char*)value) == NULL)
+                else
                 {
-                    LogError("Failed cloning option %s (strcpy failed)", name);
-                    free(result);
-                    result = NULL;
+                    strcpy((char *)result, (char *)value);
                 }
             }
         }
@@ -485,14 +483,10 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
         destroy_network_interface_descriptions(result);
         result = NULL;
     }
-    else if (strcpy(result->name, ifr->ifr_name) == NULL)
-    {
-        LogError("failed setting interface description name (strcpy failed)");
-        destroy_network_interface_descriptions(result);
-        result = NULL;
-    }
     else
     {
+        strcpy(result->name, ifr->ifr_name);
+
         char* ip_address;
         unsigned char* mac = (unsigned char*)ifr->ifr_hwaddr.sa_data;
 
@@ -520,14 +514,9 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
             destroy_network_interface_descriptions(result);
             result = NULL;
         }
-        else if (strcpy(result->ip_address, ip_address) == NULL)
-        {
-            LogError("failed setting the ip address (strcpy failed)");
-            destroy_network_interface_descriptions(result);
-            result = NULL;
-        }
         else
         {
+            strcpy(result->ip_address, ip_address);
             result->next = NULL;
 
             if (previous_nid != NULL)
@@ -1193,15 +1182,9 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
                 LogError("failed setting net_interface_mac_address option (malloc failed)");
                 result = MU_FAILURE;
             }
-            else if (strcpy(socket_io_instance->target_mac_address, value) == NULL)
-            {
-                LogError("failed setting net_interface_mac_address option (strcpy failed)");
-                free(socket_io_instance->target_mac_address);
-                socket_io_instance->target_mac_address = NULL;
-                result = MU_FAILURE;
-            }
             else
             {
+                strcpy(socket_io_instance->target_mac_address, value);
                 strtoup(socket_io_instance->target_mac_address);
                 result = 0;
             }
