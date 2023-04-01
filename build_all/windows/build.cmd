@@ -98,7 +98,6 @@ rem no error checking
 pushd %build-root%\cmake\%CMAKE_DIR%
 
 echo ***checking msbuild***
-dir "c:\Program Files\Microsoft Visual Studio"
 where /q msbuild
 IF ERRORLEVEL 1 (
 echo ***setting VC paths***
