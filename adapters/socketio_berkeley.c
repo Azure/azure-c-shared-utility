@@ -287,6 +287,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     int flags;
     struct addrinfo* addr = NULL;
     struct sockaddr* connect_addr = NULL;
+    struct sockaddr_in6* connect_addr6 = NULL;
     struct sockaddr_un addrInfoUn;
     socklen_t connect_addr_len;
 
@@ -306,11 +307,21 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
                 LogError("DNS resolution failed");
                 result = MU_FAILURE;
             }
-            else
+            else if (addr->ai_family == AF_INET)
             {
                 connect_addr = addr->ai_addr;
                 connect_addr_len = sizeof(*addr->ai_addr);
                 result = 0;
+            } 
+            else if (addr->ai_family == AF_INET6)
+            {
+                connect_addr6 = (struct sockaddr_in6*) addr->ai_addr;
+                connect_addr_len = sizeof(struct sockaddr_in6);
+                result = 0;
+            }
+            else {
+                LogError("Socket failure...");
+                result = MU_FAILURE;
             }
         }
     }
@@ -335,6 +346,28 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         }
     }
 
+    if (addr->ai_family == AF_INET)
+    {
+        socket_io_instance->socket = socket (AF_INET, SOCK_STREAM, 0);
+        if (socket_io_instance->socket < SOCKET_SUCCESS)
+        {
+            LogError("Failure: socket create failure %d.", socket_io_instance->socket);
+            result = MU_FAILURE;
+        }
+    } else if (addr->ai_family == AF_INET6)
+    {
+        socket_io_instance->socket = socket (AF_INET6, SOCK_STREAM, 0);
+        if (socket_io_instance->socket < SOCKET_SUCCESS)
+        {
+            LogError("Failure: socket create failure %d.", socket_io_instance->socket);
+            result = MU_FAILURE;
+        }
+    } else 
+    {
+        result = MU_FAILURE;
+        LogError("Failure: Should not go through here.");
+    }
+
     if(result == 0)
     {
         if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
@@ -345,7 +378,16 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         }
         else
         {
-            result = connect(socket_io_instance->socket, connect_addr, connect_addr_len);
+            
+            if (addr->ai_family == AF_INET)
+            {
+                result = connect(socket_io_instance->socket, connect_addr, connect_addr_len);
+            } 
+            else
+            {
+                result = connect(socket_io_instance->socket, (struct sockaddr*)connect_addr6, connect_addr_len);
+            }
+            
             if ((result != 0) && (errno != EINPROGRESS))
             {
                 LogError("Failure: connect failure %d.", errno);
@@ -799,21 +841,15 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         }
         else
         {
-            socket_io_instance->socket = socket (socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX, SOCK_STREAM, 0);
-            if (socket_io_instance->socket < SOCKET_SUCCESS)
-            {
-                LogError("Failure: socket create failure %d. errno=%d", socket_io_instance->socket, errno);
-                result = MU_FAILURE;
-            }
 #ifndef __APPLE__
-            else if (socket_io_instance->target_mac_address != NULL &&
+            if (socket_io_instance->target_mac_address != NULL &&
                      set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
             {
                 LogError("Failure: failed selecting target network interface (MACADDR=%s).", socket_io_instance->target_mac_address);
                 result = MU_FAILURE;
             }
 #endif //__APPLE__
-            else if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
+            if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
             {
                 LogError("lookup_address_and_connect_socket failed");
             }
@@ -1038,7 +1074,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 ssize_t received = 0;
                 do
                 {
-                    received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, XIO_RECEIVE_BUFFER_SIZE, 0);
+                    received = recv(socket_io_instance->socket, socket_io_instance->recv_bytes, XIO_RECEIVE_BUFFER_SIZE, MSG_NOSIGNAL);
                     if (received > 0)
                     {
                         if (socket_io_instance->on_bytes_received != NULL)
