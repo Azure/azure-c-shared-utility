@@ -813,7 +813,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             socket_io_instance->socket = socket (socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX, SOCK_STREAM, 0);
             if (socket_io_instance->socket < SOCKET_SUCCESS)
             {
-                LogError("Failure: socket create failure %d.", socket_io_instance->socket);
+                LogError("Failure: socket create failure %d. errno=%d", socket_io_instance->socket, errno);
                 result = MU_FAILURE;
             }
 #ifndef __APPLE__

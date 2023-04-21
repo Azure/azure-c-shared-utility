@@ -844,10 +844,14 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
         }
         else
         {
+            LogError("Invalid open_result. Expected result is IO_OPEN_OK.");
             tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
             indicate_open_complete(tls_io_instance, IO_OPEN_ERROR);
-            LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPENING_UNDERLYING_IO.");
         }
+    }
+    else
+    {
+        LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_OPENING_UNDERLYING_IO.");
     }
 }
 
