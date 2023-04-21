@@ -12,7 +12,7 @@ if(NOT ${use_installed_dependencies})
         add_subdirectory(ctest)
     endif()
     if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/testrunner/CMakeLists.txt))
-        add_subdirectory(testrunner)
+        #add_subdirectory(testrunner)
     endif()
 endif()
 
