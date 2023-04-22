@@ -143,7 +143,7 @@ if %MAKE_NUGET_PKG% == yes (
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
 	echo ***Running CMAKE for Win64***
-	cmake %build-root% -A x64 -Drun_unittests:bool=ON -Drun_int_tests=ON -Duse_cppunittest=ON
+	cmake %build-root% -A x64 -Drun_unittests:bool=ON -Drun_int_tests=ON
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
