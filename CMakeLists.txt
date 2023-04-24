@@ -736,4 +736,6 @@ DESTINATION
     ${package_location}
 )
 
+message("fork test 1")
+
 compileTargetAsC99(aziotsharedutil)
