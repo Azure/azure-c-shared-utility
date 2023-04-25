@@ -61,6 +61,7 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNS
             result->is_complete = false;
             result->is_failed = false;
             result->ip_v4 = 0;
+            memset(result->ip_v6, 0, 16); // Zero out the IPv6 address
             result->port = port;
             /* Codes_SRS_dns_resolver_30_010: [ dns_resolver_create shall make a copy of the hostname parameter to allow immediate deletion by the caller. ]*/
             ms_result = mallocAndStrcpy_s(&result->hostname, hostname);
