@@ -403,6 +403,15 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
                 }
             }
         }
+
+        if (result != 0)
+        {
+            if (socket_io_instance->socket >= SOCKET_SUCCESS)
+            {
+                close(socket_io_instance->socket);
+            }
+            socket_io_instance->socket = INVALID_SOCKET;
+        }
     }
 
     return result;
@@ -425,7 +434,7 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     return result;
 }
 
-static int wait_for_connection(SOCKET_IO_INSTANCE* socket_io_instance)
+static int wait_for_connection(SOCKET_IO_INSTANCE* socket_io_instance) // TODOR: Change the name of this function
 {
     int result;
     int err;
@@ -475,6 +484,15 @@ static int wait_for_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         {
             result = 0;
         }
+    }
+
+    if (result != 0)
+    {
+        if (socket_io_instance->socket >= SOCKET_SUCCESS)
+        {
+            close(socket_io_instance->socket);
+        }
+        socket_io_instance->socket = INVALID_SOCKET;
     }
 
     return result;
@@ -853,12 +871,11 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             {
                 LogError("lookup_address_and_connect_socket failed");
             }
-            else if ((result = wait_for_connection(socket_io_instance)) != 0)
+            else if ((socket_io_instance->io_state == IO_STATE_OPEN) && (result = wait_for_connection(socket_io_instance)) != 0)
             {
                 LogError("wait_for_connection failed");
-            }
-
-            if (result == 0)
+            } 
+            else
             {
                 socket_io_instance->on_bytes_received = on_bytes_received;
                 socket_io_instance->on_bytes_received_context = on_bytes_received_context;
@@ -868,14 +885,6 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
                 socket_io_instance->on_io_open_complete = on_io_open_complete;
                 socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
-            }
-            else
-            {
-                if (socket_io_instance->socket >= SOCKET_SUCCESS)
-                {
-                    close(socket_io_instance->socket);
-                }
-                socket_io_instance->socket = INVALID_SOCKET;
             }
         }
     }
@@ -1110,7 +1119,16 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 {
                     if(socket_io_instance->io_state == IO_STATE_OPEN)
                     {
-                        initiate_socket_connection(socket_io_instance);
+                        if (initiate_socket_connection(socket_io_instance) != 0)
+                        {
+                            LogError("Socketio_Failure: initiate_socket_connection failed");
+                            indicate_error(socket_io_instance);
+                        }
+                        else if (wait_for_connection(socket_io_instance) != 0)
+                        {
+                            LogError("Socketio_Failure: wait_for_connection failed");
+                            indicate_error(socket_io_instance);
+                        }
                     }
                 }
 

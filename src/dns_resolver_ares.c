@@ -150,9 +150,10 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
             else
             {
                 addr = (void *)ptr->ai_addr;
-
+                LogInfo("RAUL'S LOGS: Going through found addresses.");
                 if (he->h_addrtype == AF_INET)
                 {
+                    LogInfo("RAUL'S LOGS: Chose IPv4.");
                     memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
                     addr->sin_family = he->h_addrtype;
                     addr->sin_port = htons((unsigned short)dns->port);
@@ -166,6 +167,7 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
 
                 if (he->h_addrtype == AF_INET6)
                 {
+                    LogInfo("RAUL'S LOGS: Chose IPv6.");
                     memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in6_addr));
                     addr->sin_family = he->h_addrtype;
                     addr->sin_port = htons((unsigned short)dns->port);
@@ -209,8 +211,7 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
         }
         else if(!dns->in_progress)
         {
-            //ares_gethostbyname(dns->ares_resolver, dns->hostname, AF_UNSPEC, query_completed_cb, (void*)dns);
-            ares_gethostbyname(dns->ares_resolver, dns->hostname, AF_INET, query_completed_cb, (void*)dns);
+            ares_gethostbyname(dns->ares_resolver, dns->hostname, AF_UNSPEC, query_completed_cb, (void*)dns);
             dns->in_progress = true;
             // This synchronous implementation is incapable of being incomplete, so SRS_dns_resolver_30_023 does not ever happen
             /* Codes_SRS_dns_resolver_30_023: [ If the DNS lookup process is not yet complete, dns_resolver_is_create_complete shall return false. ]*/
