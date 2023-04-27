@@ -114,8 +114,7 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
     int i;
     struct addrinfo *ptr = NULL;
     struct sockaddr_in *addr;
-    
-    LogInfo("Went through query_completed_cb");
+    struct sockaddr_in6 *addr6;
 
     DNSRESOLVER_INSTANCE *dns = (DNSRESOLVER_INSTANCE *)arg;
     (void)timeouts;
@@ -138,22 +137,20 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
         {
             ptr = dns->addrInfo;
             
-            ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in));
-            if(ptr->ai_addr == NULL)
+            if (he->h_addrtype == AF_INET)
             {
-                LogError("dns addrinfo ai_addr: allocation failed");
-                free(dns->addrInfo);
-                dns->is_failed = true;
-                dns->is_complete = true;
-                dns->in_progress = false;
-            }
-            else
-            {
+                ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in));
                 addr = (void *)ptr->ai_addr;
-                LogInfo("RAUL'S LOGS: Going through found addresses.");
-                if (he->h_addrtype == AF_INET)
+
+                if(ptr->ai_addr == NULL)
                 {
-                    LogInfo("RAUL'S LOGS: Chose IPv4.");
+                    LogError("dns addrinfo ai_addr: allocation failed");
+                    free(dns->addrInfo);
+                    dns->is_failed = true;
+                    dns->is_complete = true;
+                    dns->in_progress = false;
+                } else {
+                    dns->addrInfo->ai_family = AF_INET;
                     memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
                     addr->sin_family = he->h_addrtype;
                     addr->sin_port = htons((unsigned short)dns->port);
@@ -163,17 +160,28 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
                     dns->is_failed = (dns->ip_v4 == 0);
                     dns->is_complete = true;
                     dns->in_progress = false;
-                }
+                }   
+            }
+            if (he->h_addrtype == AF_INET6)
+            {
+                ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in6));
+                addr6 = (void *)ptr->ai_addr;
 
-                if (he->h_addrtype == AF_INET6)
+                if(ptr->ai_addr == NULL)
                 {
-                    LogInfo("RAUL'S LOGS: Chose IPv6.");
-                    memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in6_addr));
-                    addr->sin_family = he->h_addrtype;
-                    addr->sin_port = htons((unsigned short)dns->port);
+                    LogError("dns addrinfo ai_addr: allocation failed");
+                    free(dns->addrInfo);
+                    dns->is_failed = true;
+                    dns->is_complete = true;
+                    dns->in_progress = false;
+                } else {
+                    dns->addrInfo->ai_family = AF_INET6;
+                    memcpy(&addr6->sin6_addr, he->h_addr_list[0], sizeof(struct in6_addr));
+                    addr6->sin6_family = he->h_addrtype;
+                    addr6->sin6_port = htons((unsigned short)dns->port);
 
                     /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-                    memcpy(dns->ip_v6, EXTRACT_IPV6(ptr), 16); // TODOR: Add comment or notice for 16.
+                    memcpy(dns->ip_v6, EXTRACT_IPV6(ptr), 16); // IPv6 address is 16 bytes
                     dns->is_failed = (dns->ip_v6 == 0);
                     dns->is_complete = true;
                     dns->in_progress = false;
