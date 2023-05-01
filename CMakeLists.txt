@@ -30,9 +30,14 @@ option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on 
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
 option(no_openssl_engine "Disables the use of ENGINEs in OpenSSL" OFF)
+option(enable_ipv6 "set enable_ipv6 to ON to enable dual-stack support (default is OFF)" OFF)
 
 if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
+endif()
+
+if (${enable_ipv6})
+    add_definitions(-DIPV6_ENABLED)
 endif()
 
 if(WIN32)
