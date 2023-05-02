@@ -572,6 +572,7 @@ void uws_client_destroy(UWS_CLIENT_HANDLE uws_client)
             }
 
             free(uws_client->protocols);
+            uws_client->protocols = NULL;
         }
 
         /* Codes_SRS_UWS_CLIENT_01_019: [ uws_client_destroy shall free all resources associated with the uws instance. ]*/
