@@ -321,6 +321,43 @@ TEST_FUNCTION(UUID_from_string_succeed)
     }
 }
 
+TEST_FUNCTION(UUID_from_string_invalid_fails)
+{
+    //Arrange
+    int result;
+    UUID_T uuid;
+    const char* invalid_uuids[] = {
+        "d",
+        "-",
+        "dec14a98",
+        "dec14a98-c5fc",
+        "dec14a98-c5fc-430e-b4e3-",
+        "dec14a98-c5fc-430e-b4e3-33c1c434dca",
+        "dec14a98c5fc-430e-b4e3-33c1c434dcaf",
+        "dec14a98-c5fc430e-b4e3-33c1c434dcaf",
+        "dec14a98-c5fc-430eb4e3-33c1c434dcaf",
+        "dec14a98-c5fc-430e-b4e333c1c434dcaf",
+        "dec14a98c5fc430eb4e333c1c434dcaf",
+        "dec14a98-c5fc-430e-b4e3-33c1c434dca-",
+        "dec14a98-c5fc-430e-b-e3-33c1c434dcaf",
+        "dec14a98-c5fc-43-e-b4e3-33c1c434dcaf",
+        "dec14a98-c-fc-430e-b4e3-33c1c434dcaf",
+        "dec14-98-c5fc-430e-b4e3-33c1c434dcaf",
+        "-ec14a98-c5fc-430e-b4e3-33c1c434dcaf",
+    };
+
+    umock_c_reset_all_calls();
+
+    for (size_t i = 0; i < sizeof(invalid_uuids)/sizeof(invalid_uuids[0]); i++)
+    {
+        //Act
+        result = UUID_from_string(invalid_uuids[i], &uuid);
+
+        //Assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    }
+}
+
 // Tests_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
 // To be implemented once sscanf mock is implemented.
 

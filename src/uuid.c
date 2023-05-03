@@ -18,6 +18,8 @@
         : (((c) >= 'a') && ((c) <= 'f')) \
             ? ((c) - 'a' + 10) \
             : (((c) >= 'A') && ((c) <= 'F')) ? ((c) - 'A' + 10) : -1)
+#define MUST_BE_DASH(pos) \
+    (pos == 8 || pos == 13 || pos == 18 || pos == 23)
 
 
 int UUID_from_string(const char* uuid_string, UUID_T* uuid)
@@ -51,19 +53,19 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
 
             for (i = 0, j = 0; i < uuid_string_length; )
             {
-                bool mustBeDash = i == 8 || i == 13 || i == 18 || i == 23;
-
-                if ((uuid_string[i] == '-') != mustBeDash)
-                {
-                    // Codes_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
-                    LogError("Failed decoding UUID string (%lu)", (unsigned long)i);
-                    result = MU_FAILURE;
-                    break;
-                }
-
                 if (uuid_string[i] == '-')
                 {
-                    i++;
+                    if (!MUST_BE_DASH(i))
+                    {
+                        // Codes_SRS_UUID_09_009: [ If uuid fails to be generated, UUID_from_string shall return a non-zero value ]
+                        LogError("Failed decoding UUID string (%lu)", (unsigned long)i);
+                        result = MU_FAILURE;
+                        break;
+                    }
+                    else
+                    {
+                        i++;
+                    }
                 }
                 else
                 {
