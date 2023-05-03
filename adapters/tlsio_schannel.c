@@ -1358,6 +1358,7 @@ int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t si
                 }
                 else
                 {
+                    LogInfo("[TLS IO SCHANNEL] new pending send (%p)", new_pending_send);
                     result = 0;
                 }
             }
