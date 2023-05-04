@@ -9,11 +9,15 @@
 #include <stddef.h>
 #endif
 
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/strings.h"
 
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
+
+static size_t currentcalloc_call;
+static size_t whenShallcalloc_fail;
 
 void* my_gballoc_malloc(size_t size)
 {
@@ -33,6 +37,28 @@ void* my_gballoc_malloc(size_t size)
     else
     {
         result = malloc(size);
+    }
+    return result;
+}
+
+void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    void* result;
+    currentcalloc_call++;
+    if (whenShallcalloc_fail > 0)
+    {
+        if (currentcalloc_call == whenShallcalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = calloc(nmemb, size);
+        }
+    }
+    else
+    {
+        result = calloc(nmemb, size);
     }
     return result;
 }
@@ -63,7 +89,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(string_tokenizer_unittests)
@@ -82,6 +108,7 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         ASSERT_ARE_EQUAL(int, 0, result);
 
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_realloc, my_gballoc_realloc);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     }
@@ -104,6 +131,9 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         currentmalloc_call = 0;
         whenShallmalloc_fail = 0;
+
+        currentcalloc_call = 0;
+        whenShallcalloc_fail = 0;
     }
 
     TEST_FUNCTION_CLEANUP(cleans)
@@ -138,8 +168,8 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Allocation.
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))  //Token Allocation.
+            .IgnoreAllArguments();
 
         STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Content Allocation.
             .IgnoreArgument(1);
@@ -180,8 +210,8 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
 
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Allocation.
-            .IgnoreArgument(1);
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))  //Token Allocation.
+            .IgnoreAllArguments();
 
         STRICT_EXPECTED_CALL(gballoc_malloc(0))  //Token Content Allocation.
             .IgnoreArgument(1);
@@ -209,10 +239,11 @@ BEGIN_TEST_SUITE(string_tokenizer_unittests)
         umock_c_reset_all_calls();
 
 
-        EXPECTED_CALL(gballoc_malloc(0));  //Token Allocation.
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))  //Token Allocation.
+            .IgnoreAllArguments();
 
 
-        whenShallmalloc_fail = currentmalloc_call + 1;
+        whenShallcalloc_fail = currentcalloc_call + 1;
         ///act
         t = STRING_TOKENIZER_create(input_string_handle);
 

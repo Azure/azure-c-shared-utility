@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include <stddef.h>
 #include <stdbool.h>
 #include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/gballoc.h"
@@ -34,7 +33,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
     /*Codes_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
-    result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA) + size);
+    result = (CONSTBUFFER_HANDLE)calloc(1, (sizeof(CONSTBUFFER_HANDLE_DATA) + size));
     if (result == NULL)
     {
         /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/
@@ -54,7 +53,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
         }
         else
         {
-            unsigned char* temp = (void*)(result + 1);
+            unsigned char* temp = (unsigned char*)(result + 1);
             /*Codes_SRS_CONSTBUFFER_02_004: [Otherwise CONSTBUFFER_Create shall return a non-NULL handle.]*/
             /*Codes_SRS_CONSTBUFFER_02_007: [Otherwise, CONSTBUFFER_CreateFromBuffer shall copy the content of buffer.]*/
             /*Codes_SRS_CONSTBUFFER_02_009: [Otherwise, CONSTBUFFER_CreateFromBuffer shall return a non-NULL handle.]*/
@@ -67,7 +66,7 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
     return result;
 }
 
-CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t size)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_Create, const unsigned char*, source, size_t, size)
 {
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_001: [If source is NULL and size is different than 0 then CONSTBUFFER_Create shall fail and return NULL.]*/
@@ -87,7 +86,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_Create(const unsigned char* source, size_t size)
 }
 
 /*this creates a new constbuffer from an existing BUFFER_HANDLE*/
-CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromBuffer, BUFFER_HANDLE, buffer)
 {
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_006: [If buffer is NULL then CONSTBUFFER_CreateFromBuffer shall fail and return NULL.]*/
@@ -105,7 +104,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromBuffer(BUFFER_HANDLE buffer)
     return result;
 }
 
-CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, size_t size)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithMoveMemory, unsigned char*, source, size_t, size)
 {
     CONSTBUFFER_HANDLE result;
 
@@ -117,7 +116,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, size_
     }
     else
     {
-        result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA));
+        result = (CONSTBUFFER_HANDLE)calloc(1, sizeof(CONSTBUFFER_HANDLE_DATA));
         if (result == NULL)
         {
             /* Codes_SRS_CONSTBUFFER_01_005: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
@@ -139,7 +138,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithMoveMemory(unsigned char* source, size_
     return result;
 }
 
-CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithCustomFree(const unsigned char* source, size_t size, CONSTBUFFER_CUSTOM_FREE_FUNC customFreeFunc, void* customFreeFuncContext)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateWithCustomFree, const unsigned char*, source, size_t, size, CONSTBUFFER_CUSTOM_FREE_FUNC, customFreeFunc, void*, customFreeFuncContext)
 {
     CONSTBUFFER_HANDLE result;
 
@@ -158,7 +157,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithCustomFree(const unsigned char* source,
     }
     else
     {
-        result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA));
+        result = (CONSTBUFFER_HANDLE)calloc(1, sizeof(CONSTBUFFER_HANDLE_DATA));
         if (result == NULL)
         {
             /* Codes_SRS_CONSTBUFFER_01_011: [ If any error occurs, CONSTBUFFER_CreateWithMoveMemory shall fail and return NULL. ]*/
@@ -184,7 +183,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateWithCustomFree(const unsigned char* source,
     return result;
 }
 
-CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromOffsetAndSize(CONSTBUFFER_HANDLE handle, size_t offset, size_t size)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, CONSTBUFFER_CreateFromOffsetAndSize, CONSTBUFFER_HANDLE, handle, size_t, offset, size_t, size)
 {
     CONSTBUFFER_HANDLE result;
 
@@ -206,7 +205,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromOffsetAndSize(CONSTBUFFER_HANDLE handle
     else
     {
         /*Codes_SRS_CONSTBUFFER_02_028: [ CONSTBUFFER_CreateFromOffsetAndSize shall allocate memory for a new CONSTBUFFER_HANDLE's content. ]*/
-        result = (CONSTBUFFER_HANDLE)malloc(sizeof(CONSTBUFFER_HANDLE_DATA));
+        result = (CONSTBUFFER_HANDLE)calloc(1, sizeof(CONSTBUFFER_HANDLE_DATA));
         if (result == NULL)
         {
             /*Codes_SRS_CONSTBUFFER_02_032: [ If there are any failures then CONSTBUFFER_CreateFromOffsetAndSize shall fail and return NULL. ]*/
@@ -232,7 +231,7 @@ CONSTBUFFER_HANDLE CONSTBUFFER_CreateFromOffsetAndSize(CONSTBUFFER_HANDLE handle
     return result;
 }
 
-void CONSTBUFFER_IncRef(CONSTBUFFER_HANDLE constbufferHandle)
+IMPLEMENT_MOCKABLE_FUNCTION(, void, CONSTBUFFER_IncRef, CONSTBUFFER_HANDLE, constbufferHandle)
 {
     if (constbufferHandle == NULL)
     {
@@ -246,7 +245,7 @@ void CONSTBUFFER_IncRef(CONSTBUFFER_HANDLE constbufferHandle)
     }
 }
 
-const CONSTBUFFER* CONSTBUFFER_GetContent(CONSTBUFFER_HANDLE constbufferHandle)
+IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER*, CONSTBUFFER_GetContent, CONSTBUFFER_HANDLE, constbufferHandle)
 {
     const CONSTBUFFER* result;
     if (constbufferHandle == NULL)
@@ -288,7 +287,7 @@ static void CONSTBUFFER_DecRef_internal(CONSTBUFFER_HANDLE constbufferHandle)
     }
 }
 
-void CONSTBUFFER_DecRef(CONSTBUFFER_HANDLE constbufferHandle)
+IMPLEMENT_MOCKABLE_FUNCTION(, void, CONSTBUFFER_DecRef, CONSTBUFFER_HANDLE, constbufferHandle)
 {
     if (constbufferHandle == NULL)
     {
@@ -302,7 +301,7 @@ void CONSTBUFFER_DecRef(CONSTBUFFER_HANDLE constbufferHandle)
 }
 
 
-bool CONSTBUFFER_HANDLE_contain_same(CONSTBUFFER_HANDLE left, CONSTBUFFER_HANDLE right)
+IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_HANDLE_contain_same, CONSTBUFFER_HANDLE, left, CONSTBUFFER_HANDLE, right)
 {
     bool result;
     if (left == NULL)

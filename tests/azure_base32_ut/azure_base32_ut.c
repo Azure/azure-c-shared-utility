@@ -9,6 +9,8 @@
 #include <stddef.h>
 #endif
 
+#include "azure_macro_utils/macro_utils.h"
+
 static void* my_gballoc_malloc(size_t size)
 {
     return malloc(size);
@@ -24,7 +26,6 @@ static void my_gballoc_free(void* ptr)
 #include "umock_c/umocktypes_charptr.h"
 #include "umock_c/umocktypes_stdint.h"
 #include "umock_c/umock_c_negative_tests.h"
-#include "azure_macro_utils/macro_utils.h"
 
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
@@ -39,7 +40,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static STRING_HANDLE TEST_STRING_HANDLE = (STRING_HANDLE)0x11;

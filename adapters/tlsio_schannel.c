@@ -5,9 +5,9 @@
 #define SEC_TCHAR   SEC_CHAR
 
 #include <stdlib.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/tlsio_schannel.h"
 #include "azure_c_shared_utility/socketio.h"
@@ -388,6 +388,16 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
                 }
             }
         }
+
+        if (init_security_buffers[0].pvBuffer != NULL)
+        {
+            FreeContextBuffer(init_security_buffers[0].pvBuffer);
+        }
+
+        if (init_security_buffers[1].pvBuffer != NULL)
+        {
+            FreeContextBuffer(init_security_buffers[1].pvBuffer);
+        }
     }
 }
 
@@ -445,14 +455,14 @@ static int verify_custom_certificate_if_needed(TLS_IO_INSTANCE* tls_io_instance)
         {
             result = 0;
         }
-        
+
         if (serverCertificateToVerify)
         {
             CertFreeCertificateContext(serverCertificateToVerify);
         }
     }
 
-    return result;    
+    return result;
 }
 
 static int set_receive_buffer(TLS_IO_INSTANCE* tls_io_instance, size_t buffer_size)
@@ -491,7 +501,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tls_io;
         if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
         {
-            LogError("invalid tls_io_instance->tlsio_state: %s", MU_ENUM_TO_STRING(TLSIO_STATE, tls_io_instance->tlsio_state));
+            LogError("invalid tls_io_instance->tlsio_state: %" PRI_MU_ENUM "", MU_ENUM_VALUE(TLSIO_STATE, tls_io_instance->tlsio_state));
             result = MU_FAILURE;
         }
         else
@@ -543,7 +553,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
                     }
                     else
                     {
-                        if (xio_send(tls_io_instance->socket_io, out_buffer, security_buffers[0].cbBuffer + security_buffers[1].cbBuffer + security_buffers[2].cbBuffer, on_send_complete, callback_context) != 0)
+                        if (xio_send(tls_io_instance->socket_io, out_buffer, (size_t)security_buffers[0].cbBuffer + (size_t)security_buffers[1].cbBuffer + (size_t)security_buffers[2].cbBuffer, on_send_complete, callback_context) != 0)
                         {
                             LogError("xio_send failed");
                             result = MU_FAILURE;
@@ -810,7 +820,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         LPVOID srcText = NULL;
                         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)srcText, 0, NULL) > 0)
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
                         {
                             LogError("[%#x] %s", status, (LPTSTR)srcText);
                             LocalFree(srcText);
@@ -824,6 +834,18 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         indicate_error(tls_io_instance);
                     }
                     break;
+                }
+
+                if (output_buffers[0].pvBuffer != NULL)
+                {
+                    FreeContextBuffer(output_buffers[0].pvBuffer);
+                    output_buffers[0].pvBuffer = NULL;
+                }
+
+                if (output_buffers[1].pvBuffer != NULL)
+                {
+                    FreeContextBuffer(output_buffers[1].pvBuffer);
+                    output_buffers[1].pvBuffer = NULL;
                 }
             }
             else if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
@@ -965,6 +987,18 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             }
                         }
                     }
+
+                    if (output_buffers[0].pvBuffer != NULL)
+                    {
+                        FreeContextBuffer(output_buffers[0].pvBuffer);
+                        output_buffers[0].pvBuffer = NULL;
+                    }
+
+                    if (output_buffers[1].pvBuffer != NULL)
+                    {
+                        FreeContextBuffer(output_buffers[1].pvBuffer);
+                        output_buffers[1].pvBuffer = NULL;
+                    }
                     break;
                 }
 
@@ -972,7 +1006,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     {
                         LPVOID srcText = NULL;
                         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)srcText, 0, NULL) > 0)
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
                         {
                             LogError("[%#x] %s", status, (LPTSTR)srcText);
                             LocalFree(srcText);
@@ -1217,7 +1251,7 @@ int tlsio_schannel_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_ope
 
         if (tls_io_instance->tlsio_state != TLSIO_STATE_NOT_OPEN)
         {
-            LogError("invalid tls_io_instance->tlsio_state = %s", MU_ENUM_TO_STRING(TLSIO_STATE, tls_io_instance->tlsio_state));
+            LogError("invalid tls_io_instance->tlsio_state = %" PRI_MU_ENUM "", MU_ENUM_VALUE(TLSIO_STATE, tls_io_instance->tlsio_state));
             result = MU_FAILURE;
         }
         else
@@ -1265,7 +1299,7 @@ int tlsio_schannel_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_c
         if ((tls_io_instance->tlsio_state == TLSIO_STATE_NOT_OPEN) ||
             (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
-            LogError("invalid tls_io_instance->tlsio_state = %s", MU_ENUM_TO_STRING(TLSIO_STATE, tls_io_instance->tlsio_state));
+            LogError("invalid tls_io_instance->tlsio_state = %" PRI_MU_ENUM "", MU_ENUM_VALUE(TLSIO_STATE, tls_io_instance->tlsio_state));
             result = MU_FAILURE;
         }
         else
@@ -1296,7 +1330,7 @@ int tlsio_schannel_send(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t si
     if (tls_io_instance->tlsio_state == TLSIO_STATE_RENEGOTIATE)
     {
         /* add to pending list */
-        PENDING_SEND* new_pending_send = (PENDING_SEND*)malloc(sizeof(PENDING_SEND));
+        PENDING_SEND* new_pending_send = (PENDING_SEND*)calloc(1, sizeof(PENDING_SEND));
         if (new_pending_send == NULL)
         {
             LogError("Cannot allocate memory for pending IO");
@@ -1446,13 +1480,13 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
         {
             if (value == NULL)
             {
-                LogError("Invalid paramater: OPTION_TRUSTED_CERT value=NULL"); 
+                LogError("Invalid paramater: OPTION_TRUSTED_CERT value=NULL");
                 result = MU_FAILURE;
             }
             else
             {
                 if (tls_io_instance->trustedCertificate != NULL)
-                {   
+                {
                     free(tls_io_instance->trustedCertificate);
                     tls_io_instance->trustedCertificate = NULL;
                 }
@@ -1478,6 +1512,11 @@ int tlsio_schannel_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, 
         {
             LogError("tls_io_instance->socket_io is not set");
             result = MU_FAILURE;
+        }
+        else if (strcmp(optionName, OPTION_SET_TLS_RENEGOTIATION) == 0)
+        {
+            // No need to do anything for Schannel
+            result = 0;
         }
         else
         {

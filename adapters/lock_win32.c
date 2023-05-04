@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "azure_c_shared_utility/lock.h"
-#include <windows.h>
 #include <stdlib.h>
+#include <windows.h>
+#include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 
@@ -78,7 +78,13 @@ LOCK_RESULT Unlock(LOCK_HANDLE handle)
     }
     else
     {
+#ifdef _MSC_VER
+#pragma warning(disable:26110) // Warning C26110: Caller failing to hold lock 'handle' before calling function 'ReleaseSRWLockExclusive'.
+#endif
         ReleaseSRWLockExclusive((SRWLOCK*)handle);
+#ifdef _MSC_VER
+#pragma warning (default:26110)
+#endif
         /* Codes_SRS_LOCK_10_009: [Unlock on success shall return LOCK_OK] */
         result = LOCK_OK;
 

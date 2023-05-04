@@ -2,7 +2,6 @@
 
 #include "windows.h"
 
-
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 
@@ -59,6 +58,12 @@ double timer_get_elapsed(TIMER_HANDLE timer)
         result = ((double)(stopTime.QuadPart - timer->startTime.QuadPart) / (double)timer->freq.QuadPart);
     }
     return result;
+}
+
+double timer_get_elapsed_ms(TIMER_HANDLE timer)
+{
+    double result = timer_get_elapsed(timer);
+    return result < 0 ? result : result * 1000;
 }
 
 void timer_destroy(TIMER_HANDLE timer)

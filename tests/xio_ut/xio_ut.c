@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #endif
 
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
 static unsigned int g_fail_alloc_calls;
@@ -119,7 +120,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static OPTIONHANDLER_HANDLE my_OptionHandler_Create(pfCloneOption cloneOption, pfDestroyOption destroyOption, pfSetOption setOption)
@@ -137,8 +138,6 @@ static OPTIONHANDLER_HANDLE my_test_xio_retrieveoptions(CONCRETE_IO_HANDLE handl
 static OPTIONHANDLER_RESULT my_OptionHandler_AddOption(OPTIONHANDLER_HANDLE handle, const char* name, const void* value)
 {
     (void)name, (void)handle, (void)value;
-    /*if an option is added here, it is because it was cloned (malloc'd) so safe to free it here*/
-    my_gballoc_free((void*)value);
     return OPTIONHANDLER_OK;
 }
 
@@ -164,7 +163,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_UMOCK_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(XIO_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(LOGGER_LOG, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_SEND_COMPLETE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_IO_CLOSE_COMPLETE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_IO_OPEN_COMPLETE, void*);
@@ -911,15 +909,14 @@ TEST_FUNCTION(xio_retrieveoptions_with_NULL_xio_fails)
 /*this function exists for the purpose of sharing code between happy and unhappy paths*/
 static void xio_retrieveoptions_inert_path(void)
 {
-    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, (pfSetOption)xio_setoption))
-        .IgnoreArgument_cloneOption()
-        .IgnoreArgument_destroyOption();
-    STRICT_EXPECTED_CALL(test_xio_retrieveoptions(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
+    STRICT_EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, (pfSetOption)xio_setoption));
 
-    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, "concreteOptions", IGNORED_PTR_ARG))
-        .IgnoreArgument_handle()
-        .IgnoreArgument_value();
+    STRICT_EXPECTED_CALL(test_xio_retrieveoptions(IGNORED_PTR_ARG));
+
+    STRICT_EXPECTED_CALL(OptionHandler_AddOption(IGNORED_PTR_ARG, "concreteOptions", IGNORED_PTR_ARG));
+
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG));
+
 }
 
 /*Tests_SRS_XIO_02_002: [ xio_retrieveoptions shall create a OPTIONHANDLER_HANDLE by calling OptionHandler_Create passing xio_setoption as setOption argument and xio_CloneOption and xio_DestroyOption for cloneOption and destroyOption. ]*/
@@ -967,6 +964,8 @@ TEST_FUNCTION(xio_retrieveoptions_unhappypaths)
     ///act
     for (i = 0; i < umock_c_negative_tests_call_count(); i++)
     {
+        if (!umock_c_negative_tests_can_call_fail(i)) continue;
+
         char temp_str[128];
         OPTIONHANDLER_HANDLE h;
 

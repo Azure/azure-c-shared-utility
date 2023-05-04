@@ -24,6 +24,7 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umock_c_negative_tests.h"
@@ -79,7 +80,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(strings_unittests)
@@ -166,7 +167,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[128];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -262,7 +263,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[128];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -406,7 +407,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[128];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -773,7 +774,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[128];
             int nResult;
 
             umock_c_negative_tests_reset();
@@ -1004,7 +1005,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         for (index = 0; index < count; index++)
         {
             STRING_HANDLE str_result;
-            char tmp_msg[64];
+            char tmp_msg[128];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -1113,7 +1114,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         for (index = 0; index < count; index++)
         {
             STRING_HANDLE result;
-            char tmp_msg[64];
+            char tmp_msg[128];
 
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
@@ -1313,7 +1314,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[128];
             STRING_HANDLE result;
 
             umock_c_negative_tests_reset();
@@ -1551,7 +1552,7 @@ BEGIN_TEST_SUITE(strings_unittests)
         count = umock_c_negative_tests_call_count();
         for (index = 0; index < count; index++)
         {
-            char tmp_msg[64];
+            char tmp_msg[128];
             int str_result;
 
             umock_c_negative_tests_reset();

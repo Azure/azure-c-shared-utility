@@ -3,22 +3,26 @@
 #ifndef CONSTBUFFER_ARRAY_H
 #define CONSTBUFFER_ARRAY_H
 
+#ifdef __cplusplus
+#include <cstdint>
+#else
+#include <stdint.h>
+#include <stdbool.h>
+#endif
+
 #include "azure_c_shared_utility/constbuffer.h"
 
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
-#include <cstdint>
 extern "C" {
-#else
-#include <stdint.h>
-#include <stdbool.h>
 #endif
 
 typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG* CONSTBUFFER_ARRAY_HANDLE;
 
 /*create*/
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create, const CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count);
+MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_with_move_buffers, CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count);
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty);
 MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_array_array, const CONSTBUFFER_ARRAY_HANDLE*, buffer_arrays, uint32_t, buffer_array_count);
 

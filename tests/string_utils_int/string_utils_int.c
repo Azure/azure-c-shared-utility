@@ -50,7 +50,7 @@ TEST_FUNCTION(mbs_to_wcs_converts_a_simple_LOCALE_C_string)
     free(result);
 }
 
-/*the values in this test are taken from https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/mbstowcs-mbstowcs-l?view=vs-2017*/
+/*the values in this test are taken from https://docs.microsoft.com/cpp/c-runtime-library/reference/mbstowcs-mbstowcs-l?view=vs-2017*/
 TEST_FUNCTION(mbs_to_wcs_converts_a_Japanese_string)
 {
     ///arrange
@@ -67,13 +67,54 @@ TEST_FUNCTION(mbs_to_wcs_converts_a_Japanese_string)
     ASSERT_IS_TRUE(result[0] == L'\x3042');
     ASSERT_IS_TRUE(result[1] == L'\x3043');
 
-    ///clean 
+    ///clean
     free(result);
     localeInfo=setlocale(LC_ALL, "");
     ASSERT_IS_NOT_NULL(localeInfo);
 }
 
-/*the values in this test are taken from https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/mbstowcs-mbstowcs-l?view=vs-2017*/
+TEST_FUNCTION(wcs_to_mbs_converts_a_simple_LOCALE_C_string)
+{
+    ///arrange
+    const wchar_t* s = L"a";
+
+    ///act
+    char* result = wcs_to_mbs(s);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_IS_TRUE(result[0] == 'a');
+    ASSERT_IS_TRUE(result[1] == '\0');
+
+    ///clean
+    free(result);
+}
+
+/*the values in this test are taken from https://docs.microsoft.com/cpp/c-runtime-library/reference/mbstowcs-mbstowcs-l?view=vs-2017*/
+TEST_FUNCTION(wcs_to_mbs_converts_a_Japanese_string)
+{
+    ///arrange
+    char* localeInfo = setlocale(LC_ALL, "Japanese_Japan.932");
+    ASSERT_IS_NOT_NULL(localeInfo);
+
+    const wchar_t* wideJapanese = L"\x3042\x3043";
+
+    ///act
+    char* result = wcs_to_mbs(wideJapanese);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(result);
+    ASSERT_IS_TRUE(result[0] == '\x82');
+    ASSERT_IS_TRUE(result[1] == '\xa0');
+    ASSERT_IS_TRUE(result[2] == '\x82');
+    ASSERT_IS_TRUE(result[3] == '\xa1');
+
+    ///clean
+    free(result);
+    localeInfo = setlocale(LC_ALL, "");
+    ASSERT_IS_NOT_NULL(localeInfo);
+}
+
 TEST_FUNCTION(GUID_FORMAT_AND_VALUES)
 {
     ///arrange
@@ -101,7 +142,7 @@ TEST_FUNCTION(GUID_FORMAT_AND_VALUES)
             },
             "ffffffff-ffff-ffff-ffff-ffffffffffff"
         },
-        {/*[2]*/ 
+        {/*[2]*/
             /*a most famous bug that needed testing - it was producing 1f018f1a-1b1f-40ad-b78d-d577f2b27821
             instead of the expected                                    1f018f1a-1b1f-40ad-b78d-d578f2b27821 and we had great fun with it!*/
             {
@@ -245,7 +286,7 @@ TEST_FUNCTION(vsprintf_wchar_with_empty_string_succeeds)
     wchar_t* result;
 
     ///act
-    result = vsprintf_wchar_wrapper_function(L"%s", "");
+    result = vsprintf_wchar_wrapper_function(L"%s", L"");
 
     ///assert
     ASSERT_ARE_EQUAL(int, 0, wcscmp(result, L""));

@@ -1,7 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required (VERSION 3.5)
 
 if (TARGET aziotsharedutil)
     RETURN()
@@ -26,7 +26,7 @@ option(use_default_uuid "set use_default_uuid to ON to use the out of the box UU
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
 option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
 option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in httpapi_compact that comes with C shared utility (default is OFF)" OFF)
-option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
+option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
 
@@ -39,9 +39,13 @@ if(WIN32)
     option(use_openssl "set use_openssl to ON if openssl is to be used, set to OFF to not use openssl" OFF)
     option(use_mbedtls "set use_mbedtls to ON if mbedtls is to be used, set to OFF to not use mbedtls" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
-    option(use_etw "set use_etw to ON if ETW logging is to be used. Default is OFF" OFF)
+    option(use_bearssl "set use_bearssl to ON if BearSSL is to be used, set to OFF to not use BearSSL" OFF)
     option(logerror_captures_stack_traces "LogError will make a reasonable attempt to capture the stack trace at the time of calling LogError. Only available on Windows" OFF)
     option(use_socketio "set use_socketio to ON if socketio is to be included in the library, set to OFF if a different implementation will be provided" ON)
+
+    set(use_etw OFF CACHE STRING "set use_etw to OFF = No ETW logging, TRACELOGGING = Use ETW from tracelogging.h, TRACELOGGING_WITH_CONSOLE = Use ETW from tracelogging.h and call console logger. Default is OFF")
+    set_property(CACHE use_etw PROPERTY STRINGS TRACELOGGING_WITH_CONSOLE TRACELOGGING OFF)
+
 else()
     option(use_schannel "set use_schannel to ON if schannel is to be used, set to OFF to not use schannel" OFF)
     if(MACOSX)
@@ -53,6 +57,8 @@ else()
     endif()
     option(use_mbedtls "set use_mbedtls to ON if mbedtls is to be used, set to OFF to not use mbedtls" OFF)
     option(use_wolfssl "set use_wolfssl to ON if wolfssl is to be used, set to OFF to not use wolfssl" OFF)
+    option(use_bearssl "set use_bearssl to ON if BearSSL is to be used, set to OFF to not use BearSSL" OFF)
+    option(use_c_ares "set use_c_ares to ON if c-ares is to be used, set to OFF to not use c-ares" OFF)
 endif()
 
 option(no_logging "disable logging (default is OFF)" OFF)
@@ -69,14 +75,17 @@ if (MACOSX)
     endif()
 endif()
 
-if(${use_etw})
-    #create res folder
-    file(MAKE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/res)
+if(WIN32)
 
-    #populate res folder with the ETW resources
-    execute_process(COMMAND  ${CMAKE_CURRENT_LIST_DIR}/src/etw_provider_generate.cmd
-        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src
-    )
+if(${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
+    add_definitions(-DUSE_TRACELOGGING)
+    add_definitions(-DCALL_CONSOLE_LOGGER)
+endif() #(${use_etw} STREQUAL "TRACELOGGING_WITH_CONSOLE")
+
+if(${use_etw} STREQUAL "TRACELOGGING")
+    add_definitions(-DUSE_TRACELOGGING)
+endif() #(${use_etw} STREQUAL "TRACELOGGING")
+
 endif()
 
 if(${logerror_captures_stack_traces})
@@ -134,6 +143,10 @@ if(MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MBEDTLS")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_MBEDTLS")
     endif()
+    if(${use_bearssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_BEARSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_BEARSSL")
+    endif()
     if(${use_wolfssl})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_WOLFSSL")
@@ -152,6 +165,10 @@ elseif(LINUX) #LINUX OR APPLE
     if(${use_mbedtls})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_MBEDTLS")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_MBEDTLS")
+    endif()
+    if(${use_bearssl})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_BEARSSL")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DUSE_BEARSSL")
     endif()
     if(${use_wolfssl})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WOLFSSL")
@@ -186,6 +203,7 @@ set(source_c_files
     ./src/azure_base64.c
     ./src/buffer.c
     ./src/constbuffer_array.c
+    ./src/constbuffer_array_batcher.c
     ./src/connection_string_parser.c
     ./src/constbuffer.c
     ${LOGGING_C_FILE}
@@ -229,6 +247,7 @@ set(source_c_files
     ${UNIQUEID_C_FILE}
     ${ENVIRONMENT_VARIABLE_C_FILE}
     ${LOGGING_STACKTRACE_C_FILE}
+    ${DNS_C_FILE}
 )
 
 if(UNIX) #LINUX OR APPLE
@@ -273,6 +292,11 @@ if(${use_mbedtls})
         ./adapters/tlsio_mbedtls.c
     )
 endif()
+if(${use_bearssl})
+    set(source_c_files ${source_c_files}
+        ./adapters/tlsio_bearssl.c
+    )
+endif()
 if(${use_openssl})
     set(source_c_files ${source_c_files}
         ./adapters/tlsio_openssl.c
@@ -300,6 +324,7 @@ set(source_h_files
     ./inc/azure_c_shared_utility/azure_base64.h
     ./inc/azure_c_shared_utility/buffer_.h
     ./inc/azure_c_shared_utility/constbuffer_array.h
+    ./inc/azure_c_shared_utility/constbuffer_array_batcher.h
     ./inc/azure_c_shared_utility/connection_string_parser.h
     ./inc/azure_c_shared_utility/crt_abstractions.h
     ./inc/azure_c_shared_utility/constmap.h
@@ -350,6 +375,7 @@ set(source_h_files
     ./inc/azure_c_shared_utility/tlsio.h
     ./inc/azure_c_shared_utility/optionhandler.h
     ./inc/azure_c_shared_utility/memory_data.h
+    ./inc/azure_c_shared_utility/safe_math.h    
     ${LOGGING_STACKTRACE_H_FILE}
 )
 
@@ -417,9 +443,26 @@ if(${use_applessl})
     )
     include_directories(./pal/ios-osx/)
 endif()
-
+if(${use_bearssl})
+    set(source_h_files ${source_h_files}
+        ./inc/azure_c_shared_utility/tlsio_bearssl.h
+    )
+endif()
 FILE(GLOB aziotsharedutil_md_files "devdoc/*.md")
 SOURCE_GROUP(devdoc FILES ${aziotsharedutil_md_files})
+
+# Add ignore deprecated functions so we may use 1.1.1 APIs
+# in OpenSSL 3
+if(LINUX)
+  set_property(
+    SOURCE
+      ${CMAKE_CURRENT_LIST_DIR}/adapters/tlsio_openssl.c
+      ${CMAKE_CURRENT_LIST_DIR}/adapters/x509_openssl.c
+      ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_curl.c
+    PROPERTY COMPILE_OPTIONS
+      -Wno-deprecated-declarations
+  )
+endif()
 
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files} ${aziotsharedutil_md_files})
@@ -472,21 +515,20 @@ if(${use_http})
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
     else()
         if (NOT use_builtin_httpapi)
-            if (CMAKE_CROSSCOMPILING)
-                # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
-                # pkg-config tool can not be used by cmake while cross compiling.
-                message(STATUS "Cross compiling not using pkg-config")
-            else()
-                # try pkg-config first
-                find_package(PkgConfig)
-                if(PKG_CONFIG_FOUND)
-                    pkg_check_modules(CURL libcurl)
-                endif()
-            endif()
 
-            # if that didn't work, try CMake find_package
-            if(NOT CURL_FOUND)
-                find_package(CURL)
+            # try CMake find_package first
+            find_package(CURL)
+
+            # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
+            # pkg-config tool can not be used by cmake while cross compiling.
+            if (NOT CMAKE_CROSSCOMPILING)
+                # if find_package didn't work, try pkg-config
+                if(NOT CURL_FOUND)
+                    find_package(PkgConfig)
+                    if(PKG_CONFIG_FOUND)
+                        pkg_check_modules(CURL libcurl)
+                    endif()
+                endif()
             endif()
 
             set(CURL_FIND_REQUIRED 1)
@@ -506,10 +548,28 @@ endif()
 
 if(${use_mbedtls})
     if (WIN32)
-        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} $ENV{mbedtlsLibDir}/mbedtls $ENV{mbedtlsLibDir}/mbedx509 $ENV{mbedtlsLibDir}/mbedcrypto)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ws2_32
+            $ENV{mbedtlsLibDir}/mbedtls.lib
+            $ENV{mbedtlsLibDir}/mbedx509.lib
+            $ENV{mbedtlsLibDir}/mbedcrypto.lib
+        )
         include_directories("$ENV{mbedtlsDir}/include")
     else()
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} mbedtls mbedx509 mbedcrypto)
+    endif()
+endif()
+
+if(${use_bearssl})
+    if (WIN32)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs}
+            $ENV{bearsslDir}/build/bearssls.lib
+        )
+        include_directories("$ENV{bearsslDir}/inc")
+    else()
+        include_directories($ENV{bearsslDir}/inc)
+        link_directories($ENV{bearsslDir}/build)
+        find_library(bearssl bearssl $ENV{bearsslDir}/build/)
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ${bearssl})
     endif()
 endif()
 
@@ -557,6 +617,9 @@ if(LINUX)
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} -L${UUID_LIBRARY_DIRS} uuid)
         endif()
     endif()
+    if(${use_c_ares})
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} cares)
+    endif()
 endif()
 
 target_link_libraries(aziotsharedutil ${aziotsharedutil_target_libs})
@@ -564,7 +627,28 @@ if(${build_as_dynamic})
     target_link_libraries(aziotsharedutil_dll ${aziotsharedutil_target_libs})
 endif()
 
+set(original_run_e2e_tests ${run_e2e_tests})
+set(original_run_unittests ${run_unittests})
+set(original_run_int_tests ${run_int_tests})
+
+set(run_e2e_tests OFF)
+set(run_unittests OFF)
+set(run_int_tests OFF)
+
 include(dependencies.cmake)
+
+if (${original_run_unittests} OR ${original_run_e2e_tests})
+    include("${CMAKE_CURRENT_LIST_DIR}/dependencies-test.cmake")
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/testtools)
+
+    setTargetBuildProperties(ctest)
+    setTargetBuildProperties(testrunnerswitcher)
+    setTargetBuildProperties(umock_c)
+endif()
+
+set(run_e2e_tests ${original_run_e2e_tests})
+set(run_unittests ${original_run_unittests})
+set(run_int_tests ${original_run_int_tests})
 
 include_directories(${MACRO_UTILS_INC_FOLDER})
 include_directories(${UMOCK_C_INC_FOLDER})
@@ -606,7 +690,7 @@ if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
     set(CMAKE_INSTALL_LIBDIR "lib")
 endif()
 
-set(package_location "cmake")
+set(package_location "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 
 if(${build_as_dynamic})
     set(targets aziotsharedutil aziotsharedutil_dll)
@@ -617,11 +701,12 @@ endif(${build_as_dynamic})
 install (TARGETS ${targets} EXPORT aziotsharedutilTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
 )
-install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
+install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility)
 install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
+
 
 include(CMakePackageConfigHelpers)
 
@@ -654,4 +739,3 @@ DESTINATION
 )
 
 compileTargetAsC99(aziotsharedutil)
-

@@ -98,6 +98,7 @@ MOCKABLE_FUNCTION(, int, mbedtls_ssl_handshake_step, mbedtls_ssl_context*, ssl)
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_setup, mbedtls_ssl_context*, ssl, const mbedtls_ssl_config*, conf)
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_set_session, mbedtls_ssl_context*, ssl, const mbedtls_ssl_session*, session)
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_read, mbedtls_ssl_context*, ssl, unsigned char*, buf, size_t, len)
+MOCKABLE_FUNCTION(, size_t, mbedtls_ssl_get_max_frag_len, const mbedtls_ssl_context*, ssl)
 
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_authmode, mbedtls_ssl_config*, conf, int, authmode)
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_rng, mbedtls_ssl_config*, conf, f_rng, fr, void*, p_rng);
@@ -114,7 +115,9 @@ MOCKABLE_FUNCTION(, int, mbedtls_ssl_config_defaults, mbedtls_ssl_config*, conf,
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_config_init, mbedtls_ssl_config*, conf);
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_session_init, mbedtls_ssl_session*, session);
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_session_reset, mbedtls_ssl_context*, ssl);
+MOCKABLE_FUNCTION(, void, mbedtls_ssl_session_free, mbedtls_ssl_session*, ssl);
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_conf_own_cert, mbedtls_ssl_config*, conf, mbedtls_x509_crt*, own_cert, mbedtls_pk_context*, pk_key);
+MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_renegotiation, mbedtls_ssl_config*, conf, int, renegotiation);
 
 MOCKABLE_FUNCTION(, void, mbedtls_debug_set_threshold, int, threshold);
 
@@ -122,6 +125,10 @@ MOCKABLE_FUNCTION(, void, mbedtls_entropy_init, mbedtls_entropy_context*, ctx);
 MOCKABLE_FUNCTION(, int, mbedtls_entropy_add_source, mbedtls_entropy_context*, ctx, mbedtls_entropy_f_source_ptr, f_source, void*, p_source, size_t, threshold, int, strong);
 MOCKABLE_FUNCTION(, int, mbedtls_entropy_func, void*, data, unsigned char*, output, size_t, len);
 MOCKABLE_FUNCTION(, void, mbedtls_entropy_free, mbedtls_entropy_context*, ctx)
+
+MOCKABLE_FUNCTION(, void, mbedtls_pk_init, mbedtls_pk_context*, ctx);
+MOCKABLE_FUNCTION(, mbedtls_pk_type_t, mbedtls_pk_get_type, const mbedtls_pk_context*, ctx);
+MOCKABLE_FUNCTION(, void, mbedtls_pk_free, mbedtls_pk_context*, ctx);
 
 MOCKABLE_FUNCTION(, void, on_io_open_complete, void*, context, IO_OPEN_RESULT, open_result);
 MOCKABLE_FUNCTION(, void, on_bytes_received, void*, context, const unsigned char*, buffer, size_t, size);
@@ -148,6 +155,8 @@ static ON_BYTES_RECEIVED g_on_bytes_received = NULL;
 static void* g_on_bytes_received_ctx = NULL;
 static ON_IO_ERROR g_on_io_error = NULL;
 static void* g_on_io_error_ctx = NULL;
+static size_t g_max_send_fragment_size = 0;
+static int g_failed_fragment_index = -1;
 
 static mbedtls_ssl_send_t* mbed_f_send = NULL;
 static mbedtls_ssl_recv_t* mbed_f_recv = NULL;
@@ -203,6 +212,30 @@ static void my_xio_destroy(XIO_HANDLE xio)
     my_gballoc_free(xio);
 }
 
+static int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+{
+    (void)xio;
+    (void)buffer;
+    (void)size;
+    (void)on_send_complete;
+
+    if (on_send_complete != NULL)
+    {
+        if (g_failed_fragment_index == 0)
+        {
+            on_send_complete(callback_context, IO_SEND_ERROR);
+        }
+        else
+        {
+            on_send_complete(callback_context, IO_SEND_OK);
+        }
+
+        g_failed_fragment_index >= 0 ? g_failed_fragment_index-- : g_failed_fragment_index;
+    }
+
+    return 0;
+}
+
 static void my_mbedtls_ssl_set_bio(mbedtls_ssl_context* ssl, void* p_bio, mbedtls_ssl_send_t* f_send, mbedtls_ssl_recv_t* f_recv, mbedtls_ssl_recv_timeout_t* f_recv_timeout)
 {
     (void)ssl;
@@ -220,6 +253,30 @@ static int my_mbedtls_entropy_add_source(mbedtls_entropy_context* ctx, mbedtls_e
     (void)strong;
     g_entropy_f_source = f_source;
     return 0;
+}
+
+static int my_mbedtls_ssl_write(mbedtls_ssl_context* ssl, const unsigned char *buf, size_t len)
+{
+    int ret;
+    (void)buf;
+
+    if (mbed_f_send != NULL)
+    {
+        // send tls app data
+        ssl->out_msgtype = MBEDTLS_SSL_MSG_APPLICATION_DATA;
+        mbed_f_send(g_mbedtls_ctx, buf, len);
+    }
+
+    if (g_max_send_fragment_size > 0)
+    {
+        ret = (int)(g_max_send_fragment_size > len ? len : g_max_send_fragment_size);
+    }
+    else
+    {
+        ret = (int)len;
+    }
+
+    return ret;
 }
 
 static void my_os_delay_us(int us)
@@ -268,7 +325,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 /**
@@ -293,7 +350,6 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
     TEST_SUITE_INITIALIZE(suite_init)
     {
         int result;
-        TEST_INITIALIZE_MEMORY_DEBUG(g_dllByDll);
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
@@ -312,6 +368,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_UMOCK_ALIAS_TYPE(ON_IO_ERROR, void*);
         REGISTER_UMOCK_ALIAS_TYPE(ON_IO_CLOSE_COMPLETE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(ON_SEND_COMPLETE, void*);
+        REGISTER_UMOCK_ALIAS_TYPE(mbedtls_pk_type_t, int);
 
         REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
         REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
@@ -332,6 +389,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_GLOBAL_MOCK_HOOK(xio_open, my_xio_open);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_open, __LINE__);
         REGISTER_GLOBAL_MOCK_HOOK(xio_destroy, my_xio_destroy);
+        REGISTER_GLOBAL_MOCK_HOOK(xio_send, my_xio_send);
 
         REGISTER_GLOBAL_MOCK_RETURN(socketio_get_interface_description, TEST_INTERFACE_DESC);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(socketio_get_interface_description, NULL);
@@ -339,6 +397,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_GLOBAL_MOCK_RETURN(mbedtls_ssl_read, 0);
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_ssl_set_bio, my_mbedtls_ssl_set_bio);
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_entropy_add_source, my_mbedtls_entropy_add_source);
+        REGISTER_GLOBAL_MOCK_HOOK(mbedtls_ssl_write, my_mbedtls_ssl_write);
 
         REGISTER_GLOBAL_MOCK_HOOK(on_io_open_complete, my_on_io_open_complete);
         REGISTER_GLOBAL_MOCK_HOOK(on_bytes_received, my_on_bytes_received);
@@ -351,7 +410,6 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
-        TEST_DEINITIALIZE_MEMORY_DEBUG(g_dllByDll);
     }
 
     TEST_FUNCTION_INITIALIZE(method_init)
@@ -370,6 +428,9 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         mbed_f_send = NULL;
         mbed_f_recv = NULL;
         mbed_f_recv_timeout = NULL;
+
+        g_max_send_fragment_size = 0;
+        g_failed_fragment_index = -1;
 
         umock_c_reset_all_calls();
     }
@@ -403,6 +464,8 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(xio_create(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_init(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_x509_crt_init(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_pk_init(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_init(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_add_source(IGNORED_PTR_ARG, IGNORED_PTR_ARG, NULL, IGNORED_NUM_ARG, IGNORED_NUM_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_init(IGNORED_PTR_ARG));
@@ -458,7 +521,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         tlsio_mbedtls_destroy(handle);
     }
 
-    /*TEST_FUNCTION(tlsio_mbedtls_create_fail)
+    TEST_FUNCTION(tlsio_mbedtls_create_fail)
     {
         //arrange
         TLSIO_CONFIG tls_io_config;
@@ -481,19 +544,16 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
-            char tmp_msg[64];
-            sprintf(tmp_msg, "tlsio_mbedtls_create failure in test %lu/%lu", (unsigned long)index, (unsigned long)count);
-
             //act
             CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
 
             //assert
-            ASSERT_IS_NULL(handle, tmp_msg);
+            ASSERT_IS_NULL(handle, "tlsio_mbedtls_create failure in test %lu/%lu", (unsigned long)index, (unsigned long)count);
         }
 
         //cleanup
         umock_c_negative_tests_deinit();
-    }*/
+    }
 
     TEST_FUNCTION(tlsio_mbedtls_destroy_succeed)
     {
@@ -506,13 +566,14 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_close_notify(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_session_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_pk_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_free(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(xio_destroy(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));
@@ -680,8 +741,8 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         int result = tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_close_notify(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
         //act
         result = tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
@@ -767,6 +828,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
+        STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
         STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(TEST_DATA_SIZE);
 
         //act
@@ -794,10 +856,100 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(1);
+        STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
+        STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(-1);
 
         //act
         int result = tlsio_mbedtls_send(handle, TEST_DATA_VALUE, TEST_DATA_SIZE, on_send_complete, NULL);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_send_large_payload_success)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        tls_io_config.invoke_on_send_complete_callback_for_fragments = false;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        size_t MAX_FRAGMENT_SIZE = 1;
+        int rounds = 3;
+        size_t total_data = rounds * MAX_FRAGMENT_SIZE;
+        const unsigned char* dummy_data = (const unsigned char*) 0x51;
+        g_max_send_fragment_size = MAX_FRAGMENT_SIZE;
+
+        for (int index = 0; index < rounds; index++)
+        {
+            size_t data_left = total_data - index * MAX_FRAGMENT_SIZE;
+            size_t data_processed = data_left > MAX_FRAGMENT_SIZE ? MAX_FRAGMENT_SIZE : data_left;
+            const unsigned char* data_ptr = dummy_data + index * MAX_FRAGMENT_SIZE;
+            STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+            STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, data_ptr, data_left));
+            STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        }
+
+        STRICT_EXPECTED_CALL(on_send_complete(IGNORED_PTR_ARG, IO_SEND_OK));
+
+        //act
+        int result = tlsio_mbedtls_send(handle, dummy_data, total_data, on_send_complete, NULL);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_send_large_payload_failure)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        tls_io_config.invoke_on_send_complete_callback_for_fragments = false;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        size_t MAX_FRAGMENT_SIZE = 1;
+        int rounds = 3;
+        size_t total_data = rounds * MAX_FRAGMENT_SIZE;
+        const unsigned char* dummy_data = (const unsigned char*) 0x51;
+        g_failed_fragment_index = 1; // second fragment to fail
+        g_max_send_fragment_size = MAX_FRAGMENT_SIZE;
+
+        for (int index = 0; index <= g_failed_fragment_index; index++)
+        {
+            size_t data_left = total_data - index * MAX_FRAGMENT_SIZE;
+            size_t data_processed = data_left > MAX_FRAGMENT_SIZE ? MAX_FRAGMENT_SIZE : data_left;
+            const unsigned char* data_ptr = dummy_data + index * MAX_FRAGMENT_SIZE;
+            STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+            STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, data_ptr, data_left));
+            STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+        }
+
+        STRICT_EXPECTED_CALL(on_send_complete(IGNORED_PTR_ARG, IO_SEND_ERROR));
+
+        //act
+        int result = tlsio_mbedtls_send(handle, dummy_data, total_data, on_send_complete, NULL);
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -835,6 +987,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
 
         //act
         tlsio_mbedtls_dowork(handle);
@@ -865,6 +1018,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             .SetReturn(TEST_DATA_SIZE);
         STRICT_EXPECTED_CALL(on_bytes_received(IGNORED_PTR_ARG, IGNORED_PTR_ARG, TEST_DATA_SIZE));
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
 
         //act
         tlsio_mbedtls_dowork(handle);
@@ -917,7 +1071,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
         (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
-        //g_on_bytes_received(g_on_bytes_received_ctx, TEST_DATA_VALUE, TEST_DATA_SIZE);
+
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
@@ -1004,6 +1158,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
 
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_X509_CERTIFICATE));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_parse(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_pk_get_type(IGNORED_PTR_ARG)).SetReturn(MBEDTLS_PK_NONE);
 
         //act
         tlsio_mbedtls_setoption(handle, SU_OPTION_X509_CERT, TEST_X509_CERTIFICATE);
@@ -1039,6 +1194,62 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         tlsio_mbedtls_setoption(handle, SU_OPTION_X509_PRIVATE_KEY, TEST_X509_KEY);
 
         //assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_setoption_renegotiation_success)
+    {
+        //arrange
+        mbedtls_pk_info_t* pk_info = (mbedtls_pk_info_t*)0x12345;
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(mbedtls_ssl_conf_renegotiation(IGNORED_PTR_ARG, 1));
+
+        //act
+        bool set_renegotiation = true;
+        int result = tlsio_mbedtls_setoption(handle, OPTION_SET_TLS_RENEGOTIATION, &set_renegotiation);
+
+        //assert
+        ASSERT_ARE_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    TEST_FUNCTION(tlsio_mbedtls_setoption_renegotiation_value_NULL_fail)
+    {
+        //arrange
+        mbedtls_pk_info_t* pk_info = (mbedtls_pk_info_t*)0x12345;
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        //act
+        bool set_renegotiation = true;
+        int result = tlsio_mbedtls_setoption(handle, OPTION_SET_TLS_RENEGOTIATION, NULL);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
         //cleanup

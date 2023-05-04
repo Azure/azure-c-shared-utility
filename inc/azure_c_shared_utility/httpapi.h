@@ -2,27 +2,43 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 /** @file httpapi.h
- *    @brief     This module implements the standard HTTP API used by the C IoT client
+ *    @deprecated Applications should not directly use this header file.  They should use httpapiex.h instead.
+ *
+ *    @brief   Deprecated module implements the standard HTTP API used by the C IoT client
  *             library.
  *
  *    @details For example, on the Windows platform the HTTP API code uses
  *             WinHTTP and for Linux it uses curl and so forth. HTTPAPI must support
  *             HTTPs (HTTP+SSL).
+ *    
+ *    @remarks This header file is deprecated in the sense that applications should not directly invoke it.  
+ *             It remains the contract that instantiations of the HTTP clients on various platforms
+ *             (e.g. curl and WinHTTP) are implemented to.
+ *
+ *             Applications should not directly invoke functions in this header because this layer does
+ *             not follow the standard allocation/copying rules of the rest of the SDK.  When passed
+ *             a memory buffer, this layer points directly to the memory and does not make a copy or use reference counting.
+ *             This means there can be a crash if the caller free()'s the data but this layer needs it.
+ *             The httpapiex.h layer follows the conventions throughout the rest of the SDK and is 
+ *             therefore safer and less likely to cause unexpected problems for callers.
  */
 
 #ifndef HTTPAPI_H
 #define HTTPAPI_H
 
-#include "azure_c_shared_utility/httpheaders.h"
+#ifdef __cplusplus
+#include <cstddef>
+#else
+#include <stddef.h>
+#endif
+
 #include "azure_macro_utils/macro_utils.h"
+#include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
-#include <cstddef>
 extern "C" {
-#else
-#include <stddef.h>
 #endif
 
 typedef struct HTTP_HANDLE_DATA_TAG* HTTP_HANDLE;
@@ -74,6 +90,8 @@ MU_DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
 #define MAX_PASSWORD_LEN        65
 
 /**
+ * @deprecated Applications should not directly invoke this function.  They should use httpapiex.h instead.
+ *
  * @brief    Global initialization for the HTTP API component.
  *
  *            Platform specific implementations are expected to initialize
@@ -84,10 +102,16 @@ MU_DEFINE_ENUM(HTTPAPI_REQUEST_TYPE, HTTPAPI_REQUEST_TYPE_VALUES);
  */
 MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_Init);
 
-/** @brief    Free resources allocated in ::HTTPAPI_Init. */
+/** @brief    Free resources allocated in ::HTTPAPI_Init. 
+  *
+  * @deprecated Applications should not directly invoke this function.  They should use httpapiex.h instead.
+  *
+*/
 MOCKABLE_FUNCTION(, void, HTTPAPI_Deinit);
 
 /**
+ * @deprecated Applications should not directly invoke this function.  They should use httpapiex.h instead.
+ *
  * @brief    Creates an HTTPS connection to the host specified by the @p
  *             hostName parameter.
  *
@@ -103,6 +127,9 @@ MOCKABLE_FUNCTION(, void, HTTPAPI_Deinit);
 MOCKABLE_FUNCTION(, HTTP_HANDLE, HTTPAPI_CreateConnection, const char*, hostName);
 
 /**
+ *
+ * @deprecated Applications should not directly invoke this function.  They should use httpapiex.h instead.
+ *
  * @brief    Closes a connection created with ::HTTPAPI_CreateConnection.
  *
  * @param    handle    The handle to the HTTP connection created via ::HTTPAPI_CreateConnection.
@@ -166,6 +193,8 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
                                              HTTP_HEADERS_HANDLE, responseHeadersHandle, BUFFER_HANDLE, responseContent);
 
 /**
+ * @deprecated Applications should not directly invoke this function.  They should use httpapiex.h instead.
+ *
  * @brief    Sets the option named @p optionName bearing the value
  *             @p value for the HTTP_HANDLE @p handle.
  *
@@ -181,6 +210,8 @@ MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_ExecuteRequest, HTTP_HANDLE, handle,
 MOCKABLE_FUNCTION(, HTTPAPI_RESULT, HTTPAPI_SetOption, HTTP_HANDLE, handle, const char*, optionName, const void*, value);
 
 /**
+ * @deprecated Applications should not directly invoke this function.  They should use httpapiex.h instead.
+ *
  * @brief    Clones the option named @p optionName bearing the value @p value
  *             into the pointer @p savedValue.
  *

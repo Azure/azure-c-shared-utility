@@ -6,6 +6,7 @@
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/httpapiex.h"
 #include "winsock2.h"
 #include "minwindef.h"
 #include "winnt.h"
@@ -18,6 +19,12 @@
 #endif
 #if USE_WOLFSSL
 #include "azure_c_shared_utility/tlsio_wolfssl.h"
+#endif
+#if USE_MBEDTLS
+#include "azure_c_shared_utility/tlsio_mbedtls.h"
+#endif
+#if USE_BEARSSL
+#include "azure_c_shared_utility/tlsio_bearssl.h"
 #endif
 
 #include "azure_c_shared_utility/tlsio_schannel.h"
@@ -35,10 +42,20 @@ int platform_init(void)
     }
     else
     {
-#ifdef USE_OPENSSL
-        tlsio_openssl_init();
-#endif
         result = 0;
+#ifndef DONT_USE_UPLOADTOBLOB
+        if (HTTPAPIEX_Init() == HTTPAPIEX_ERROR)
+        {
+            LogError("HTTP for upload to blob failed on initialization.");
+            result = MU_FAILURE;
+        }
+#endif /* DONT_USE_UPLOADTOBLOB */
+#ifdef USE_OPENSSL
+        if (result == 0)
+        {
+            result = tlsio_openssl_init();
+        }
+#endif
     }
     return result;
 }
@@ -51,6 +68,10 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
     return tlsio_cyclonessl_get_interface_description();
 #elif USE_WOLFSSL
     return tlsio_wolfssl_get_interface_description();
+#elif USE_BEARSSL
+    return tlsio_bearssl_get_interface_description();
+#elif USE_MBEDTLS
+    return tlsio_mbedtls_get_interface_description();
 #else
     return tlsio_schannel_get_interface_description();
 #endif
@@ -150,7 +171,9 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
     result = NULL;
     memset(&osvi, 0, sizeof(osvi));
     osvi.dwOSVersionInfoSize = sizeof(osvi);
-#pragma warning(disable:4996)
+#ifdef _MSC_VER
+#pragma warning(disable:4996 28159)  // GetVersionEx is deprecated 
+#endif
     if (GetVersionEx(&osvi))
     {
         DWORD product_type;
@@ -165,7 +188,9 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
         DWORD dwVersion = GetVersion();
         result = STRING_construct_sprintf("(native; WindowsProduct:Windows NT %d.%d; %s", LOBYTE(LOWORD(dwVersion)), HIBYTE(LOWORD(dwVersion)), arch);
     }
-#pragma warning(default:4996)
+#ifdef _MSC_VER
+#pragma warning(default:4996 28159)
+#endif
 
     if (result == NULL)
     {
@@ -205,6 +230,10 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 void platform_deinit(void)
 {
     (void)WSACleanup();
+
+#ifndef DONT_USE_UPLOADTOBLOB
+    HTTPAPIEX_Deinit();
+#endif /* DONT_USE_UPLOADTOBLOB */
 
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();

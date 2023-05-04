@@ -3,17 +3,20 @@
 #ifdef __cplusplus
 #include <cinttypes>
 #include <cstdlib>
-#include <cstdint>
 #else
 #include <inttypes.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdbool.h>
 #endif
 
 static void* my_gballoc_malloc(size_t size)
 {
     return malloc(size);
+}
+
+static void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    return calloc(nmemb, size);
 }
 
 static void my_gballoc_free(void* s)
@@ -32,9 +35,8 @@ static void my_gballoc_free(void* s)
 #define ENABLE_MOCKS
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/constbuffer.h"
+#include "../src/constbuffer.c"
 #undef ENABLE_MOCKS
-
-#include "real_constbuffer.h"
 
 #include "azure_c_shared_utility/constbuffer_array.h"
 
@@ -44,7 +46,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static const unsigned char one = '1';
@@ -82,7 +84,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     result = umocktypes_bool_register_types();
     ASSERT_ARE_EQUAL(int, 0, result, "umocktypes_bool_register_types");
 
-    REGISTER_CONSTBUFFER_GLOBAL_MOCK_HOOK();
+    REGISTER_GLOBAL_INTERFACE_HOOKS(constbuffer);
 
     REGISTER_UMOCK_ALIAS_TYPE(CONSTBUFFER_HANDLE, void*);
 
@@ -90,6 +92,9 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_malloc, NULL);
+
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(gballoc_calloc, NULL);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 }
@@ -108,22 +113,22 @@ TEST_FUNCTION_INITIALIZE(method_init)
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
 
-    TEST_CONSTBUFFER_HANDLE_1 = CONSTBUFFER_Create(&one, sizeof(char));
+    TEST_CONSTBUFFER_HANDLE_1 = UMOCK_REAL(CONSTBUFFER_Create)(&one, sizeof(char));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_1);
 
-    TEST_CONSTBUFFER_HANDLE_2 = CONSTBUFFER_Create(two, sizeof(two));
+    TEST_CONSTBUFFER_HANDLE_2 = UMOCK_REAL(CONSTBUFFER_Create)(two, sizeof(two));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_2);
 
-    TEST_CONSTBUFFER_HANDLE_3 = CONSTBUFFER_Create(three, sizeof(three));
+    TEST_CONSTBUFFER_HANDLE_3 = UMOCK_REAL(CONSTBUFFER_Create)(three, sizeof(three));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_3);
 
-    TEST_CONSTBUFFER_HANDLE_4 = CONSTBUFFER_Create(four, sizeof(four));
+    TEST_CONSTBUFFER_HANDLE_4 = UMOCK_REAL(CONSTBUFFER_Create)(four, sizeof(four));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_4);
 
-    TEST_CONSTBUFFER_HANDLE_5 = CONSTBUFFER_Create(five, sizeof(five));
+    TEST_CONSTBUFFER_HANDLE_5 = UMOCK_REAL(CONSTBUFFER_Create)(five, sizeof(five));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_5);
 
-    TEST_CONSTBUFFER_HANDLE_6 = CONSTBUFFER_Create(six, sizeof(six));
+    TEST_CONSTBUFFER_HANDLE_6 = UMOCK_REAL(CONSTBUFFER_Create)(six, sizeof(six));
     ASSERT_IS_NOT_NULL(TEST_CONSTBUFFER_HANDLE_6);
 
     umock_c_reset_all_calls();
@@ -132,12 +137,12 @@ TEST_FUNCTION_INITIALIZE(method_init)
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
 {
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_6);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_5);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_4);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_3);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_2);
-    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_1);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_6);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_5);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_4);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_3);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_2);
+    UMOCK_REAL(CONSTBUFFER_DecRef)(TEST_CONSTBUFFER_HANDLE_1);
     umock_c_negative_tests_deinit();
     TEST_MUTEX_RELEASE(test_serialize_mutex);
 }
@@ -249,6 +254,89 @@ TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_fails)
             ASSERT_IS_NULL(constbuffer_array);
         }
     }
+}
+
+/* constbuffer_array_create_with_move_buffers */
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_028: [ If buffers is NULL and buffer_count is not 0, constbuffer_array_create_with_move_buffers shall fail and return NULL. ]*/
+TEST_FUNCTION(constbuffer_array_create_with_move_buffers_with_NULL_buffers_fails)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+
+    ///act
+    constbuffer_array = constbuffer_array_create_with_move_buffers(NULL, 1);
+
+    ///assert
+    ASSERT_IS_NULL(constbuffer_array);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_029: [ Otherwise, constbuffer_array_create_with_move_buffers shall allocate memory for a new CONSTBUFFER_ARRAY_HANDLE that holds the const buffers in buffers. ]*/
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_031: [ On success constbuffer_array_create_with_move_buffers shall return a non-NULL handle. ]*/
+TEST_FUNCTION(constbuffer_array_create_with_move_buffers_succeeds)
+{
+    ///arrange
+    CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)my_gballoc_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
+
+    CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2);
+
+    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+    ///act
+    constbuffer_array = constbuffer_array_create_with_move_buffers(test_buffers, 2);
+
+    ///assert
+    ASSERT_IS_NOT_NULL(constbuffer_array);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    constbuffer_array_dec_ref(constbuffer_array);
+}
+
+/* Tests_SRS_CONSTBUFFER_ARRAY_01_030: [ If any error occurs, constbuffer_array_create_with_move_buffers shall fail and return NULL. ]*/
+TEST_FUNCTION(when_underlying_calls_fail_constbuffer_array_create_with_move_buffers_also_fails)
+{
+    ///arrange
+    CONSTBUFFER_HANDLE* test_buffers = (CONSTBUFFER_HANDLE*)my_gballoc_malloc(sizeof(CONSTBUFFER_HANDLE) * 2);
+    size_t i;
+
+    CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_IncRef(TEST_CONSTBUFFER_HANDLE_2);
+
+    test_buffers[0] = TEST_CONSTBUFFER_HANDLE_1;
+    test_buffers[1] = TEST_CONSTBUFFER_HANDLE_2;
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(malloc(IGNORED_NUM_ARG));
+
+    umock_c_negative_tests_snapshot();
+    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            CONSTBUFFER_ARRAY_HANDLE constbuffer_array;
+
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            constbuffer_array = constbuffer_array_create_with_move_buffers(test_buffers, 2);
+
+            ///assert
+            ASSERT_IS_NULL(constbuffer_array, "On failed call %lu", (unsigned long)i);
+        }
+    }
+
+    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_1);
+    CONSTBUFFER_DecRef(TEST_CONSTBUFFER_HANDLE_2);
+    free(test_buffers);
 }
 
 /* constbuffer_array_create_empty */

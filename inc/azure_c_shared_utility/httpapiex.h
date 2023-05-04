@@ -16,15 +16,18 @@
 #ifndef HTTPAPIEX_H
 #define HTTPAPIEX_H
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
+#include <stddef.h>
+#endif
+
 #include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/httpapi.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
-#include <cstddef>
 extern "C" {
-#else
-#include <stddef.h>
 #endif
 
 typedef struct HTTPAPIEX_HANDLE_DATA_TAG* HTTPAPIEX_HANDLE;
@@ -39,6 +42,25 @@ typedef struct HTTPAPIEX_HANDLE_DATA_TAG* HTTPAPIEX_HANDLE;
 /** @brief Enumeration specifying the status of calls to various APIs in this module.
 */
 MU_DEFINE_ENUM(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
+
+/**
+ * @brief    Initialize the HTTPAPIEX.
+ *
+ *  This API shall be called only once before call any other HTTPAPIEX API. 
+ *  **This API is NOT thread safe**.
+ *
+ * @return    An @c HTTPAPIEX_RESULT indicating the status of the call.
+ */
+MOCKABLE_FUNCTION(, HTTPAPIEX_RESULT, HTTPAPIEX_Init);
+
+/**
+ * @brief    Deinitialize the HTTPAPIEX.
+ *
+ *  This API shall be called only once to release all HTTP resources. No other HTTPAPIEX 
+ *      API shall be called after call this API.
+ *  **This API is NOT thread safe**.
+ */
+MOCKABLE_FUNCTION(, void, HTTPAPIEX_Deinit);
 
 /**
  * @brief    Creates an @c HTTPAPIEX_HANDLE that can be used in further calls.

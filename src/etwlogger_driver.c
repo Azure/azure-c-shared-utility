@@ -3,13 +3,19 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <time.h>
+
+#include <inttypes.h>
 
 #include "windows.h"
 
-
 #include "azure_c_shared_utility/xlogging.h"
-#include "azure_c_shared_utility/etwlogger.h"
+
+#include "azure_c_shared_utility/consolelogger.h"
+
+#ifdef USE_TRACELOGGING
+#include "TraceLoggingProvider.h"
+#include "evntrace.h"
+#endif
 
 /*returns a string as if printed by vprintf*/
 static char* vprintf_alloc(const char* format, va_list va)
@@ -59,7 +65,7 @@ static char* lastErrorToString(DWORD lastError)
         result = printf_alloc(""); /*no error should appear*/
         if (result == NULL)
         {
-            (void)printf("failure in printf_alloc");
+            (void)printf("failure in printf_alloc\r\n");
         }
         else
         {
@@ -74,7 +80,7 @@ static char* lastErrorToString(DWORD lastError)
             result = printf_alloc("GetLastError()=0X%x", lastError);
             if (result == NULL)
             {
-                (void)printf("failure in printf_alloc\n");
+                (void)printf("failure in printf_alloc\r\n");
                 /*return as is*/
             }
             else
@@ -100,7 +106,7 @@ static char* lastErrorToString(DWORD lastError)
 
             if (result == NULL)
             {
-                (void)printf("failure in printf_alloc\n");
+                (void)printf("failure in printf_alloc\r\n");
                 /*return as is*/
             }
             else
@@ -112,35 +118,95 @@ static char* lastErrorToString(DWORD lastError)
     return result;
 }
 
+#ifdef USE_TRACELOGGING
 
-static int isETWLoggerInit = 0;
+TRACELOGGING_DEFINE_PROVIDER(
+    g_hMyComponentProvider,
+    "block_storage_2",
+    (0xDAD29F36, 0x0A48, 0x4DEF, 0x9D, 0x50, 0x8E, 0xF9, 0x03, 0x6B, 0x92, 0xB4));
+/*DAD29F36-0A48-4DEF-9D50-8EF9036B92B4*/
+
+    
+static volatile LONG isETWLoggerInit = 0;
 
 static void lazyRegisterEventProvider(void)
 {
     /*lazily init the logger*/
-    if (isETWLoggerInit == 0)
+    if (InterlockedCompareExchange(&isETWLoggerInit, 1, 0) == 0)
     {
-        if (EventRegisterMicrosoft_ServiceBus() != ERROR_SUCCESS)
+        // Register the provider
+        TLG_STATUS t = TraceLoggingRegister(g_hMyComponentProvider);
+        if (SUCCEEDED(t))
         {
-            /*go back to printf, maybe somebody notices*/
-            (void)printf("failure in EventRegisterMicrosoft_ServiceBus");
+            LogInfo("block_storage_2 ETW provider was registered succesfully (self test). Executable file full path name = %s", _pgmptr); /*_pgmptr comes from https://docs.microsoft.com/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamea */
         }
         else
         {
-            /*should check if the provider is registered with the system... maybe at a later time*/
-            isETWLoggerInit = 1; /*and stays 1 until the process exits*/ /*sorry, no graceful exit with EventUnregisterMicrosoft_ServiceBus*/
-            LogInfo("EventRegisterMicrosoft_ServiceBus success"); /*selflogging that the log service has started*/
+            (void)printf("block_storage_2 ETW provider was NOT registered.");
+            (void)InterlockedExchange(&isETWLoggerInit, 0);
         }
+    }
+    else
+    {
+        /*do nothing, already registered/attempted*/
     }
 }
 
-/*the function will also attempt to produce some human readable strings for GetLastError*/
+static void perform_EventWriteLogErrorEvent(const char* content, const char* file, const SYSTEMTIME* t, const char* func, int line)
+{
+    (void)t;
+    TraceLoggingWrite(g_hMyComponentProvider,
+        "LogError",
+        TraceLoggingLevel(TRACE_LEVEL_ERROR),
+        TraceLoggingString(file, "file"),
+        TraceLoggingString(func, "func"),
+        TraceLoggingInt32(line, "line"),
+        TraceLoggingString(content, "content")
+    );
+
+#if CALL_CONSOLE_LOGGER
+    consolelogger_log(AZ_LOG_ERROR, file, func, line, LOG_LINE, "%s", content);
+#endif
+}
+
+static void perform_EventWriteLogLastError(const char* userMessage, const char* file, const SYSTEMTIME* t, const char* func, int line, const char* lastErrorAsString)
+{
+    (void)t;
+    TraceLoggingWrite(g_hMyComponentProvider,
+        "LogLastError",
+        TraceLoggingLevel(TRACE_LEVEL_ERROR),
+        TraceLoggingString(file, "file"),
+        TraceLoggingString(func, "func"),
+        TraceLoggingInt32(line, "line"),
+        TraceLoggingString(userMessage, "content"),
+        TraceLoggingString(lastErrorAsString, "GetLastError")
+    );
+
+#if CALL_CONSOLE_LOGGER
+    consolelogger_log(AZ_LOG_ERROR, file, func, line, LOG_LINE, "%s %s", userMessage, lastErrorAsString);
+#endif
+}
+
+static void perform_EventWriteLogInfoEvent(const char* message)
+{
+    TraceLoggingWrite(g_hMyComponentProvider,
+        "LogInfo",
+        TraceLoggingLevel(TRACE_LEVEL_INFORMATION),
+        TraceLoggingString(message, "content")
+    );
+
+#if CALL_CONSOLE_LOGGER
+    consolelogger_log(AZ_LOG_INFO, NULL, NULL, 0, LOG_LINE, "%s", message);
+#endif
+
+}
+
 void etwlogger_log_with_GetLastError(const char* file, const char* func, int line, const char* format, ...)
 {
     DWORD lastError;
     char* lastErrorAsString;
 
-    lastError = GetLastError(); /*needs to be done before lazRegistedEventProvider*/
+    lastError = GetLastError();
     lazyRegisterEventProvider();
 
     va_list args;
@@ -155,17 +221,11 @@ void etwlogger_log_with_GetLastError(const char* file, const char* func, int lin
         char* userMessage = vprintf_alloc(format, args);
         if (userMessage == NULL)
         {
-            if (EventWriteLogErrorEvent("unable to print user error or last error", file, &t, func, line) != ERROR_SUCCESS)
-            {
-                (void)printf("failure in EventWriteLogErrorEvent");
-            }
+            perform_EventWriteLogLastError("unable to print user error", file, &t, func, line, "last error was erroneously NULL");
         }
         else
         {
-            if (EventWriteLogErrorEvent(userMessage, file, &t, func, line) != ERROR_SUCCESS)
-            {
-                (void)printf("failure in EventWriteLogErrorEvent");
-            }
+            perform_EventWriteLogLastError(userMessage, file, &t, func, line, "last error was erroneously NULL");
             free(userMessage);
         }
     }
@@ -174,28 +234,18 @@ void etwlogger_log_with_GetLastError(const char* file, const char* func, int lin
         char* userMessage = vprintf_alloc(format, args);
         if (userMessage == NULL)
         {
-            if (EventWriteLogErrorEvent(lastErrorAsString, file, &t, func, line) != ERROR_SUCCESS)
-            {
-                (void)printf("failure in EventWriteLogErrorEvent");
-            }
+            perform_EventWriteLogLastError("unable to print user error", file, &t, func, line, lastErrorAsString);
         }
         else
         {
-            if (EventWriteLogLastError(userMessage, file, &t, func, line, lastErrorAsString) != ERROR_SUCCESS)
-            {
-                (void)printf("failure in EventWriteLogErrorEvent");
-            }
+            perform_EventWriteLogLastError(userMessage, file, &t, func, line, lastErrorAsString);
             free(userMessage);
         }
         free(lastErrorAsString);
     }
 
-
     va_end(args);
 }
-
-
-
 
 void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func, int line, unsigned int options, const char* format, ...)
 {
@@ -211,21 +261,15 @@ void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func
         switch (log_category)
         {
             case AZ_LOG_INFO:
-                if (EventWriteLogInfoEvent("INTERNAL LOGGING ERROR: failed in vprintf_alloc") != ERROR_SUCCESS)
-                {
-                    /*fallback on printf...*/
-                    (void)printf("failed in EventWriteLogInfoEvent");
-                }
+            {
+                perform_EventWriteLogInfoEvent("INTERNAL LOGGING ERROR: failed in vprintf_alloc");
                 break;
+            }
             case AZ_LOG_ERROR:
             {
                 SYSTEMTIME t;
                 GetSystemTime(&t);
-                if (EventWriteLogErrorEvent("INTERNAL LOGGING ERROR: failed in vprintf_alloc", file, &t, func, line) != ERROR_SUCCESS)
-                {
-                    /*fallback on printf...*/
-                    (void)printf("failed in EventWriteLogErrorEvent");
-                }
+                perform_EventWriteLogErrorEvent("INTERNAL LOGGING ERROR: failed in vprintf_alloc", file, &t, func, line);
                 break;
             }
             default:
@@ -236,29 +280,25 @@ void etwlogger_log(LOG_CATEGORY log_category, const char* file, const char* func
     {
         switch (log_category)
         {
-        case AZ_LOG_INFO:
-            if (EventWriteLogInfoEvent(text) != ERROR_SUCCESS)
+            case AZ_LOG_INFO:
             {
-                /*fallback on printf...*/
-                (void)printf("failed in EventWriteLogInfoEvent");
+                perform_EventWriteLogInfoEvent(text);
+                break;
             }
-            break;
-        case AZ_LOG_ERROR:
-        {
-            SYSTEMTIME t;
-            GetSystemTime(&t);
-            if (EventWriteLogErrorEvent(text, file, &t, func, line) != ERROR_SUCCESS)
+            case AZ_LOG_ERROR:
             {
-                /*fallback on printf...*/
-                (void)printf("failed in EventWriteLogErrorEvent");
+                SYSTEMTIME t;
+                GetSystemTime(&t);
+                perform_EventWriteLogErrorEvent(text, file, &t, func, line);
+                break;
             }
-            break;
-        }
-        default:
-            break;
+            default:
+                break;
         }
         free(text);
     }
     va_end(args);
 }
+
+#endif
 

@@ -8,7 +8,7 @@ The document does not cover the specifics of any particular platform.
 ## References
 
 ###### Specifications
-- [tickcounter adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter.md)<br/>
+- [tickcounter FreeRTOS reference](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter_freertos_requirement.md)<br/>
 - [agenttime adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/agenttime_requirements.md)<br/>
 - [threadapi and sleep adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/threadapi_and_sleep_requirements.md)<br/>
 - [platform adapter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/platform_requirements.md)<br/>
@@ -78,17 +78,12 @@ If any of these adapters work for your device, simply include that file in your 
 
 ### tickcounter adapter
 
-Tickcounter behavior is specified in the
-[tickcounter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter.md).
+Tickcounter behavior is exemplified by the
+[tickcounter FreeRTOS reference](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter_freertos_requirement.md).
 
 To get started, copy
 [this version of tickcounter.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/freertos/tickcounter.c) 
 file and modify it to suit your device.
-
-If memory size is an issue, the 
- [tickcounter specification](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/tickcounter.md)
- contains an optimization suggestion that may work for you.
-
 
 ### agenttime adapter
 
@@ -243,24 +238,23 @@ The
 [tlsio_openssl_compact for ESP32](https://github.com/Azure/azure-iot-pal-esp32/blob/master/pal/src/tlsio_openssl_compact.c)
 abstracts its operating system dependencies using these two files:
 - [socket_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/socket_async.c)
-- [dns_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/dns_async.c)
+- [dns_resolver_ares.c](https://github.com/Azure/azure-c-shared-utility/blob/master/src/dns_resolver_ares.c)
 
 It is recommended that all _direct_ tlsio implementatons follow this pattern.
 
 The
 [socket_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/socket_async.c)
 and
-[dns_async.c](https://github.com/Azure/azure-c-shared-utility/blob/master/pal/dns_async.c)
+[dns_resolver_ares.c](https://github.com/Azure/azure-c-shared-utility/blob/master/src/dns_resolver_ares.c)
 files can be re-used without change for most socket implementations by merely changing the content of 
 the included "socket_async_os.h" file, which contains os-specific headers.
 
 #### Existing _chained_ tlsio implementations
 _Chained_ adapter implementations include:
-- [tlsio_openssl for Windows, Linux, and Mac](https://github.com/Azure/azure-c-shared-utility/blob/master/src/tlsio_openssl.c)
-- [tlsio_schannel for Windows only](https://github.com/Azure/azure-c-shared-utility/blob/master/src/tlsio_schannel.c)
-- [tlsio_wolfssl for embedded devices](https://github.com/Azure/azure-c-shared-utility/blob/master/src/tlsio_wolfssl.c)
-- [tlsio_cyclonessl for embedded devices](https://github.com/Azure/azure-c-shared-utility/blob/master/src/tlsio_cyclonessl.c)
-- [tlsio_mbedtls for mbed](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_mbedtls.c)
+- [tlsio_openssl for Windows, Linux, and Mac](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_openssl.c)
+- [tlsio_schannel for Windows only](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_schannel.c)
+- [tlsio_wolfssl for embedded devices](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_wolfssl.c)
+- [tlsio_mbedtls for embedded devices](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/tlsio_mbedtls.c)
 
 #### Existing socketio implementations for _chained_ tlsio adapters
 There is no spec for socketio adapters, so it is necessary to copy the behavior of an existing one, and 
@@ -271,7 +265,6 @@ purge their pending io lists during socketio_destroy, which is incorrect. The pe
 lists should be purged during socketio_close instead.
 - [socketio_berkeley for Linux, easily adapted to any Berkeley socket](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/socketio_berkeley.c)
 - [socketio_win32 for Windows](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/socketio_win32.c)
-- [socketio_mbed for mbed](https://github.com/Azure/azure-c-shared-utility/blob/master/adapters/socketio_mbed.c)
 - [tlsio_cyclonessl_socket for use with cyclonessl](https://github.com/Azure/azure-c-shared-utility/blob/master/src/tlsio_cyclonessl_socket.c)
 
 ### Adding device support repositories
@@ -280,6 +273,5 @@ Newly supported devices are likely to use a wide variety of possible build syste
 tree can be prescribed. The [support repository for ESP32](https://github.com/Azure/azure-iot-pal-esp32) is the
 one we recommend considering as a model for creating a new device support repository.
 
-##### Last step: profit!
 
 

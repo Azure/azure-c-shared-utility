@@ -4,8 +4,8 @@
 #define __STDC_WANT_LIB_EXT1__ 1
 
 #include <stdlib.h>
-#include <stddef.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 #include <limits.h>
 #include <float.h>
@@ -255,7 +255,7 @@ int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...)
         /*not Microsoft compiler... */
 #if defined (__STDC_VERSION__) || (__cplusplus)
 #if ( \
-        ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L)) || \
+        ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L)) || \
         (defined __cplusplus) \
     )
         /*C99 compiler*/
@@ -597,8 +597,8 @@ float strtof_s(const char* nptr, char** endptr)
             result = NAN;
             break;
         case FST_NUMBER:
-            val = fraction * pow(10.0, (double)exponential) * (double)signal;
-            if ((val >= (FLT_MAX * (-1.0f))) && (val <= FLT_MAX))
+            val = fraction * pow((double)10.0, (double)exponential) * (double)signal;
+            if ((val >= ((double)FLT_MAX * (-1.0))) && (val <= (double)FLT_MAX))
             {
                 /*Codes_SRS_CRT_ABSTRACTIONS_21_016: [The strtof_s must return the float that represents the value in the initial part of the string. If any.]*/
                 result = (float)val;
@@ -655,7 +655,13 @@ long double strtold_s(const char* nptr, char** endptr)
             break;
         case FST_NAN:
             /*Codes_SRS_CRT_ABSTRACTIONS_21_034: [If the string is 'NAN' or 'NAN(...)' (ignoring case), the strtold_s must return 0.0 and points endptr to the first character after the 'NAN' sequence.]*/
+#ifdef _MSC_VER
+#pragma warning(disable:26451) // warning C26451: overflow in constant arithmetic
+#endif
             result = (long double)NAN;
+#ifdef _MSC_VER
+#pragma warning (default:26451)
+#endif
             break;
         case FST_NUMBER:
             if ((exponential != DBL_MAX_10_EXP || (fraction <= 1.7976931348623158)) &&
@@ -719,7 +725,7 @@ int mallocAndStrcpy_s(char** destination, const char* source)
             *destination = temp;
             /*Codes_SRS_CRT_ABSTRACTIONS_99_039: [mallocAndstrcpy_s shall copy the contents in the address source, including the terminating null character into location specified by the destination pointer after the memory allocation.]*/
             copied_result = strcpy_s(*destination, l + 1, source);
-            if (copied_result < 0) /*strcpy_s error*/
+            if (copied_result != 0) /*strcpy_s error*/
             {
                 free(*destination);
                 *destination = NULL;
@@ -831,6 +837,52 @@ int size_tToString(char* destination, size_t destinationSize, size_t value)
         else
         {
             /*Codes_SRS_CRT_ABSTRACTIONS_02_002: [If the conversion fails for any reason (for example, insufficient buffer space), a non-zero return value shall be supplied and unsignedIntToString shall fail.] */
+            result = MU_FAILURE;
+        }
+    }
+    return result;
+}
+
+/*takes "value" and transforms it into a decimal string*/
+/*10 => "10"*/
+/*return 0 when everything went ok*/
+int uint64_tToString(char* destination, size_t destinationSize, uint64_t value)
+{
+    int result;
+    size_t pos;
+    /*the below loop gets the number in reverse order*/
+    if (
+        (destination == NULL) ||
+        (destinationSize < 2) /*because the smallest number is '0\0' which requires 2 characters*/
+        )
+    {
+        result = MU_FAILURE;
+    }
+    else
+    {
+        pos = 0;
+        do
+        {
+            destination[pos++] = '0' + (value % 10);
+            value /= 10;
+        } while ((value > 0) && (pos < (destinationSize - 1)));
+
+        if (value == 0)
+        {
+            size_t w;
+            destination[pos] = '\0';
+            /*all converted and they fit*/
+            for (w = 0; w <= (pos - 1) >> 1; w++)
+            {
+                char temp;
+                temp = destination[w];
+                destination[w] = destination[pos - 1 - w];
+                destination[pos - 1 - w] = temp;
+            }
+            result = 0;
+        }
+        else
+        {
             result = MU_FAILURE;
         }
     }

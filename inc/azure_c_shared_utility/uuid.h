@@ -7,7 +7,6 @@
 #ifdef __cplusplus
 #include <cstddef>
 #include <cstdint>
-extern "C" {
 #else
 #include <stddef.h>
 #include <stdint.h>
@@ -15,6 +14,10 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 typedef unsigned char UUID_T[16];
 

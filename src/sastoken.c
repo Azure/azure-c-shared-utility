@@ -23,7 +23,7 @@ static double getExpiryValue(const char* expiryASCII)
     {
         if (expiryASCII[i] >= '0' && expiryASCII[i] <= '9')
         {
-            value = value * 10 + (double)(expiryASCII[i] - '0');
+            value = value * 10.0 + ((double)expiryASCII[i] - (double)'0');
         }
         else
         {
@@ -152,7 +152,7 @@ bool SASToken_Validate(STRING_HANDLE sasToken)
             }
             else
             {
-                char* expiryASCII = (char*)malloc(seStop - seStart + 1);
+                char* expiryASCII = (char*)malloc((size_t)seStop - (size_t)seStart + 1);
                 /*Codes_SRS_SASTOKEN_25_031: [**If malloc fails during validation then SASToken_Validate shall return false.**]***/
                 if (expiryASCII == NULL)
                 {
@@ -162,7 +162,7 @@ bool SASToken_Validate(STRING_HANDLE sasToken)
                 {
                     double expiry;
                     // Add the Null terminator here
-                    memset(expiryASCII, 0, seStop - seStart + 1);
+                    memset(expiryASCII, 0, (size_t)seStop - (size_t)seStart + 1);
                     for (i = seStart; i < seStop; i++)
                     {
                         // The se contains the expiration values, if a & token is encountered then
@@ -202,7 +202,7 @@ bool SASToken_Validate(STRING_HANDLE sasToken)
     return result;
 }
 
-static STRING_HANDLE construct_sas_token(const char* key, const char* scope, const char* keyname, size_t expiry)
+static STRING_HANDLE construct_sas_token(const char* key, const char* scope, const char* keyname, uint64_t expiry)
 {
     STRING_HANDLE result;
 
@@ -220,7 +220,7 @@ static STRING_HANDLE construct_sas_token(const char* key, const char* scope, con
     else
     {
         /*Codes_SRS_SASTOKEN_06_026: [If the conversion to string form fails for any reason then SASToken_Create shall return NULL.]*/
-        if (size_tToString(tokenExpirationTime, sizeof(tokenExpirationTime), expiry) != 0)
+        if (uint64_tToString(tokenExpirationTime, sizeof(tokenExpirationTime), expiry) != 0)
         {
             LogError("For some reason converting seconds to a string failed.  No SAS can be generated.");
             result = NULL;
@@ -302,7 +302,7 @@ static STRING_HANDLE construct_sas_token(const char* key, const char* scope, con
     return result;
 }
 
-STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HANDLE keyName, size_t expiry)
+STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HANDLE keyName, uint64_t expiry)
 {
     STRING_HANDLE result;
 
@@ -325,7 +325,7 @@ STRING_HANDLE SASToken_Create(STRING_HANDLE key, STRING_HANDLE scope, STRING_HAN
     return result;
 }
 
-STRING_HANDLE SASToken_CreateString(const char* key, const char* scope, const char* keyName, size_t expiry)
+STRING_HANDLE SASToken_CreateString(const char* key, const char* scope, const char* keyName, uint64_t expiry)
 {
     STRING_HANDLE result;
 

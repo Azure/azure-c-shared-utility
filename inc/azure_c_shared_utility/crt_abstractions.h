@@ -4,19 +4,20 @@
 #ifndef CRT_ABSTRACTIONS_H
 #define CRT_ABSTRACTIONS_H
 
-#include "umock_c/umock_c_prod.h"
-
 #ifdef __cplusplus
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <cerrno>
 #include <cmath>
-extern "C" {
 #else // __cplusplus
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #endif // __cplusplus
+
+#include "umock_c/umock_c_prod.h"
 
 #ifdef _MSC_VER
 
@@ -40,13 +41,17 @@ typedef bool _Bool;
 #else //  _MSC_VER
 
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
-/*C99 compiler or C11*/
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
+/*C99, C11 (including GNU 4.6) or C18 compiler */
 #define HAS_STDBOOL
 #include <stdbool.h>
-#endif //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#endif //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
 #endif // __STDC_VERSION__
 #endif //  _MSC_VER
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
 #ifndef HAS_STDBOOL
 #ifdef __cplusplus
@@ -75,15 +80,15 @@ typedef unsigned char bool;
 #define STRUNCATE       80
 #endif  /* !defined (STRUNCATE) */
 
-extern int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src);
-extern int strcat_s(char* dst, size_t dstSizeInBytes, const char* src);
-extern int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount);
-extern int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...);
+int strcpy_s(char* dst, size_t dstSizeInBytes, const char* src);
+int strcat_s(char* dst, size_t dstSizeInBytes, const char* src);
+int strncpy_s(char* dst, size_t dstSizeInBytes, const char* src, size_t maxCount);
+int sprintf_s(char* dst, size_t dstSizeInBytes, const char* format, ...);
 #endif // _MSC_VER || MINGW_HAS_SECURE_API
 
-extern unsigned long long strtoull_s(const char* nptr, char** endPtr, int base);
-extern float strtof_s(const char* nptr, char** endPtr);
-extern long double strtold_s(const char* nptr, char** endPtr);
+unsigned long long strtoull_s(const char* nptr, char** endPtr, int base);
+float strtof_s(const char* nptr, char** endPtr);
+long double strtold_s(const char* nptr, char** endPtr);
 
 #ifdef _MSC_VER
 #define stricmp _stricmp
@@ -92,6 +97,7 @@ extern long double strtold_s(const char* nptr, char** endPtr);
 MOCKABLE_FUNCTION(, int, mallocAndStrcpy_s, char**, destination, const char*, source);
 MOCKABLE_FUNCTION(, int, unsignedIntToString, char*, destination, size_t, destinationSize, unsigned int, value);
 MOCKABLE_FUNCTION(, int, size_tToString, char*, destination, size_t, destinationSize, size_t, value);
+MOCKABLE_FUNCTION(, int, uint64_tToString, char*, destination, size_t, destinationSize, uint64_t, value);
 
 /*following logic shall define the TOUPPER and ISDIGIT, we do that because the SDK is not happy with some Arduino implementation of it.*/
 #define TOUPPER(c)      ((((c)>='a') && ((c)<='z'))?(c)-'a'+'A':c)
@@ -106,12 +112,12 @@ MOCKABLE_FUNCTION(, int, size_tToString, char*, destination, size_t, destination
 #define ISNAN _isnan
 #else // _MSC_VER
 #if defined __STDC_VERSION__
-#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
-/*C99 compiler or C11*/
+#if ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
+/*C99, C11 (including GNU 4.6) or C18 compiler */
 #define ISNAN isnan
-#else //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#else //  ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
 #error update this file to contain the latest C standard.
-#endif // ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L))
+#endif // ((__STDC_VERSION__  == 199901L) || (__STDC_VERSION__ == 201000L) || (__STDC_VERSION__ == 201112L) || (__STDC_VERSION__ == 201710L))
 #else // __STDC_VERSION__
 #ifdef __cplusplus
 /*C++ defines isnan... in C11*/

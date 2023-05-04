@@ -10,6 +10,8 @@
 #else
 #include <stdlib.h>
 #endif
+
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "testrunnerswitcher.h"
@@ -55,7 +57,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(GBAlloc_UnitTests)
@@ -115,7 +117,7 @@ TEST_FUNCTION(gballoc_init_resets_memory_used)
     gballoc_init();
     allocation = malloc(OVERHEAD_SIZE);
 
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     gballoc_free(gballoc_malloc(1));
 
@@ -245,7 +247,7 @@ TEST_FUNCTION(gballoc_malloc_with_0_Size_Calls_Underlying_malloc)
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_malloc(0));
@@ -278,7 +280,7 @@ TEST_FUNCTION(gballoc_malloc_with_1_Size_Calls_Underlying_malloc_And_Increases_M
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_malloc(1));
@@ -309,7 +311,7 @@ TEST_FUNCTION(When_malloc_Fails_Then_gballoc_malloc_fails_too)
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_malloc(1))
@@ -339,7 +341,7 @@ TEST_FUNCTION(When_allocating_memory_for_tracking_information_fails_Then_gballoc
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn((void*)NULL);
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
@@ -402,7 +404,7 @@ TEST_FUNCTION(gballoc_calloc_with_0_Size_And_ItemCount_Calls_Underlying_calloc)
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_calloc(0, 0));
@@ -434,7 +436,7 @@ TEST_FUNCTION(gballoc_calloc_with_1_Item_Of_1_Size_Calls_Underlying_malloc_And_I
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_calloc(1, 1));
@@ -466,7 +468,7 @@ TEST_FUNCTION(gballoc_calloc_with_1_Item_Of_0_Size_Calls_Underlying_malloc_And_D
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_calloc(1, 0));
@@ -498,7 +500,7 @@ TEST_FUNCTION(gballoc_calloc_with_0_Items_Of_1_Size_Calls_Underlying_malloc_And_
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_calloc(0, 1));
@@ -530,7 +532,7 @@ TEST_FUNCTION(gballoc_calloc_with_42_Items_Of_2_Size_Calls_Underlying_malloc_And
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_calloc(42, 2));
@@ -561,7 +563,7 @@ TEST_FUNCTION(When_calloc_Fails_Then_gballoc_calloc_fails_too)
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_calloc(1, 1))
@@ -591,7 +593,7 @@ TEST_FUNCTION(When_allocating_memory_for_tracking_information_fails_Then_gballoc
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn((void*)NULL);
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
@@ -670,7 +672,7 @@ TEST_FUNCTION(gballoc_realloc_with_NULL_Arg_And_0_Size_Calls_Underlying_realloc)
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 0));
@@ -702,7 +704,7 @@ TEST_FUNCTION(gballoc_realloc_with_NULL_Arg_And_1_Size_Calls_Underlying_realloc)
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
@@ -734,7 +736,7 @@ TEST_FUNCTION(gballoc_realloc_with_Previous_1_Byte_Block_Ptr_And_2_Size_Calls_Un
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
@@ -771,7 +773,7 @@ TEST_FUNCTION(When_realloc_fails_then_gballoc_realloc_Fails_Too_And_No_Change_Is
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
@@ -806,7 +808,7 @@ TEST_FUNCTION(When_Allocating_Memory_For_tracking_fails_gballoc_realloc_fails)
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn((void*)NULL);
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
@@ -832,7 +834,7 @@ TEST_FUNCTION(When_The_Pointer_Is_Not_Tracked_gballoc_realloc_Returns_NULL)
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
@@ -867,7 +869,7 @@ TEST_FUNCTION(When_ptr_is_null_and_the_underlying_realloc_fails_then_the_memory_
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1))
@@ -913,7 +915,7 @@ TEST_FUNCTION(when_acquiring_the_lock_fails_then_gballoc_free_does_nothing)
     allocation = malloc(OVERHEAD_SIZE);
 
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
@@ -949,7 +951,7 @@ TEST_FUNCTION(gballoc_free_calls_the_underlying_free)
     allocation = malloc(OVERHEAD_SIZE);
 
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     /* This is the call to the underlying malloc with the size we want to allocate */
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
@@ -987,7 +989,7 @@ TEST_FUNCTION(gballoc_malloc_free_2_times_with_1_byte_yields_1_byte_as_max)
     allocation = malloc(OVERHEAD_SIZE);
 
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_realloc(NULL, 1));
     block = gballoc_realloc(NULL, 1);
@@ -995,7 +997,7 @@ TEST_FUNCTION(gballoc_malloc_free_2_times_with_1_byte_yields_1_byte_as_max)
 
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     block = gballoc_realloc(NULL, 1);
     umock_c_reset_all_calls();
@@ -1027,7 +1029,7 @@ TEST_FUNCTION(gballoc_free_with_an_untracked_pointer_does_not_alter_total_memory
 
     /* don't quite like this, but I'm unsure I want to invest more in this memory counting */
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
 
     gballoc_realloc(NULL, 1);
@@ -1115,7 +1117,7 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_returns_1)
     allocation = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     toBeFreed = gballoc_malloc(1);
@@ -1148,7 +1150,7 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_2x3_byte_calloc_returns_6)
     allocation = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     toBeFreed = gballoc_calloc(2, 3);
     umock_c_reset_all_calls();
@@ -1180,7 +1182,7 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_3_bytes_reall
     allocation = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
@@ -1216,7 +1218,7 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_free_returns_
     allocation = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
@@ -1251,7 +1253,7 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_2x3_byte_calloc_and_free_return
     allocation = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
 
@@ -1285,7 +1287,7 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_realloc_and_free_returns_0)
     allocation = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
@@ -1325,12 +1327,12 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
     allocation2 = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
@@ -1372,12 +1374,12 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
     allocation2 = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
@@ -1420,12 +1422,12 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_6_byte_calloc
     allocation2 = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_calloc(2, 3));
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
@@ -1466,13 +1468,13 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_6_byte_calloc
     allocation2 = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1))
         .SetReturn((char*)allocation1 + OVERHEAD_SIZE / 2); /*somewhere in the middle of allocation*/
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_calloc(2, 3))
         .SetReturn((char*)allocation2 + OVERHEAD_SIZE / 2);
@@ -1514,13 +1516,13 @@ TEST_FUNCTION(gballoc_getCurrentMemoryUsed_after_1_byte_malloc_and_1_byte_malloc
     allocation2 = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation1);
     STRICT_EXPECTED_CALL(mock_malloc(1))
         .SetReturn((char*)allocation1 + OVERHEAD_SIZE / 2); /*somewhere in the middle of allocation*/
     STRICT_EXPECTED_CALL(Unlock(TEST_LOCK_HANDLE));
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation2);
     STRICT_EXPECTED_CALL(mock_realloc(IGNORED_PTR_ARG, 3))
         .IgnoreArgument(1)
@@ -1647,7 +1649,7 @@ TEST_FUNCTION(gballoc_getAllocationCount_success)
     allocation = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     toBeFreed = gballoc_malloc(1);
@@ -1710,7 +1712,7 @@ TEST_FUNCTION(gballoc_resetMetrics_success)
     allocation = malloc(OVERHEAD_SIZE);
 
     STRICT_EXPECTED_CALL(Lock(TEST_LOCK_HANDLE));
-    EXPECTED_CALL(mock_malloc(0))
+    EXPECTED_CALL(mock_calloc(1, 0))
         .SetReturn(allocation);
     STRICT_EXPECTED_CALL(mock_malloc(1));
     toBeFreed = gballoc_malloc(1);

@@ -9,11 +9,17 @@
 #include <stddef.h>
 #endif
 
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 
 void* my_gballoc_malloc(size_t size)
 {
     return malloc(size);
+}
+
+void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    return calloc(nmemb, size);
 }
 
 void my_gballoc_free(void* ptr)
@@ -84,7 +90,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(constbuffer_unittests)
@@ -99,6 +105,7 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
 
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+        REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
         REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
         REGISTER_GLOBAL_MOCK_HOOK(BUFFER_u_char, my_BUFFER_u_char);
         REGISTER_GLOBAL_MOCK_HOOK(BUFFER_length, my_BUFFER_length);
@@ -151,7 +158,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         const CONSTBUFFER* content;
 
         ///act
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
 
@@ -182,7 +190,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///act
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
         STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         handle = CONSTBUFFER_CreateFromBuffer(BUFFER1_HANDLE);
 
@@ -210,7 +219,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         STRICT_EXPECTED_CALL(BUFFER_length(BUFFER1_HANDLE));
         STRICT_EXPECTED_CALL(BUFFER_u_char(BUFFER1_HANDLE));
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments()
             .SetReturn(NULL);
 
 
@@ -247,7 +257,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         CONSTBUFFER_HANDLE handle;
 
         ///act
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments()
             .SetReturn(NULL);
 
         handle = CONSTBUFFER_Create(BUFFER1_u_char, BUFFER1_length);
@@ -286,7 +297,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         const CONSTBUFFER* content;
 
         ///act
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         handle = CONSTBUFFER_Create(BUFFER2_u_char, BUFFER2_length);
 
@@ -311,7 +323,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         const CONSTBUFFER* content;
 
         ///act
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         handle = CONSTBUFFER_Create(BUFFER3_u_char, BUFFER3_length);
 
@@ -353,7 +366,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         handle = CONSTBUFFER_CreateWithMoveMemory(test_buffer, 2);
@@ -381,7 +395,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         handle = CONSTBUFFER_CreateWithMoveMemory(test_buffer, 0);
@@ -404,7 +419,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         handle = CONSTBUFFER_CreateWithMoveMemory(NULL, 0);
@@ -429,7 +445,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments()
             .SetReturn(NULL);
 
         ///act
@@ -486,7 +503,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, free, test_buffer);
@@ -513,7 +531,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 2, test_free_func, NULL);
@@ -542,7 +561,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         handle = CONSTBUFFER_CreateWithCustomFree(test_buffer, 0, free, test_buffer);
@@ -565,7 +585,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         CONSTBUFFER_HANDLE handle;
         const CONSTBUFFER* content;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         handle = CONSTBUFFER_CreateWithCustomFree(NULL, 0, free, NULL);
@@ -590,7 +611,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         test_buffer[0] = 42;
         test_buffer[1] = 43;
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments()
             .SetReturn(NULL);
 
         ///act
@@ -688,7 +710,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -715,7 +738,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -737,7 +761,8 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -762,13 +787,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, sizeof(source));
@@ -794,13 +821,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, 0);
@@ -825,13 +854,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source) - 1, 1);
@@ -856,13 +887,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
@@ -888,13 +921,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
 
         ///act
         CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, sizeof(source), 0);
@@ -916,13 +951,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments()
             .SetReturn(NULL);
 
         ///act
@@ -943,13 +980,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -978,13 +1017,15 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         CONSTBUFFER_HANDLE result = CONSTBUFFER_CreateFromOffsetAndSize(origin, 1, sizeof(source) - 1);
         ASSERT_IS_NOT_NULL(result);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1016,19 +1057,22 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         CONSTBUFFER_HANDLE result1 = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, 2);
         ASSERT_IS_NOT_NULL(result1);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         CONSTBUFFER_HANDLE result2 = CONSTBUFFER_CreateFromOffsetAndSize(result1, 1, 1);
         ASSERT_IS_NOT_NULL(result2);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -1055,19 +1099,22 @@ BEGIN_TEST_SUITE(constbuffer_unittests)
         ///arrange
         CONSTBUFFER_HANDLE origin;
         const char source[] = "source";
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         origin = CONSTBUFFER_Create((const unsigned char*)source, sizeof(source));
         ASSERT_IS_NOT_NULL(origin);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         CONSTBUFFER_HANDLE result1 = CONSTBUFFER_CreateFromOffsetAndSize(origin, 0, 2);
         ASSERT_IS_NOT_NULL(result1);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
+            .IgnoreAllArguments();
         CONSTBUFFER_HANDLE result2 = CONSTBUFFER_CreateFromOffsetAndSize(result1, 1, 1);
         ASSERT_IS_NOT_NULL(result2);
         ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());

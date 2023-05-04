@@ -2,8 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
@@ -100,7 +100,7 @@ static HTTPAPI_RESULT ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHand
     if (HTTPHeaders_GetHeaderCount(httpHeadersHandle, &headersCount) != HTTP_HEADERS_OK)
     {
         result = HTTPAPI_ERROR;
-        LogError("HTTPHeaders_GetHeaderCount failed (result = %s).", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("HTTPHeaders_GetHeaderCount failed (result = %" PRI_MU_ENUM ").", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
     else
     {
@@ -141,17 +141,17 @@ static HTTPAPI_RESULT ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHand
             else if ((requiredCharactersForHeaders = MultiByteToWideChar(CP_ACP, 0, httpHeadersA, -1, NULL, 0)) == 0)
             {
                 result = HTTPAPI_STRING_PROCESSING_ERROR;
-                LogError("MultiByteToWideChar failed, GetLastError=0x%08x (result = %s)", GetLastError(), MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("MultiByteToWideChar failed, GetLastError=0x%08x (result = %" PRI_MU_ENUM ")", GetLastError(), MU_ENUM_VALUE(HTTPAPI_RESULT, result));
             }
             else if ((*httpHeaders = (wchar_t*)malloc((requiredCharactersForHeaders + 1) * sizeof(wchar_t))) == NULL)
             {
                 result = HTTPAPI_ALLOC_FAILED;
-                LogError("Cannot allocate memory (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("Cannot allocate memory (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
             }
             else if (MultiByteToWideChar(CP_ACP, 0, httpHeadersA, -1, *httpHeaders, (int)requiredCharactersForHeaders) == 0)
             {
                 result = HTTPAPI_STRING_PROCESSING_ERROR;
-                LogError("MultiByteToWideChar failed, GetLastError=0x%08x (result = %s)", GetLastError(), MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("MultiByteToWideChar failed, GetLastError=0x%08x (result = %" PRI_MU_ENUM ")", GetLastError(), MU_ENUM_VALUE(HTTPAPI_RESULT, result));
                 free(*httpHeaders);
                 *httpHeaders = NULL;
             }
@@ -243,18 +243,37 @@ HTTPAPI_RESULT HTTPAPI_Init(void)
             LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpen failed.");
             result = HTTPAPI_INIT_FAILED;
         }
-        else if (WinHttpSetStatusCallback(g_SessionHandle, httpapi_WinhttpStatusCallback, WINHTTP_CALLBACK_FLAG_SEND_REQUEST, 0) == WINHTTP_INVALID_STATUS_CALLBACK)
-        {
-            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetStatusCallback failed.");
-            (void)WinHttpCloseHandle(g_SessionHandle);
-            g_SessionHandle = NULL;
-            result = HTTPAPI_INIT_FAILED;
-        }
         else
         {
-            nUsersOfHTTPAPI++;
-            g_HTTPAPIState = HTTPAPI_INITIALIZED;
-            result = HTTPAPI_OK;
+            DWORD supportedProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | // TLS 1.0 is support for back-compat reasons (https://docs.microsoft.com/azure/iot-fundamentals/iot-security-deployment)
+                WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 |
+                WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+
+            if (!WinHttpSetOption(
+                g_SessionHandle,
+                WINHTTP_OPTION_SECURE_PROTOCOLS,
+                &supportedProtocols,
+                sizeof(supportedProtocols)
+            ))
+            {
+                LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption (WINHTTP_OPTION_SECURE_PROTOCOLS)");
+                (void)WinHttpCloseHandle(g_SessionHandle);
+                g_SessionHandle = NULL;
+                result = HTTPAPI_INIT_FAILED;
+            }
+            else if (WinHttpSetStatusCallback(g_SessionHandle, httpapi_WinhttpStatusCallback, WINHTTP_CALLBACK_FLAG_SEND_REQUEST, 0) == WINHTTP_INVALID_STATUS_CALLBACK)
+            {
+                LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetStatusCallback failed.");
+                (void)WinHttpCloseHandle(g_SessionHandle);
+                g_SessionHandle = NULL;
+                result = HTTPAPI_INIT_FAILED;
+            }
+            else
+            {
+                nUsersOfHTTPAPI++;
+                g_HTTPAPIState = HTTPAPI_INITIALIZED;
+                result = HTTPAPI_OK;
+            }
         }
     }
     else
@@ -439,7 +458,7 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     if ((requestTypeString = GetHttpRequestString(requestType)) == NULL)
     {
         result = HTTPAPI_INVALID_ARG;
-        LogError("requestTypeString was NULL (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("requestTypeString was NULL (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
     else if ((requiredCharactersForRelativePath = MultiByteToWideChar(CP_ACP, 0, relativePath, -1, NULL, 0)) == 0)
     {
@@ -449,12 +468,12 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     else if ((relativePathTemp = (wchar_t*)malloc((requiredCharactersForRelativePath + 1) * sizeof(wchar_t))) == NULL)
     {
         result = HTTPAPI_ALLOC_FAILED;
-        LogError("malloc failed (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("malloc failed (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
     else if (MultiByteToWideChar(CP_ACP, 0, relativePath, -1, relativePathTemp, (int)requiredCharactersForRelativePath) == 0)
     {
         result = HTTPAPI_STRING_PROCESSING_ERROR;
-        LogError("MultiByteToWideChar was 0. (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("MultiByteToWideChar was 0. (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
     else if ((*requestHandle = WinHttpOpenRequest(
             handleData->ConnectionHandle,
@@ -466,9 +485,9 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
             WINHTTP_FLAG_SECURE)) == NULL)
     {
         result = HTTPAPI_OPEN_REQUEST_FAILED;
-        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s).", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %" PRI_MU_ENUM ").", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
-    else if ((handleData->x509SchannelHandle!=NULL) &&
+    else if ((handleData->x509SchannelHandle != NULL) &&
             !WinHttpSetOption(
                 *requestHandle,
                 WINHTTP_OPTION_CLIENT_CERT_CONTEXT,
@@ -477,7 +496,7 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     ))
     {
         result = HTTPAPI_SET_X509_FAILURE;
-        LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption");
+        LogErrorWinHTTPWithGetLastErrorAsString("unable to WinHttpSetOption (WINHTTP_OPTION_CLIENT_CERT_CONTEXT)");
         (void)WinHttpCloseHandle(*requestHandle);
         *requestHandle = NULL;
     }
@@ -502,7 +521,7 @@ static HTTPAPI_RESULT SendHttpRequest(HTTP_HANDLE_DATA* handleData, HINTERNET re
     ) == FALSE)
     {
         result = HTTPAPI_SET_TIMEOUTS_FAILED;
-        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpOpenRequest failed (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
     else
     {
@@ -527,7 +546,7 @@ static HTTPAPI_RESULT SendHttpRequest(HTTP_HANDLE_DATA* handleData, HINTERNET re
             sizeof(dwSecurityFlags)))
         {
             result = HTTPAPI_SET_OPTION_FAILED;
-            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetOption failed (result = %s).", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSetOption failed (result = %" PRI_MU_ENUM ").", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
         }
         else if (!WinHttpSendRequest(
                 requestHandle,
@@ -539,7 +558,7 @@ static HTTPAPI_RESULT SendHttpRequest(HTTP_HANDLE_DATA* handleData, HINTERNET re
                 (DWORD_PTR)handleData))
         {
             result = HTTPAPI_SEND_REQUEST_FAILED;
-            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSendRequest: (result = %s).", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpSendRequest: (result = %" PRI_MU_ENUM ").", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
         }
         else
         {
@@ -639,7 +658,7 @@ static HTTPAPI_RESULT ReceiveResponseAndStatusCode(HINTERNET requestHandle, unsi
         0))
     {
         result = HTTPAPI_RECEIVE_RESPONSE_FAILED;
-        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReceiveResponse: (result = %s).", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReceiveResponse: (result = %" PRI_MU_ENUM ").", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
     else if (statusCode != NULL)
     {
@@ -655,7 +674,7 @@ static HTTPAPI_RESULT ReceiveResponseAndStatusCode(HINTERNET requestHandle, unsi
             WINHTTP_NO_HEADER_INDEX))
         {
             result = HTTPAPI_QUERY_HEADERS_FAILED;
-            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryHeaders failed (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryHeaders failed (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
         }
         else
         {
@@ -682,7 +701,7 @@ static HTTPAPI_RESULT ReceiveResponseContent(HINTERNET requestHandle, BUFFER_HAN
         if (!WinHttpQueryDataAvailable(requestHandle, &responseBytesAvailable))
         {
             result = HTTPAPI_QUERY_DATA_AVAILABLE_FAILED;
-            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryDataAvailable failed (result = %s).", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryDataAvailable failed (result = %" PRI_MU_ENUM ").", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
             break;
         }
         else if (responseBytesAvailable == 0)
@@ -694,7 +713,7 @@ static HTTPAPI_RESULT ReceiveResponseContent(HINTERNET requestHandle, BUFFER_HAN
         else if (BUFFER_enlarge(responseContent, responseBytesAvailable) != 0)
         {
             result = HTTPAPI_ALLOC_FAILED;
-            LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+            LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
             break;
         }
         else
@@ -706,13 +725,13 @@ static HTTPAPI_RESULT ReceiveResponseContent(HINTERNET requestHandle, BUFFER_HAN
             if (BUFFER_content(responseContent, &bufferContent) != 0)
             {
                 result = HTTPAPI_ERROR;
-                LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
                 break;
             }
             else if (BUFFER_size(responseContent, &bufferSize) != 0)
             {
                 result = HTTPAPI_ERROR;
-                LogError("(result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
                 break;
             }
             else
@@ -721,7 +740,7 @@ static HTTPAPI_RESULT ReceiveResponseContent(HINTERNET requestHandle, BUFFER_HAN
                 if (!WinHttpReadData(requestHandle, (LPVOID)(bufferContent + bufferSize - responseBytesAvailable), responseBytesAvailable, &bytesReceived))
                 {
                     result = HTTPAPI_READ_DATA_FAILED;
-                    LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReadData failed (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                    LogErrorWinHTTPWithGetLastErrorAsString("WinHttpReadData failed (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
                     break;
                 }
                 /*if for some reason bytesReceived is zero If you are using WinHttpReadData synchronously, and the return value is TRUE and the number of bytes read is zero, the transfer has been completed and there are no more bytes to read on the handle.*/
@@ -729,7 +748,7 @@ static HTTPAPI_RESULT ReceiveResponseContent(HINTERNET requestHandle, BUFFER_HAN
                 {
                     /*end of everything, but this looks like an error still, or a non-conformance between WinHttpQueryDataAvailable and WinHttpReadData*/
                     result = HTTPAPI_READ_DATA_FAILED;
-                    LogError("bytesReceived was unexpectedly zero (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                    LogError("bytesReceived was unexpectedly zero (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
                     break;
                 }
                 else
@@ -761,10 +780,10 @@ static HTTPAPI_RESULT ReceiveResponseHeaders(HINTERNET requestHandle, HTTP_HEADE
         &responseHeadersTempLength,
         WINHTTP_NO_HEADER_INDEX);
 
-    if ((responseHeadersTemp = (wchar_t*)malloc(responseHeadersTempLength + 2)) == NULL)
+    if ((responseHeadersTemp = (wchar_t*)malloc((size_t)responseHeadersTempLength + 2)) == NULL)
     {
         result = HTTPAPI_ALLOC_FAILED;
-        LogError("malloc failed: (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("malloc failed: (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
     else if (! WinHttpQueryHeaders(
             requestHandle,
@@ -775,11 +794,11 @@ static HTTPAPI_RESULT ReceiveResponseHeaders(HINTERNET requestHandle, HTTP_HEADE
             WINHTTP_NO_HEADER_INDEX))
     {
         result = HTTPAPI_QUERY_HEADERS_FAILED;
-        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryHeaders failed (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogErrorWinHTTPWithGetLastErrorAsString("WinHttpQueryHeaders failed (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
     else    
     {
-        wchar_t *next_token;
+        wchar_t *next_token = NULL;
         wchar_t* token = wcstok_s(responseHeadersTemp, L"\r\n", &next_token);
         char* tokenTemp = NULL;     
 
@@ -858,7 +877,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
             (httpHeadersHandle == NULL))
     {
         result = HTTPAPI_INVALID_ARG;
-        LogError("NULL parameter detected (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+        LogError("NULL parameter detected (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
     }
     else
     {
@@ -884,7 +903,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         }
         else if ((result = ReceiveResponseAndStatusCode(requestHandle, statusCode)) != HTTPAPI_OK)
         {
-            LogError("failed receiving response and/or headeders");
+            LogError("failed receiving response and/or headers");
         }
         else if ((responseContent != NULL) && ((result = ReceiveResponseContent(requestHandle, responseContent)) != HTTPAPI_OK))
         {
@@ -998,7 +1017,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 }
                 else
                 {
-                    result = 0;
+                    result = HTTPAPI_OK;
                 }
             }
         }
@@ -1106,7 +1125,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
             if (temp == NULL)
             {
                 result = HTTPAPI_ERROR;
-                LogError("malloc failed (result = %s)", MU_ENUM_TO_STRING(HTTPAPI_RESULT, result));
+                LogError("malloc failed (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
             }
             else
             {

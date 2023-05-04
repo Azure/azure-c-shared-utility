@@ -6,14 +6,17 @@
 
 #ifdef __cplusplus
 #include <cstddef>
-extern "C"
-{
 #else
 #include <stddef.h>
 #include <stdbool.h>
 #endif
 
 #include "umock_c/umock_c_prod.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 typedef struct STRING_TOKEN_TAG* STRING_TOKEN_HANDLE;
 

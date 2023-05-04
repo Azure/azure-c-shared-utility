@@ -9,6 +9,7 @@
 #include <stddef.h>
 #endif
 
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/condition.h"
@@ -23,6 +24,7 @@
 extern "C" {
 #endif
     MOCKABLE_FUNCTION(, void*, gballoc_malloc, size_t, size);
+    MOCKABLE_FUNCTION(, void*, gballoc_calloc, size_t, nmemb, size_t, size);
     MOCKABLE_FUNCTION(, void, gballoc_free, void*, ptr);
 #ifdef __cplusplus
 }
@@ -45,6 +47,7 @@ void real_gballoc_free(void* ptr);
 static TEST_MUTEX_HANDLE g_testByTest;
 
 static bool malloc_will_fail = false;
+static bool calloc_will_fail = false;
 
 TEST_DEFINE_ENUM_TYPE(COND_RESULT, COND_RESULT_VALUES)
 
@@ -63,6 +66,17 @@ void* my_gballoc_malloc(size_t size)
     return result;
 }
 
+void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    void* result = NULL;
+    if (calloc_will_fail == false)
+    {
+        result = real_gballoc_calloc(nmemb, size);
+    }
+
+    return result;
+}
+
 void my_gballoc_free(void* ptr)
 {
     real_gballoc_free(ptr);
@@ -76,7 +90,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 COND_RESULT Condition_Handle_ToString(COND_HANDLE handle)
@@ -99,6 +113,7 @@ TEST_SUITE_INITIALIZE(a)
     umock_c_init(on_umock_c_error);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
 }
 
@@ -118,6 +133,7 @@ TEST_FUNCTION_INITIALIZE(f)
 
     umock_c_reset_all_calls();
     malloc_will_fail = false;
+    calloc_will_fail = false;
 }
 
 TEST_FUNCTION_CLEANUP(cleans)

@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdbool.h>
 #include <stdlib.h>
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/httpapiex.h"
 #include "azure_c_shared_utility/optimize_size.h"
@@ -26,7 +28,47 @@ typedef struct HTTPAPIEX_HANDLE_DATA_TAG
 
 MU_DEFINE_ENUM_STRINGS(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 
-#define LOG_HTTAPIEX_ERROR() LogError("error code = %s", MU_ENUM_TO_STRING(HTTPAPIEX_RESULT, result))
+#define LOG_HTTAPIEX_ERROR() LogError("error code = %" PRI_MU_ENUM "", MU_ENUM_VALUE(HTTPAPIEX_RESULT, result))
+
+static int useGlobalInitialization = 0;
+
+HTTPAPIEX_RESULT HTTPAPIEX_Init(void)
+{
+    HTTPAPIEX_RESULT result;
+
+    /*Codes_SRS_HTTPAPIEX_21_045: [If HTTPAPIEX_Init is calling more than once, it shall initialize the HTTP by calling HTTAPI_Init only once, and return success for all calls.] */
+    if (useGlobalInitialization == 0)
+    {
+        /*Codes_SRS_HTTPAPIEX_21_044: [HTTPAPIEX_Init shall initialize the HTTP by calling HTTAPI_Init.] */
+        if (HTTPAPI_Init() == HTTPAPI_OK)
+        {
+            useGlobalInitialization++;
+            result = HTTPAPIEX_OK;
+        }
+        else
+        {
+            /*Codes_SRS_HTTPAPIEX_21_046: [If HTTAPI_Init, HTTPAPIEX_Init shall return HTTPAPIEX_ERROR.] */
+            result = HTTPAPIEX_ERROR;
+        }
+    }
+    else
+    {
+        useGlobalInitialization++;
+        result = HTTPAPIEX_OK;
+    }
+
+    return result;
+}
+
+void HTTPAPIEX_Deinit(void)
+{
+    /*Codes_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
+    useGlobalInitialization--;
+    if (useGlobalInitialization == 0)
+    {
+        HTTPAPI_Deinit();
+    }
+}
 
 HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
 {
@@ -40,7 +82,7 @@ HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
     else
     {
         /*Codes_SRS_HTTPAPIEX_02_005: [If creating the handle fails for any reason, then HTTAPIEX_Create shall return NULL.] */
-        HTTPAPIEX_HANDLE_DATA* handleData = (HTTPAPIEX_HANDLE_DATA*)malloc(sizeof(HTTPAPIEX_HANDLE_DATA));
+        HTTPAPIEX_HANDLE_DATA* handleData = (HTTPAPIEX_HANDLE_DATA*)calloc(1, sizeof(HTTPAPIEX_HANDLE_DATA));
         if (handleData == NULL)
         {
             LogError("malloc failed.");
@@ -294,6 +336,27 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
     return result;
 }
 
+static bool validRequestType(HTTPAPI_REQUEST_TYPE requestType)
+{
+    bool result;
+
+    if ((requestType == HTTPAPI_REQUEST_GET) ||
+        (requestType == HTTPAPI_REQUEST_POST) ||
+        (requestType == HTTPAPI_REQUEST_PUT) ||
+        (requestType == HTTPAPI_REQUEST_DELETE) ||
+        (requestType == HTTPAPI_REQUEST_PATCH) ||
+        (requestType == HTTPAPI_REQUEST_HEAD))
+    {
+        result = true;
+    }
+    else
+    {
+        result = false;
+    }
+
+    return result;
+}
+
 HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
     HTTP_HEADERS_HANDLE requestHttpHeadersHandle, BUFFER_HANDLE requestContent, unsigned int* statusCode,
     HTTP_HEADERS_HANDLE responseHttpHeadersHandle, BUFFER_HANDLE responseContent)
@@ -308,7 +371,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
     else
     {
         /*Codes_SRS_HTTPAPIEX_02_007: [If parameter requestType does not indicate a valid request, HTTPAPIEX_ExecuteRequest shall fail and return HTTPAPIEX_INVALID_ARG.] */
-        if (requestType >= MU_COUNT_ARG(HTTPAPI_REQUEST_TYPE_VALUES))
+        if (!validRequestType(requestType))
         {
             result = HTTPAPIEX_INVALID_ARG;
             LOG_HTTAPIEX_ERROR();
@@ -370,7 +433,12 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         {
                         case 0:
                         {
-                            if (HTTPAPI_Init() != HTTPAPI_OK)
+                            if (useGlobalInitialization > 0)
+                            {
+                                /*Codes_SRS_HTTPAPIEX_21_048: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Init.] */
+                                goOn = true;
+                            }
+                            else if (HTTPAPI_Init() != HTTPAPI_OK)
                             {
                                 goOn = false;
                             }
@@ -450,7 +518,11 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         {
                         case 0:
                         {
-                            HTTPAPI_Deinit();
+                            /*Codes_SRS_HTTPAPIEX_21_049: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Deinit.] */
+                            if (useGlobalInitialization == 0)
+                            {
+                                HTTPAPI_Deinit();
+                            }
                             break;
                         }
                         case 1:
@@ -510,7 +582,11 @@ void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle)
         if (handleData->k == 2)
         {
             HTTPAPI_CloseConnection(handleData->httpHandle);
-            HTTPAPI_Deinit();
+            /*Codes_SRS_HTTPAPIEX_21_050: [If HTTPAPIEX_Init was called, HTTPAPI_Destroy shall not call HTTPAPI_Deinit.] */
+            if (useGlobalInitialization == 0)
+            {
+                HTTPAPI_Deinit();
+            }
         }
         STRING_delete(handleData->hostName);
 

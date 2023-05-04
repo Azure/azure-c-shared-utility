@@ -15,16 +15,18 @@
 typedef struct CONSTBUFFER_ARRAY_HANDLE_DATA_TAG
 {
     uint32_t nBuffers;
+    bool created_with_moved_memory;
+    CONSTBUFFER_HANDLE* buffers;
 #ifdef _MSC_VER
-    /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/en-us/library/b6fae073.aspx*/
+    /*warning C4200: nonstandard extension used: zero-sized array in struct/union : looks very standard in C99 and it is called flexible array. Documentation-wise is a flexible array, but called "unsized" in Microsoft's docs*/ /*https://msdn.microsoft.com/library/b6fae073.aspx*/
 #pragma warning(disable:4200)
 #endif
-    CONSTBUFFER_HANDLE buffers[];
+    CONSTBUFFER_HANDLE buffers_memory[];
 } CONSTBUFFER_ARRAY_HANDLE_DATA;
 
 DEFINE_REFCOUNT_TYPE(CONSTBUFFER_ARRAY_HANDLE_DATA);
 
-CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create(const CONSTBUFFER_HANDLE* buffers, uint32_t buffer_count)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create, const CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -48,14 +50,17 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create(const CONSTBUFFER_HANDLE* buff
         else
         {
             uint32_t i;
+
+            result->buffers = result->buffers_memory;
+            result->nBuffers = buffer_count;
+            result->created_with_moved_memory = false;
+
             for (i = 0; i < buffer_count; i++)
             {
                 /* Codes_SRS_CONSTBUFFER_ARRAY_01_010: [ constbuffer_array_create shall clone the buffers in buffers and store them. ]*/
                 CONSTBUFFER_IncRef(buffers[i]);
                 result->buffers[i] = buffers[i];
             }
-
-            result->nBuffers = buffer_count;
 
             /* Codes_SRS_CONSTBUFFER_ARRAY_01_011: [ On success constbuffer_array_create shall return a non-NULL handle. ]*/
             goto all_ok;
@@ -68,7 +73,7 @@ all_ok:
     return result;
 }
 
-CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_empty(void)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_empty)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -83,12 +88,45 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_empty(void)
     else
     {
         /*Codes_SRS_CONSTBUFFER_ARRAY_02_041: [ constbuffer_array_create_empty shall succeed and return a non-NULL value. ]*/
+        result->created_with_moved_memory = false;
         result->nBuffers = 0;
+        result->buffers = result->buffers_memory;
     }
     return result;
 }
 
-CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBUFFER_ARRAY_HANDLE* buffer_arrays, uint32_t buffer_array_count)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_with_move_buffers, CONSTBUFFER_HANDLE*, buffers, uint32_t, buffer_count)
+{
+    CONSTBUFFER_ARRAY_HANDLE result;
+
+    /* Codes_SRS_CONSTBUFFER_ARRAY_01_028: [ If buffers is NULL and buffer_count is not 0, constbuffer_array_create_with_move_buffers shall fail and return NULL. ]*/
+    if (buffers == NULL)
+    {
+        LogError("Invalid arguments: CONSTBUFFER_HANDLE* buffers=%p, uint32_t buffer_count=%" PRIu32,
+            buffers, buffer_count);
+        result = NULL;
+    }
+    else
+    {
+        result = REFCOUNT_TYPE_CREATE(CONSTBUFFER_ARRAY_HANDLE_DATA); /*explicit 0*/
+        if (result == NULL)
+        {
+            /* Codes_SRS_CONSTBUFFER_ARRAY_01_030: [ If any error occurs, constbuffer_array_create_with_move_buffers shall fail and return NULL. ]*/
+            LogError("failure allocating const buffer array");
+            /*return as is*/
+        }
+        else
+        {
+            result->created_with_moved_memory = true;
+            result->buffers = buffers;
+            result->nBuffers = buffer_count;
+        }
+    }
+
+    return result;
+}
+
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_create_from_array_array, const CONSTBUFFER_ARRAY_HANDLE*, buffer_arrays, uint32_t, buffer_array_count)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
 
@@ -159,6 +197,8 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_create_from_array_array(const CONSTBU
                     uint32_t source_idx;
 
                     result->nBuffers = total_buffer_count;
+                    result->created_with_moved_memory = false;
+                    result->buffers = result->buffers_memory;
 
                     for (dest_idx = 0, array_idx = 0; array_idx < buffer_array_count; ++array_idx)
                     {
@@ -181,7 +221,7 @@ allOk:;
     return result;
 }
 
-CONSTBUFFER_ARRAY_HANDLE constbuffer_array_add_front(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE constbuffer_handle)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_add_front, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE, constbuffer_handle)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
     if (
@@ -196,7 +236,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_add_front(CONSTBUFFER_ARRAY_HANDLE co
     else
     {
         /*Codes_SRS_CONSTBUFFER_ARRAY_02_042: [ constbuffer_array_add_front shall allocate enough memory to hold all of constbuffer_array_handle existing CONSTBUFFER_HANDLE and constbuffer_handle. ]*/
-        result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, (constbuffer_array_handle->nBuffers + 1) * sizeof(CONSTBUFFER_HANDLE));
+        result = REFCOUNT_TYPE_CREATE_WITH_EXTRA_SIZE(CONSTBUFFER_ARRAY_HANDLE_DATA, ((size_t)constbuffer_array_handle->nBuffers + 1) * sizeof(CONSTBUFFER_HANDLE));
         if (result == NULL)
         {
             /*Codes_SRS_CONSTBUFFER_ARRAY_02_011: [ If there any failures constbuffer_array_add_front shall fail and return NULL. ]*/
@@ -210,8 +250,10 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_add_front(CONSTBUFFER_ARRAY_HANDLE co
             /*Codes_SRS_CONSTBUFFER_ARRAY_02_043: [ constbuffer_array_add_front shall copy constbuffer_handle and all of constbuffer_array_handle existing CONSTBUFFER_HANDLE. ]*/
             /*Codes_SRS_CONSTBUFFER_ARRAY_02_044: [ constbuffer_array_add_front shall inc_ref all the CONSTBUFFER_HANDLE it had copied. ]*/
             result->nBuffers = constbuffer_array_handle->nBuffers + 1;
+            result->created_with_moved_memory = false;
+            result->buffers = result->buffers_memory;
             CONSTBUFFER_IncRef(constbuffer_handle);
-            result->buffers[0] = constbuffer_handle;
+            result->buffers_memory[0] = constbuffer_handle;
             for (i = 1; i < result->nBuffers; i++)
             {
                 CONSTBUFFER_IncRef(constbuffer_array_handle->buffers[i - 1]);
@@ -228,7 +270,7 @@ allOk:;
     return result;
 }
 
-CONSTBUFFER_ARRAY_HANDLE constbuffer_array_remove_front(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, CONSTBUFFER_HANDLE* constbuffer_handle)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_remove_front, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, CONSTBUFFER_HANDLE*, constbuffer_handle)
 {
     CONSTBUFFER_ARRAY_HANDLE result;
     if (
@@ -267,6 +309,8 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_remove_front(CONSTBUFFER_ARRAY_HANDLE
                 /* Codes_SRS_CONSTBUFFER_ARRAY_01_001: [ constbuffer_array_remove_front shall inc_ref the removed buffer. ]*/
                 CONSTBUFFER_IncRef(constbuffer_array_handle->buffers[0]);
                 result->nBuffers = constbuffer_array_handle->nBuffers - 1;
+                result->created_with_moved_memory = false;
+                result->buffers = result->buffers_memory;
 
                 /*Codes_SRS_CONSTBUFFER_ARRAY_02_047: [ constbuffer_array_remove_front shall copy all of constbuffer_array_handle CONSTBUFFER_HANDLEs except the front one. ]*/
                 /*Codes_SRS_CONSTBUFFER_ARRAY_02_048: [ constbuffer_array_remove_front shall inc_ref all the copied CONSTBUFFER_HANDLEs. ]*/
@@ -288,7 +332,7 @@ allOk:;
     return result;
 }
 
-int constbuffer_array_get_buffer_count(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t* buffer_count)
+IMPLEMENT_MOCKABLE_FUNCTION(, int, constbuffer_array_get_buffer_count, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, buffer_count)
 {
     int result;
 
@@ -314,7 +358,7 @@ int constbuffer_array_get_buffer_count(CONSTBUFFER_ARRAY_HANDLE constbuffer_arra
     return result;
 }
 
-CONSTBUFFER_HANDLE constbuffer_array_get_buffer(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t buffer_index)
+IMPLEMENT_MOCKABLE_FUNCTION(, CONSTBUFFER_HANDLE, constbuffer_array_get_buffer, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index)
 {
     CONSTBUFFER_HANDLE result;
 
@@ -344,7 +388,7 @@ all_ok:
     return result;
 }
 
-const CONSTBUFFER* constbuffer_array_get_buffer_content(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t buffer_index)
+IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER*, constbuffer_array_get_buffer_content, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t, buffer_index)
 {
     const CONSTBUFFER* result;
     if (
@@ -367,7 +411,7 @@ const CONSTBUFFER* constbuffer_array_get_buffer_content(CONSTBUFFER_ARRAY_HANDLE
     return result;
 }
 
-void constbuffer_array_inc_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle)
+IMPLEMENT_MOCKABLE_FUNCTION(, void, constbuffer_array_inc_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle)
 {
     if (constbuffer_array_handle == NULL)
     {
@@ -381,7 +425,7 @@ void constbuffer_array_inc_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle
     }
 }
 
-void constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle)
+IMPLEMENT_MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle)
 {
     if (constbuffer_array_handle == NULL)
     {
@@ -401,12 +445,17 @@ void constbuffer_array_dec_ref(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle
                 CONSTBUFFER_DecRef(constbuffer_array_handle->buffers[i]);
             }
 
+            if (constbuffer_array_handle->created_with_moved_memory)
+            {
+                free(constbuffer_array_handle->buffers);
+            }
+
             REFCOUNT_TYPE_DESTROY(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle);
         }
     }
 }
 
-int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle, uint32_t* all_buffers_size)
+IMPLEMENT_MOCKABLE_FUNCTION(, int, constbuffer_array_get_all_buffers_size, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle, uint32_t*, all_buffers_size)
 {
     int result;
 
@@ -429,18 +478,21 @@ int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_
         for (i = 0; i < constbuffer_array_handle->nBuffers; i++)
         {
             const CONSTBUFFER* content = CONSTBUFFER_GetContent(constbuffer_array_handle->buffers[i]);
+            if (content != NULL)
+            {
 #if SIZE_MAX > UINT32_MAX
-            if (content->size > UINT32_MAX)
-            {
-                break;
-            }
+                if (content->size > UINT32_MAX)
+                {
+                    break;
+                }
 #endif
-            if (total_size + (uint32_t)content->size < total_size)
-            {
-                break;
-            }
+                if (total_size + (uint32_t)content->size < total_size)
+                {
+                    break;
+                }
 
-            total_size += (uint32_t)content->size;
+                total_size += (uint32_t)content->size;
+            }
         }
 
         if (i < constbuffer_array_handle->nBuffers)
@@ -460,7 +512,7 @@ int constbuffer_array_get_all_buffers_size(CONSTBUFFER_ARRAY_HANDLE constbuffer_
     return result;
 }
 
-const CONSTBUFFER_HANDLE* constbuffer_array_get_const_buffer_handle_array(CONSTBUFFER_ARRAY_HANDLE constbuffer_array_handle)
+IMPLEMENT_MOCKABLE_FUNCTION(, const CONSTBUFFER_HANDLE*, constbuffer_array_get_const_buffer_handle_array, CONSTBUFFER_ARRAY_HANDLE, constbuffer_array_handle)
 {
     const CONSTBUFFER_HANDLE* result;
 
@@ -480,7 +532,7 @@ const CONSTBUFFER_HANDLE* constbuffer_array_get_const_buffer_handle_array(CONSTB
 }
 
 
-bool CONSTBUFFER_ARRAY_HANDLE_contain_same(CONSTBUFFER_ARRAY_HANDLE left, CONSTBUFFER_ARRAY_HANDLE right)
+IMPLEMENT_MOCKABLE_FUNCTION(, bool, CONSTBUFFER_ARRAY_HANDLE_contain_same, CONSTBUFFER_ARRAY_HANDLE, left, CONSTBUFFER_ARRAY_HANDLE, right)
 {
     bool result;
     if (left == NULL)

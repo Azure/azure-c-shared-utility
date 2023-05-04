@@ -4,18 +4,21 @@
 #ifndef UWS_CLIENT_H
 #define UWS_CLIENT_H
 
+#ifdef __cplusplus
+#include <cstddef>
+#include <cstdint>
+#else
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#endif
+
 #include "xio.h"
 #include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/optionhandler.h"
 
 #ifdef __cplusplus
-#include <cstddef>
-#include <cstdint>
 extern "C" {
-#else
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 #endif
 
 typedef struct UWS_CLIENT_INSTANCE_TAG* UWS_CLIENT_HANDLE;

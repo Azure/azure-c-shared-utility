@@ -24,6 +24,8 @@
 #include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/map.h"
+#include "azure_c_shared_utility/shared_util_options.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 static const char* UWS_CLIENT_OPTIONS = "uWSClientOptions";
 
@@ -95,6 +97,7 @@ typedef struct UWS_CLIENT_INSTANCE_TAG
     ON_WS_CLOSE_COMPLETE on_ws_close_complete;
     void* on_ws_close_complete_context;
     unsigned char* stream_buffer;
+    size_t stream_buffer_size;
     size_t stream_buffer_count;
     unsigned char* fragment_buffer;
     size_t fragment_buffer_count;
@@ -223,6 +226,12 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                     if (result->underlying_io == NULL)
                                     {
                                         LogError("Cannot create underlying TLS IO.");
+                                    }
+                                    else
+                                    {
+                                        // Set the underlying socket to turn on renegotiation
+                                        bool set_renegotiation = true;
+                                        xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotiation);
                                     }
                                 }
                             }
@@ -446,6 +455,10 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                             }
                             else
                             {
+                                // Set the underlying socket to turn on renegotiation
+                                bool set_renegotiation = true;
+                                (void)xio_setoption(result->underlying_io, OPTION_SET_TLS_RENEGOTIATION, &set_renegotiation);
+
                                 result->uws_state = UWS_STATE_CLOSED;
 
                                 /* Codes_SRS_UWS_CLIENT_01_520: [ The argument port shall be copied for later use. ]*/
@@ -555,9 +568,11 @@ void uws_client_destroy(UWS_CLIENT_HANDLE uws_client)
             for (i = 0; i < uws_client->protocol_count; i++)
             {
                 free(uws_client->protocols[i].protocol);
+                uws_client->protocols[i].protocol = NULL;
             }
 
             free(uws_client->protocols);
+            uws_client->protocols = NULL;
         }
 
         /* Codes_SRS_UWS_CLIENT_01_019: [ uws_client_destroy shall free all resources associated with the uws instance. ]*/
@@ -640,7 +655,8 @@ static int send_close_frame(UWS_CLIENT_INSTANCE* uws_client, unsigned int close_
         close_frame_length = BUFFER_length(close_frame_buffer);
 
         /* Codes_SRS_UWS_CLIENT_01_471: [ The callback on_underlying_io_close_sent shall be passed as argument to xio_send. ]*/
-        if (xio_send(uws_client->underlying_io, close_frame, close_frame_length, unchecked_on_send_complete, NULL) != 0)
+        if (uws_client == NULL ||
+            xio_send(uws_client->underlying_io, close_frame, close_frame_length, unchecked_on_send_complete, NULL) != 0)
         {
             LogError("Sending CLOSE frame failed.");
             result = MU_FAILURE;
@@ -817,7 +833,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     }
                     else
                     {
-                        upgrade_request = (char*)malloc(upgrade_request_length + 1);
+                        upgrade_request = (char*)malloc((size_t)upgrade_request_length + 1);
                         if (upgrade_request == NULL)
                         {
                             /* Codes_SRS_UWS_CLIENT_01_406: [ If not enough memory can be allocated to construct the WebSocket upgrade request, uws shall report that the open failed by calling the on_ws_open_complete callback passed to uws_client_open_async with WS_OPEN_ERROR_NOT_ENOUGH_MEMORY. ]*/
@@ -907,6 +923,10 @@ static void on_underlying_io_close_sent(void* context, IO_SEND_RESULT io_send_re
 
         switch (io_send_result)
         {
+        default:
+            LogError("Unknown enum value: %d", io_send_result);
+            break;
+
         case IO_SEND_OK:
         case IO_SEND_CANCELLED:
             if (uws_client->uws_state == UWS_STATE_CLOSING_SENDING_CLOSE)
@@ -1077,8 +1097,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             case UWS_STATE_WAITING_FOR_UPGRADE_RESPONSE:
             {
                 /* Codes_SRS_UWS_CLIENT_01_378: [ When on_underlying_io_bytes_received is called while the uws is OPENING, the received bytes shall be accumulated in order to attempt parsing the WebSocket Upgrade response. ]*/
-                unsigned char* new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, uws_client->stream_buffer_count + size + 1);
-                if (new_received_bytes == NULL)
+                unsigned char* new_received_bytes;
+
+                //size_t realloc_size = uws_client->stream_buffer_count + size + 1; **using safe int**
+                uws_client->stream_buffer_size = safe_add_size_t(safe_add_size_t(uws_client->stream_buffer_count, size), 1);
+                if (uws_client->stream_buffer_size == SIZE_MAX || 
+                    (new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, uws_client->stream_buffer_size)) == NULL)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the on_ws_open_complete callback passed to uws_client_open_async with WS_OPEN_ERROR_NOT_ENOUGH_MEMORY. ]*/
                     indicate_ws_open_complete_error_and_close(uws_client, WS_OPEN_ERROR_NOT_ENOUGH_MEMORY);
@@ -1100,8 +1124,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             case UWS_STATE_CLOSING_WAITING_FOR_CLOSE:
             {
                 /* Codes_SRS_UWS_CLIENT_01_385: [ If the state of the uws instance is OPEN, the received bytes shall be used for decoding WebSocket frames. ]*/
-                unsigned char* new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, uws_client->stream_buffer_count + size + 1);
-                if (new_received_bytes == NULL)
+                unsigned char* new_received_bytes;
+
+                //size_t realloc_size = uws_client->stream_buffer_count + size + 1; **using safe int**
+                uws_client->stream_buffer_size = safe_add_size_t(safe_add_size_t(uws_client->stream_buffer_count, size), 1);
+                if (uws_client->stream_buffer_size == SIZE_MAX ||
+                    (new_received_bytes = (unsigned char*)realloc(uws_client->stream_buffer, uws_client->stream_buffer_size)) == NULL)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_418: [ If allocating memory for the bytes accumulated for decoding WebSocket frames fails, an error shall be indicated by calling the on_ws_error callback with WS_ERROR_NOT_ENOUGH_MEMORY. ]*/
                     LogError("Cannot allocate memory for received data");
@@ -1195,7 +1223,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
 
                     /* Codes_SRS_UWS_CLIENT_01_277: [ To receive WebSocket data, an endpoint listens on the underlying network connection. ]*/
                     /* Codes_SRS_UWS_CLIENT_01_278: [ Incoming data MUST be parsed as WebSocket frames as defined in Section 5.2. ]*/
-                    if (uws_client->stream_buffer_count >= needed_bytes)
+                    if (uws_client->stream_buffer_count >= needed_bytes && 
+                        uws_client->stream_buffer_size > 1   // validate uws_client->stream_buffer[1] access
+                        )
                     {
                         unsigned char has_error = 0;
 
@@ -1216,7 +1246,9 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                         {
                             /* Codes_SRS_UWS_CLIENT_01_165: [ If 126, the following 2 bytes interpreted as a 16-bit unsigned integer are the payload length. ]*/
                             needed_bytes += 2;
-                            if (uws_client->stream_buffer_count >= needed_bytes)
+                            if (uws_client->stream_buffer_count >= needed_bytes && 
+                                uws_client->stream_buffer_size > 3   // validate access upto stream_buffer[3]
+                                )
                             {
                                 /* Codes_SRS_UWS_CLIENT_01_167: [ Multibyte length quantities are expressed in network byte order. ]*/
                                 length = ((size_t)(uws_client->stream_buffer[2]) << 8) + (size_t)uws_client->stream_buffer[3];
@@ -1242,11 +1274,16 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                             needed_bytes += 8;
                             if (uws_client->stream_buffer_count >= needed_bytes)
                             {
-                                if ((uws_client->stream_buffer[2] & 0x80) != 0)
+                                if (uws_client->stream_buffer_size <= 2 || (uws_client->stream_buffer[2] & 0x80) != 0)
                                 {
                                     LogError("Bad frame: received a 64 bit length frame with the highest bit set");
 
                                     /* Codes_SRS_UWS_CLIENT_01_419: [ If there is an error decoding the WebSocket frame, an error shall be indicated by calling the on_ws_error callback with WS_ERROR_BAD_FRAME_RECEIVED. ]*/
+                                    indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
+                                    has_error = 1;
+                                }
+                                else if (uws_client->stream_buffer_size <= 9)  // validate access upto stream_buffer[9] below
+                                {
                                     indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
                                     has_error = 1;
                                 }
@@ -1775,8 +1812,11 @@ int uws_client_close_async(UWS_CLIENT_HANDLE uws_client, ON_WS_CLOSE_COMPLETE on
                 {
                     WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_send);
 
-                    /* Codes_SRS_UWS_CLIENT_01_036: [ For each pending send frame the send complete callback shall be called with UWS_SEND_FRAME_CANCELLED. ]*/
-                    complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
+                    if (ws_pending_send != NULL)
+                    {
+                        /* Codes_SRS_UWS_CLIENT_01_036: [ For each pending send frame the send complete callback shall be called with UWS_SEND_FRAME_CANCELLED. ]*/
+                        complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
+                    }
                 }
 
                 /* Codes_SRS_UWS_CLIENT_01_396: [ On success uws_client_close_async shall return 0. ]*/
@@ -1837,8 +1877,10 @@ int uws_client_close_handshake_async(UWS_CLIENT_HANDLE uws_client, uint16_t clos
                 while ((first_pending_send = singlylinkedlist_get_head_item(uws_client->pending_sends)) != NULL)
                 {
                     WS_PENDING_SEND* ws_pending_send = (WS_PENDING_SEND*)singlylinkedlist_item_get_value(first_pending_send);
-
-                    complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
+                    if (ws_pending_send != NULL)
+                    {
+                        complete_send_frame(ws_pending_send, first_pending_send, WS_SEND_FRAME_CANCELLED);
+                    }
                 }
 
                 /* Codes_SRS_UWS_CLIENT_01_466: [ On success uws_client_close_handshake_async shall return 0. ]*/
@@ -2107,7 +2149,7 @@ static void* uws_client_clone_option(const char* name, const void* value)
         if (strcmp(name, UWS_CLIENT_OPTIONS) == 0)
         {
             /* Codes_SRS_UWS_CLIENT_01_507: [ uws_client_clone_option called with name being uWSClientOptions shall return the same value. ]*/
-            result = (void*)value;
+            result = (void*)OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
         }
         else
         {
@@ -2183,10 +2225,11 @@ OPTIONHANDLER_HANDLE uws_client_retrieve_options(UWS_CLIENT_HANDLE uws_client)
                 {
                     /* Codes_SRS_UWS_CLIENT_01_505: [ If OptionHandler_AddOption fails, uws_client_retrieve_options shall fail and return NULL. ]*/
                     LogError("OptionHandler_AddOption failed");
-                    OptionHandler_Destroy(underlying_io_options);
                     OptionHandler_Destroy(result);
                     result = NULL;
                 }
+
+                OptionHandler_Destroy(underlying_io_options);
             }
         }
 
@@ -2201,14 +2244,14 @@ int uws_client_set_request_header(UWS_CLIENT_HANDLE uws_client, const char* name
 
     if (uws_client == NULL || name == NULL || value == NULL)
     {
-        // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]  
+        // Codes_SRS_UWS_CLIENT_09_002: [ If any of the arguments uws_client or name or value is NULL uws_client_set_request_header shall fail and return a non-zero value. ]
         LogError("invalid parameter (uws_client=%p, name=%p, value=%p)", uws_client, name, value);
         result = MU_FAILURE;
     }
-    // Codes_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]  
+    // Codes_SRS_UWS_CLIENT_09_003: [ A copy of name and value shall be stored for later sending in the request message. ]
     else if (Map_AddOrUpdate(uws_client->request_headers, name, value) != MAP_OK)
     {
-        // Codes_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]  
+        // Codes_SRS_UWS_CLIENT_09_004: [ If name or value fail to be stored the function shall fail and return a non-zero value. ]
         LogError("Failed adding request header %s", name);
         result = MU_FAILURE;
     }

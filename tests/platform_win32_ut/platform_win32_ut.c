@@ -7,8 +7,6 @@
 #include <stdint.h>
 #endif
 
-#include "testrunnerswitcher.h"
-
 #undef DECLSPEC_IMPORT
 
 #pragma warning(disable: 4273)
@@ -25,6 +23,7 @@ void my_gballoc_free(void* ptr)
     free(ptr);
 }
 
+#include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
 #include "umock_c/umocktypes_stdint.h"
@@ -37,6 +36,7 @@ void my_gballoc_free(void* ptr)
 #include "umock_c/umock_c_prod.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/tlsio_schannel.h"
+#include "azure_c_shared_utility/httpapiex.h"
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/tlsio_openssl.h"
 #endif
@@ -91,7 +91,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static STRING_HANDLE my_STRING_construct(const char* psz)
@@ -139,8 +139,9 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, result);
 
     REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(WORD, int);
+    REGISTER_UMOCK_ALIAS_TYPE(WORD, unsigned short);
     REGISTER_UMOCK_ALIAS_TYPE(LPWSADATA, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(HTTPAPIEX_RESULT, int);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
@@ -150,6 +151,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(STRING_delete, my_STRING_delete);
 
     REGISTER_GLOBAL_MOCK_RETURN(tlsio_schannel_get_interface_description, TEST_IO_INTERFACE_DESCRIPTION);
+    REGISTER_GLOBAL_MOCK_RETURNS(HTTPAPIEX_Init, HTTPAPIEX_OK, HTTPAPIEX_ERROR);
 
 #ifdef USE_OPENSSL
     REGISTER_GLOBAL_MOCK_RETURN(tlsio_openssl_get_interface_description, TEST_IO_INTERFACE_DESCRIPTION);
@@ -185,6 +187,9 @@ TEST_FUNCTION(platform_init_success)
 
     //arrange
     STRICT_EXPECTED_CALL(WSAStartup(IGNORED_NUM_ARG, IGNORED_PTR_ARG));
+#ifndef DONT_USE_UPLOADTOBLOB
+    STRICT_EXPECTED_CALL(HTTPAPIEX_Init());
+#endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     STRICT_EXPECTED_CALL(tlsio_openssl_init());
 #endif
@@ -215,6 +220,26 @@ TEST_FUNCTION(platform_init_WSAStartup_0_fail)
 
     // cleanup
 }
+
+#ifndef DONT_USE_UPLOADTOBLOB
+TEST_FUNCTION(platform_init_HTTPAPIEX_fail)
+{
+    int result;
+
+    //arrange
+    STRICT_EXPECTED_CALL(WSAStartup(IGNORED_NUM_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(HTTPAPIEX_Init()).SetReturn(HTTPAPIEX_ERROR);
+
+    //act
+    result = platform_init();
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+}
+#endif /* DONT_USE_UPLOADTOBLOB */
 
 TEST_FUNCTION(platform_get_default_tlsio_success)
 {
@@ -256,6 +281,9 @@ TEST_FUNCTION(platform_deinit_success)
 {
     //arrange
     STRICT_EXPECTED_CALL(WSACleanup());
+#ifndef DONT_USE_UPLOADTOBLOB
+    STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit());
+#endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
 #endif

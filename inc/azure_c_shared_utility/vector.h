@@ -4,40 +4,44 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "azure_c_shared_utility/crt_abstractions.h"
-#include "umock_c/umock_c_prod.h"
-#include "azure_c_shared_utility/vector_types.h"
-
 #ifdef __cplusplus
 #include <cstddef>
-extern "C"
-{
 #else
 #include <stddef.h>
 #include <stdbool.h>
 #endif
 
-/* creation */
-MOCKABLE_FUNCTION(, VECTOR_HANDLE, VECTOR_create, size_t, elementSize);
-MOCKABLE_FUNCTION(, VECTOR_HANDLE, VECTOR_move, VECTOR_HANDLE, handle);
-MOCKABLE_FUNCTION(, void, VECTOR_destroy, VECTOR_HANDLE, handle);
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "umock_c/umock_c_prod.h"
+#include "azure_c_shared_utility/vector_types.h"
 
-/* insertion */
-MOCKABLE_FUNCTION(, int, VECTOR_push_back, VECTOR_HANDLE, handle, const void*, elements, size_t, numElements);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-/* removal */
-MOCKABLE_FUNCTION(, void, VECTOR_erase, VECTOR_HANDLE, handle, void*, elements, size_t, numElements);
-MOCKABLE_FUNCTION(, void, VECTOR_clear, VECTOR_HANDLE, handle);
+MOCKABLE_INTERFACE(vector,
+    /* creation */
+    FUNCTION(, VECTOR_HANDLE, VECTOR_create, size_t, elementSize),
+    FUNCTION(, VECTOR_HANDLE, VECTOR_move, VECTOR_HANDLE, handle),
+    FUNCTION(, void, VECTOR_destroy, VECTOR_HANDLE, handle),
 
-/* access */
-MOCKABLE_FUNCTION(, void*, VECTOR_element, VECTOR_HANDLE, handle, size_t, index);
-MOCKABLE_FUNCTION(, void*, VECTOR_front, VECTOR_HANDLE, handle);
-MOCKABLE_FUNCTION(, void*, VECTOR_back, VECTOR_HANDLE, handle);
-MOCKABLE_FUNCTION(, void*, VECTOR_find_if, VECTOR_HANDLE, handle, PREDICATE_FUNCTION, pred, const void*, value);
+    /* insertion */
+    FUNCTION(, int, VECTOR_push_back, VECTOR_HANDLE, handle, const void*, elements, size_t, numElements),
 
-/* capacity */
-MOCKABLE_FUNCTION(, size_t, VECTOR_size, VECTOR_HANDLE, handle);
+    /* removal */
+    FUNCTION(, void, VECTOR_erase, VECTOR_HANDLE, handle, void*, elements, size_t, numElements),
+    FUNCTION(, void, VECTOR_clear, VECTOR_HANDLE, handle),
 
+    /* access */
+    FUNCTION(, void*, VECTOR_element, VECTOR_HANDLE, handle, size_t, index),
+    FUNCTION(, void*, VECTOR_front, VECTOR_HANDLE, handle),
+    FUNCTION(, void*, VECTOR_back, VECTOR_HANDLE, handle),
+    FUNCTION(, void*, VECTOR_find_if, VECTOR_HANDLE, handle, PREDICATE_FUNCTION, pred, const void*, value),
+
+    /* capacity */
+    FUNCTION(, size_t, VECTOR_size, VECTOR_HANDLE, handle)
+)
 #ifdef __cplusplus
 }
 #endif

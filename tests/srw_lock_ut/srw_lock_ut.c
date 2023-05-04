@@ -14,6 +14,11 @@ static void* my_gballoc_malloc(size_t size)
     return malloc(size);
 }
 
+static void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    return calloc(nmemb, size);
+}
+
 static void my_gballoc_free(void* s)
 {
     free(s);
@@ -51,7 +56,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 static void my_timer_destroy(TIMER_HANDLE timer)
@@ -62,7 +67,7 @@ static void my_timer_destroy(TIMER_HANDLE timer)
 static SRW_LOCK_HANDLE TEST_srw_lock_create(bool do_statistics, const char* lock_name)
 {
     SRW_LOCK_HANDLE result;
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     if (do_statistics)
     {
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
@@ -119,6 +124,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     ASSERT_ARE_EQUAL(int, 0, result, "umock_c_init");
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     REGISTER_GLOBAL_MOCK_HOOK(timer_destroy, my_timer_destroy);
     
@@ -159,7 +165,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
 TEST_FUNCTION(srw_lock_create_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(timer_create())
         .SetReturn((TIMER_HANDLE)my_gballoc_malloc(2));
@@ -185,7 +191,7 @@ TEST_FUNCTION(srw_lock_create_succeeds)
 TEST_FUNCTION(srw_lock_create_with_do_statistics_false_succeeds)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(mocked_InitializeSRWLock(IGNORED_PTR_ARG));
 
     ///act
@@ -204,7 +210,7 @@ TEST_FUNCTION(srw_lock_create_with_do_statistics_false_succeeds)
 TEST_FUNCTION(srw_lock_create_fails_1)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(timer_create())
         .SetReturn(NULL);
@@ -225,7 +231,7 @@ TEST_FUNCTION(srw_lock_create_fails_1)
 TEST_FUNCTION(srw_lock_create_fails_2)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
         .SetReturn(NULL);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -244,7 +250,7 @@ TEST_FUNCTION(srw_lock_create_fails_2)
 TEST_FUNCTION(srw_lock_create_fails_3)
 {
     ///arrange
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+    STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .SetReturn(NULL);
 
     ///act

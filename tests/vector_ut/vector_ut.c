@@ -9,6 +9,8 @@
 #include <stddef.h>
 #endif
 
+#include "azure_macro_utils/macro_utils.h"
+
 static void* my_gballoc_malloc(size_t size)
 {
     return malloc(size);
@@ -38,7 +40,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 
@@ -253,7 +255,7 @@ BEGIN_TEST_SUITE(Vector_UnitTests)
     TEST_FUNCTION(VECTOR_push_back_fails_if_handle_is_NULL)
     {
         ///arrange
-        VECTOR_UNITTEST vItem;
+        VECTOR_UNITTEST vItem = { 0 };
 
         ///act
         int result = VECTOR_push_back(NULL, &vItem, 1);

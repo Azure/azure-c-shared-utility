@@ -1,22 +1,17 @@
 #Copyright (c) Microsoft. All rights reserved.
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required (VERSION 3.5)
 
 set(theseTestsName constbuffer_array_ut)
 
-set(${theseTestsName}_test_files
-    ${theseTestsName}.c
-)
+generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
     ../../src/constbuffer_array.c
-    ../real_test_files/real_constbuffer.c
 )
 
-include_directories(../real_test_files)
-
 set(${theseTestsName}_h_files
-    ../real_test_files/real_constbuffer.h
+    ../../inc/azure_c_shared_utility/constbuffer_array.h
 )
 
 build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests")

@@ -4,14 +4,17 @@
 #ifndef TLSIO_SCHANNEL_H
 #define TLSIO_SCHANNEL_H
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
+#include <stddef.h>
+#endif /* __cplusplus */
+
 #include "azure_c_shared_utility/xio.h"
 #include "umock_c/umock_c_prod.h"
 
 #ifdef __cplusplus
 extern "C" {
-#include <cstddef>
-#else
-#include <stddef.h>
 #endif /* __cplusplus */
 
 MOCKABLE_FUNCTION(, CONCRETE_IO_HANDLE, tlsio_schannel_create, void*, io_create_parameters);

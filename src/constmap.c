@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stddef.h>
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/map.h"
 #include "azure_c_shared_utility/constmap.h"
@@ -19,7 +19,7 @@ typedef struct CONSTMAP_HANDLE_DATA_TAG
 
 DEFINE_REFCOUNT_TYPE(CONSTMAP_HANDLE_DATA);
 
-#define LOG_CONSTMAP_ERROR(result) LogError("result = %s", MU_ENUM_TO_STRING(CONSTMAP_RESULT, (result)));
+#define LOG_CONSTMAP_ERROR(result) LogError("result = %" PRI_MU_ENUM "", MU_ENUM_VALUE(CONSTMAP_RESULT, (result)));
 
 CONSTMAP_HANDLE ConstMap_Create(MAP_HANDLE sourceMap)
 {

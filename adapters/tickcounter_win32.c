@@ -3,9 +3,9 @@
 
 #include <stdlib.h>
 #include <windows.h>
-#include "azure_c_shared_utility/gballoc.h"
 #include <stdint.h>
 #include <time.h>
+#include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/tickcounter.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"

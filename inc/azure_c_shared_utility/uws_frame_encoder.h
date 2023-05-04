@@ -4,16 +4,19 @@
 #ifndef UWS_FRAME_ENCODER_H
 #define UWS_FRAME_ENCODER_H
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
+#include <stdbool.h>
+#include <stddef.h>
+#endif
+
 #include "azure_c_shared_utility/buffer_.h"
 #include "umock_c/umock_c_prod.h"
 #include "azure_macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
-#include <cstddef>
 extern "C" {
-#else
-#include <stdbool.h>
-#include <stddef.h>
 #endif
 
 #define RESERVED_1  0x04
@@ -38,7 +41,7 @@ extern "C" {
     WS_RESERVED_CONTROL_FRAME_E, \
     WS_RESERVED_CONTROL_FRAME_F
 
-MU_DEFINE_ENUM(WS_FRAME_TYPE, WS_FRAME_TYPE_VALUES);
+MU_DEFINE_ENUM_WITHOUT_INVALID(WS_FRAME_TYPE, WS_FRAME_TYPE_VALUES);
 
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, uws_frame_encoder_encode, WS_FRAME_TYPE, opcode, const unsigned char*, payload, size_t, length, bool, is_masked, bool, is_final, unsigned char, reserved);
 

@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #endif
+
+#include "azure_macro_utils/macro_utils.h"
 #include "testrunnerswitcher.h"
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
@@ -48,6 +50,9 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(OPTIONHANDLER_RESULT, OPTIONHANDLER_RESULT_VALUES);
 static size_t currentmalloc_call;
 static size_t whenShallmalloc_fail;
 
+static size_t currentcalloc_call;
+static size_t whenShallcalloc_fail;
+
 static void* my_gballoc_malloc(size_t size)
 {
     void* result;
@@ -66,6 +71,28 @@ static void* my_gballoc_malloc(size_t size)
     else
     {
         result = malloc(size);
+    }
+    return result;
+}
+
+static void* my_gballoc_calloc(size_t nmemb, size_t size)
+{
+    void* result;
+    currentcalloc_call++;
+    if (whenShallcalloc_fail > 0)
+    {
+        if (currentcalloc_call == whenShallcalloc_fail)
+        {
+            result = NULL;
+        }
+        else
+        {
+            result = calloc(nmemb, size);
+        }
+    }
+    else
+    {
+        result = calloc(nmemb, size);
     }
     return result;
 }
@@ -237,7 +264,7 @@ MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(wsio_ut)
@@ -264,6 +291,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     default_wsio_config.underlying_io_parameters = TEST_UNDERLYING_IO_PARAMETERS;
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, my_gballoc_calloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_create, TEST_SINGLYLINKEDSINGLYLINKEDLIST_HANDLE);
     REGISTER_GLOBAL_MOCK_HOOK(singlylinkedlist_remove, my_singlylinkedlist_remove);
@@ -346,7 +374,7 @@ TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds)
     // arrange
     CONCRETE_IO_HANDLE wsio;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
 
@@ -444,7 +472,7 @@ TEST_FUNCTION(when_allocating_memory_fails_wsio_create_fails)
 {
     // arrange
     CONCRETE_IO_HANDLE wsio;
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG))
         .SetReturn(NULL);
 
     // act
@@ -461,7 +489,7 @@ TEST_FUNCTION(when_uws_create_fails_then_wsio_create_fails)
     // arrange
     CONCRETE_IO_HANDLE wsio;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1))
         .SetReturn(NULL);
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
@@ -480,7 +508,7 @@ TEST_FUNCTION(when_singlylinkedlist_create_fails_then_wsio_create_fails)
     // arrange
     CONCRETE_IO_HANDLE wsio;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, TEST_UNDERLYING_IO_PARAMETERS, TEST_HOST_ADDRESS, 443, TEST_RESOURCE_NAME, IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create())
         .SetReturn(NULL);
@@ -515,7 +543,7 @@ TEST_FUNCTION(wsio_create_for_secure_connection_with_valid_args_succeeds_2)
     wsio_config.underlying_io_interface = TEST_UNDERLYING_IO_INTERFACE;
     wsio_config.underlying_io_parameters = NULL;
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(uws_client_create_with_io(TEST_UNDERLYING_IO_INTERFACE, NULL, "another.com", 80, "haga", IGNORED_PTR_ARG, 1));
     STRICT_EXPECTED_CALL(singlylinkedlist_create());
 
@@ -2066,6 +2094,7 @@ TEST_FUNCTION(wsio_retrieveoptions_creates_an_option_handler_with_the_value_obta
     EXPECTED_CALL(OptionHandler_Create(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(uws_client_retrieve_options(TEST_UWS_HANDLE));
     STRICT_EXPECTED_CALL(OptionHandler_AddOption(TEST_OPTIONHANDLER_HANDLE, "WSIOOptions", TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(IGNORED_PTR_ARG));
 
     // act
     result = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
@@ -2142,8 +2171,8 @@ TEST_FUNCTION(when_OptionHandler_AddOption_fails_then_wsio_retrieveoptions_fails
     STRICT_EXPECTED_CALL(uws_client_retrieve_options(TEST_UWS_HANDLE));
     STRICT_EXPECTED_CALL(OptionHandler_AddOption(TEST_OPTIONHANDLER_HANDLE, "WSIOOptions", TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE))
         .SetReturn(OPTIONHANDLER_ERROR);
-    STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE));
     STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_OPTIONHANDLER_HANDLE));
+    STRICT_EXPECTED_CALL(OptionHandler_Destroy(TEST_UWS_CLIENT_OPTIONHANDLER_HANDLE));
 
     // act
     result = wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
@@ -2212,12 +2241,13 @@ TEST_FUNCTION(wsio_clone_option_with_WSIOOptions_clones_the_option_handler)
     wsio = wsio_get_interface_description()->concrete_io_create(&default_wsio_config);
     (void)wsio_get_interface_description()->concrete_io_retrieveoptions(wsio);
     umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(OptionHandler_Clone(IGNORED_PTR_ARG));
 
     // act
     result = g_clone_option("WSIOOptions", (void*)0x4243);
 
     // assert
-    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4243, result);
+    ASSERT_ARE_EQUAL(void_ptr, (void*)0x4246, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup

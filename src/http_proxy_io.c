@@ -6,13 +6,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
-#include <stddef.h>
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/http_proxy_io.h"
 #include "azure_c_shared_utility/azure_base64.h"
+#include "azure_c_shared_utility/safe_math.h"
+
+static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
 
 typedef enum HTTP_PROXY_IO_STATE_TAG
 {
@@ -79,7 +81,7 @@ static CONCRETE_IO_HANDLE http_proxy_io_create(void* io_create_parameters)
         else
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_001: [ http_proxy_io_create shall create a new instance of the HTTP proxy IO. ]*/
-            result = (HTTP_PROXY_IO_INSTANCE*)malloc(sizeof(HTTP_PROXY_IO_INSTANCE));
+            result = (HTTP_PROXY_IO_INSTANCE*)calloc(1, sizeof(HTTP_PROXY_IO_INSTANCE));
             if (result == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_051: [ If allocating memory for the new instance fails, http_proxy_io_create shall fail and return NULL. ]*/
@@ -314,7 +316,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     }
                     else
                     {
-                        plain_auth_string_bytes = (char*)malloc(plain_auth_string_length + 1);
+                        plain_auth_string_bytes = (char*)malloc((size_t)plain_auth_string_length + 1);
                         if (plain_auth_string_bytes == NULL)
                         {
                             /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
@@ -353,8 +355,8 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     encoded_auth_string = NULL;
                 }
 
-                if ((http_proxy_io_instance->username != NULL) &&
-                    (encoded_auth_string == NULL))
+                if (http_proxy_io_instance->hostname == NULL ||
+                    (http_proxy_io_instance->username != NULL && encoded_auth_string == NULL))
                 {
                     LogError("Cannot create authorization header");
                 }
@@ -390,7 +392,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     }
                     else
                     {
-                        char* connect_request = (char*)malloc(connect_request_length + 1);
+                        char* connect_request = (char*)malloc((size_t)connect_request_length + 1);
                         if (connect_request == NULL)
                         {
                             /* Codes_SRS_HTTP_PROXY_IO_01_062: [ If any failure is encountered while constructing the request, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
@@ -630,8 +632,16 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         case HTTP_PROXY_IO_STATE_WAITING_FOR_CONNECT_RESPONSE:
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_065: [ When bytes are received and the response to the CONNECT request was not yet received, the bytes shall be accumulated until a double new-line is detected. ]*/
-            unsigned char* new_receive_buffer = (unsigned char*)realloc(http_proxy_io_instance->receive_buffer, http_proxy_io_instance->receive_buffer_size + size + 1);
-            if (new_receive_buffer == NULL)
+            // size_t malloc_size = http_proxy_io_instance->receive_buffer_size + size + 1;
+            size_t realloc_size = safe_add_size_t(safe_add_size_t(http_proxy_io_instance->receive_buffer_size, size), 1);
+
+            unsigned char* new_receive_buffer = NULL;
+            if (realloc_size == SIZE_MAX)
+            {
+                LogError("Invalid memory size for received data");
+                indicate_open_complete_error_and_close(http_proxy_io_instance);
+            }
+            else if ((new_receive_buffer = (unsigned char*)realloc(http_proxy_io_instance->receive_buffer, realloc_size)) == NULL)
             {
                 /* Codes_SRS_HTTP_PROXY_IO_01_067: [ If allocating memory for the buffered bytes fails, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
                 LogError("Cannot allocate memory for received data");
@@ -648,8 +658,13 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
             {
                 const char* request_end_ptr;
 
+#ifdef _MSC_VER
+#pragma warning(disable:6386) // Warning C6386: Buffer overrun while writing to 'http_proxy_io_instance->receive_buffer'
+#endif
                 http_proxy_io_instance->receive_buffer[http_proxy_io_instance->receive_buffer_size] = 0;
-
+#ifdef _MSC_VER
+#pragma warning (default:6386)
+#endif
                 /* Codes_SRS_HTTP_PROXY_IO_01_066: [ When a double new-line is detected the response shall be parsed in order to extract the status code. ]*/
                 if ((http_proxy_io_instance->receive_buffer_size >= 4) &&
                     ((request_end_ptr = strstr((const char*)http_proxy_io_instance->receive_buffer, "\r\n\r\n")) != NULL))
@@ -897,7 +912,7 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
         /* Codes_SRS_HTTP_PROXY_IO_01_040: [ If any of the arguments http_proxy_io or option_name is NULL, http_proxy_io_set_option shall return a non-zero value. ]*/
         LogError("Bad arguments: http_proxy_io = %p, option_name = %p",
             http_proxy_io, option_name);
-        result = __LINE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -905,13 +920,25 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
 
         /* Codes_SRS_HTTP_PROXY_IO_01_045: [ None. ]*/
 
+        if (strcmp(option_name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
+        {
+            if (OptionHandler_FeedOptions((OPTIONHANDLER_HANDLE)value, (void*)http_proxy_io_instance->underlying_io) != OPTIONHANDLER_OK)
+            {
+                LogError("failed feeding options to underlying I/O instance");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
+            }
+        }
         /* Codes_SRS_HTTP_PROXY_IO_01_043: [ If the option_name argument indicates an option that is not handled by http_proxy_io_set_option, then xio_setoption shall be called on the underlying IO created in http_proxy_io_create, passing the option name and value to it. ]*/
         /* Codes_SRS_HTTP_PROXY_IO_01_056: [ The value argument shall be allowed to be NULL. ]*/
-        if (xio_setoption(http_proxy_io_instance->underlying_io, option_name, value) != 0)
+        else if (xio_setoption(http_proxy_io_instance->underlying_io, option_name, value) != 0)
         {
             /* Codes_SRS_HTTP_PROXY_IO_01_044: [ if xio_setoption fails, http_proxy_io_set_option shall return a non-zero value. ]*/
-            LogError("Unrecognized option");
-            result = __LINE__;
+            LogError("Unrecognized option %s", option_name);
+            result = MU_FAILURE;
         }
         else
         {
@@ -921,6 +948,56 @@ static int http_proxy_io_set_option(CONCRETE_IO_HANDLE http_proxy_io, const char
     }
 
     return result;
+}
+
+/*this function will clone an option given by name and value*/
+static void* http_proxy_io_clone_option(const char* name, const void* value)
+{
+    void* result;
+    if (
+        (name == NULL) || (value == NULL)
+        )
+    {
+        LogError("invalid parameter detected: name=%p, value=%p", name, value);
+        result = NULL;
+    }
+    else
+    {
+        if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
+        {
+            result = (void*)OptionHandler_Clone((OPTIONHANDLER_HANDLE)value);
+        }
+        else
+        {
+            LogError("not handled option : %s", name);
+            result = NULL;
+        }
+    }
+
+    return result;
+}
+
+/*this function destroys an option previously created*/
+static void http_proxy_io_destroy_option(const char* name, const void* value)
+{
+    /*since all options for this layer are actually string copies., disposing of one is just calling free*/
+    if (
+        (name == NULL) || (value == NULL)
+        )
+    {
+        LogError("invalid parameter detected: const char* name=%p, const void* value=%p", name, value);
+    }
+    else
+    {
+        if (strcmp(name, OPTION_UNDERLYING_IO_OPTIONS) == 0)
+        {
+            OptionHandler_Destroy((OPTIONHANDLER_HANDLE)value);
+        }
+        else
+        {
+            LogError("not handled option : %s", name);
+        }
+    }
 }
 
 static OPTIONHANDLER_HANDLE http_proxy_io_retrieve_options(CONCRETE_IO_HANDLE http_proxy_io)
@@ -937,12 +1014,41 @@ static OPTIONHANDLER_HANDLE http_proxy_io_retrieve_options(CONCRETE_IO_HANDLE ht
     {
         HTTP_PROXY_IO_INSTANCE* http_proxy_io_instance = (HTTP_PROXY_IO_INSTANCE*)http_proxy_io;
 
-        /* Codes_SRS_HTTP_PROXY_IO_01_046: [ http_proxy_io_retrieve_options shall return an OPTIONHANDLER_HANDLE obtained by calling xio_retrieveoptions on the underlying IO created in http_proxy_io_create. ]*/
-        result = xio_retrieveoptions(http_proxy_io_instance->underlying_io);
+        result = OptionHandler_Create(http_proxy_io_clone_option, http_proxy_io_destroy_option, http_proxy_io_set_option);
+
         if (result == NULL)
         {
-            /* Codes_SRS_HTTP_PROXY_IO_01_048: [ If xio_retrieveoptions fails, http_proxy_io_retrieve_options shall return NULL. ]*/
-            LogError("unable to create option handler");
+            LogError("OptionHandler_Create failed");
+        }
+        else
+        {
+            OPTIONHANDLER_HANDLE underlying_io_options;
+
+            /* Codes_SRS_HTTP_PROXY_IO_01_046: [ http_proxy_io_retrieve_options shall return an OPTIONHANDLER_HANDLE obtained by calling xio_retrieveoptions on the underlying IO created in http_proxy_io_create. ]*/
+            if ((underlying_io_options = xio_retrieveoptions(http_proxy_io_instance->underlying_io)) == NULL)
+            {
+                /* Codes_SRS_HTTP_PROXY_IO_01_048: [ If xio_retrieveoptions fails, http_proxy_io_retrieve_options shall return NULL. ]*/
+                LogError("unable to retrieve underlying_io options");  
+                OptionHandler_Destroy(result);
+                result = NULL;
+            }
+            else 
+            {
+                if (OptionHandler_AddOption(result, OPTION_UNDERLYING_IO_OPTIONS, underlying_io_options) != OPTIONHANDLER_OK)
+                {
+                    /* Codes_SRS_HTTP_PROXY_IO_01_048: [ If xio_retrieveoptions fails, http_proxy_io_retrieve_options shall return NULL. ]*/
+                    LogError("unable to save underlying_io options");
+                    OptionHandler_Destroy(result);
+                    result = NULL;
+                }
+                else
+                {
+                    // All is fine. 
+                }
+
+                // Must destroy since OptionHandler_AddOption creates a copy of it.
+                OptionHandler_Destroy(underlying_io_options);
+            }
         }
     }
     return result;

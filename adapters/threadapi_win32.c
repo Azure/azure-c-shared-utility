@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "windows.h"
+#include "azure_macro_utils/macro_utils.h"
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/xlogging.h"
 
@@ -14,7 +15,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         (func == NULL))
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(THREADAPI_RESULT, result));
     }
     else
     {
@@ -23,7 +24,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
         {
             result = (GetLastError() == ERROR_OUTOFMEMORY) ? THREADAPI_NO_MEMORY : THREADAPI_ERROR;
 
-            LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
+            LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(THREADAPI_RESULT, result));
         }
         else
         {
@@ -41,7 +42,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int *res)
     if (threadHandle == NULL)
     {
         result = THREADAPI_INVALID_ARG;
-        LogError("(result = %s)", MU_ENUM_TO_STRING(THREADAPI_RESULT, result));
+        LogError("(result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(THREADAPI_RESULT, result));
     }
     else
     {

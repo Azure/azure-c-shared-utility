@@ -1,6 +1,5 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 
-#include <stdint.h>
 #include <inttypes.h>
 #include <stdbool.h>
 
@@ -105,7 +104,7 @@ SRW_LOCK_HANDLE srw_lock_create(bool do_statistics, const char* lock_name)
 {
     SRW_LOCK_HANDLE result;
     /*Codes_SRS_SRW_LOCK_02_001: [ srw_lock_create shall allocate memory for SRW_LOCK_HANDLE. ]*/
-    result = malloc(sizeof(SRW_LOCK_HANDLE_DATA));
+    result = calloc(1, sizeof(SRW_LOCK_HANDLE_DATA));
     if (result == NULL)
     {
         /*return as is*/
@@ -224,7 +223,13 @@ void srw_lock_release_exclusive(SRW_LOCK_HANDLE handle)
     {
         if (!handle->doStatistics)
         {
+#ifdef _MSC_VER
+#pragma warning(disable:26110) // Warning C26110: Caller failing to hold lock 'handle->lock' before calling function 'ReleaseSRWLockExclusive'.
+#endif
             ReleaseSRWLockExclusive(&handle->lock);
+#ifdef _MSC_VER
+#pragma warning (default:26110)
+#endif
         }
         else
         {
@@ -235,7 +240,13 @@ void srw_lock_release_exclusive(SRW_LOCK_HANDLE handle)
 
             (void)QueryPerformanceCounter(&start);
             /*Codes_SRS_SRW_LOCK_02_010: [ srw_lock_release_exclusive shall call ReleaseSRWLockExclusive. ]*/
+#ifdef _MSC_VER
+#pragma warning(disable:26110) // Warning C26110: Caller failing to hold lock 'handle->lock' before calling function 'ReleaseSRWLockExclusive'.
+#endif
             ReleaseSRWLockExclusive(&handle->lock);
+#ifdef _MSC_VER
+#pragma warning (default:26110)
+#endif
             (void)QueryPerformanceCounter(&stop); /*measure release time*/
 
             (void)InterlockedAdd64(&handle->totalCounts_ReleaseSRWLockExclusive, (stop.QuadPart - start.QuadPart));

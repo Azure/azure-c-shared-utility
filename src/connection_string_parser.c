@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include <stdbool.h>
 #include "azure_c_shared_utility/connection_string_parser.h"
 #include "azure_c_shared_utility/map.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/string_tokenizer.h"
-#include <stdbool.h>
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 
@@ -121,7 +121,7 @@ MAP_HANDLE connectionstringparser_parse(STRING_HANDLE connection_string)
                                     else
                                     {
                                         /* Codes_SRS_CONNECTIONSTRINGPARSER_01_010: [The key and value shall be added to the result map by using Map_Add.] */
-                                        if (Map_Add(result, token, value) != 0)
+                                        if (Map_Add(result, token, value) != MAP_OK)
                                         {
                                             /* Codes_SRS_CONNECTIONSTRINGPARSER_01_012: [If Map_Add fails connectionstringparser_parse shall fail and return NULL (freeing the allocated result map).] */
                                             is_error = true;

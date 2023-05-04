@@ -2,7 +2,7 @@
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #this is CMakeLists for micromock
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required (VERSION 3.5)
 
 set(micromock_cpp_files
 ./src/micromockcharstararenullterminatedstrings.cpp
@@ -112,4 +112,21 @@ if(WIN32)
     set_target_properties(micromock_generator
                PROPERTIES
                FOLDER "test_tools")
+endif()
+
+if (CMAKE_VERSION VERSION_LESS "3.1")
+  if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    if (CXX_FLAG_CXX11)
+      set_source_files_properties(${micromock_cpp_files} PROPERTIES COMPILE_FLAGS "-std=c++11")
+    else()
+      set_source_files_properties(${micromock_cpp_files} PROPERTIES COMPILE_FLAGS "-std=c++0x")
+    endif()
+  endif()
+else()
+  if (TARGET micromock_cpp_unittest)
+    compileTargetAsC11(micromock_cpp_unittest)
+  endif()
+  if (TARGET micromock_ctest)
+    compileTargetAsC11(micromock_ctest)
+  endif()
 endif()

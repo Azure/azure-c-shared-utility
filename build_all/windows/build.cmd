@@ -97,6 +97,17 @@ rem no error checking
 
 pushd %build-root%\cmake\%CMAKE_DIR%
 
+call %build-root%\jenkins\windows_c_VsDevCmd.cmd %build-platform%
+
+echo ***checking msbuild***
+where /q msbuild
+
+where msbuild
+IF ERRORLEVEL 1 (
+    echo [91mERROR: msbuild not found!!![0m 
+    goto :eof
+)
+
 if %MAKE_NUGET_PKG% == yes (
 	echo ***Running CMAKE for Win32 ***
 	cmake %build-root%
@@ -110,7 +121,7 @@ if %MAKE_NUGET_PKG% == yes (
 
 	mkdir %build-root%\cmake\shared-util_x64
 	pushd %build-root%\cmake\shared-util_x64
-	cmake %build-root% -G "Visual Studio 14 Win64"
+	cmake %build-root% -G "Visual Studio 15 2017" -A x64
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	popd
 
@@ -120,19 +131,19 @@ if %MAKE_NUGET_PKG% == yes (
 	)
 	mkdir %build-root%\cmake\shared-util_arm
 	pushd %build-root%\cmake\shared-util_arm
-	cmake %build-root% -G "Visual Studio 14 ARM"
+	cmake %build-root% -A ARM
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == Win32 (
 	echo ***Running CMAKE for Win32***
-	cmake %build-root% -Drun_unittests:bool=ON -Duse_wsio:bool=ON -Drun_int_tests=ON
+	cmake %build-root% -A Win32 -Drun_unittests:bool=ON -Duse_wsio:bool=ON -Drun_int_tests=ON
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == ARM (
 	echo ***Running CMAKE for ARM***
-	cmake %build-root% -G "Visual Studio 14 ARM" -Drun_unittests:bool=ON -Drun_int_tests=ON
+	cmake %build-root% -A ARM -Drun_unittests:bool=ON -Drun_int_tests=ON
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
 	echo ***Running CMAKE for Win64***
-	cmake %build-root% -G "Visual Studio 14 Win64" -Drun_unittests:bool=ON -Drun_int_tests=ON
+	cmake %build-root% -A x64 -Drun_unittests:bool=ON -Drun_int_tests=ON
 	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
@@ -161,9 +172,6 @@ if %MAKE_NUGET_PKG% == yes (
 		msbuild /m %SOLUTION_NAME%.sln /p:Configuration=%build-config%
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	)
-
-	ctest -C "debug" -V
-	if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
 popd
