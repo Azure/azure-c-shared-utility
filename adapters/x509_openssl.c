@@ -11,7 +11,9 @@
 #include "openssl/x509.h"
 #include "openssl/pem.h"
 #include "openssl/err.h"
+#ifndef OPENSSL_NO_ENGINE
 #include "openssl/engine.h"
+#endif // OPENSSL_NO_ENGINE
 
 #ifdef __APPLE__
     #ifndef EVP_PKEY_id
@@ -271,7 +273,7 @@ int x509_openssl_add_engine_key(SSL_CTX* ssl_ctx, const char* x509privatekey_id,
 
     return result;
 }
-#endif
+#endif // OPENSSL_NO_ENGINE
 
 int x509_openssl_add_credentials(
     SSL_CTX* ssl_ctx,
@@ -304,7 +306,7 @@ int x509_openssl_add_credentials(
         {
             result = x509_openssl_add_engine_key(ssl_ctx, x509privatekey, engine);
         }
-        #endif
+        #endif // OPENSSL_NO_ENGINE
         else
         {
             result = 0;
