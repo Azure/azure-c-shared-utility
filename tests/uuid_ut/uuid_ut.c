@@ -37,6 +37,27 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 
 static const UUID_T TEST_UUID = { 222, 193, 74, 152, 197, 252, 67, 14, 180, 227, 51, 193, 196, 52, 220, 175 };
 static char* TEST_UUID_STRING = "dec14a98-c5fc-430e-b4e3-33c1c434dcaf";
+static const char* INVALID_UUIDS[] =
+{
+    "d",
+    "-",
+    "dec14a98",
+    "dec14a98-c5fc",
+    "dec14a98-c5fc-430e-b4e3-",
+    "dec14a98-c5fc-430e-b4e3-33c1c434dca",
+    "dec14a98c5fc-430e-b4e3-33c1c434dcaf",
+    "dec14a98c5fc-430e-b4e3-33c1c434dcaf1",
+    "dec14a98-c5fc430e-b4e3-33c1c434dcaf",
+    "dec14a98-c5fc-430eb4e3-33c1c434dcaf",
+    "dec14a98-c5fc-430e-b4e333c1c434dcaf",
+    "dec14a98c5fc430eb4e333c1c434dcaf",
+    "dec14a98-c5fc-430e-b4e3-33c1c434dca-",
+    "dec14a98-c5fc-430e-b-e3-33c1c434dcaf",
+    "dec14a98-c5fc-43-e-b4e3-33c1c434dcaf",
+    "dec14a98-c-fc-430e-b4e3-33c1c434dcaf",
+    "dec14-98-c5fc-430e-b4e3-33c1c434dcaf",
+    "-ec14a98-c5fc-430e-b4e3-33c1c434dcaf",
+};
 
 static UNIQUEID_RESULT mock_UniqueId_Generate_result;
 static UNIQUEID_RESULT mock_UniqueId_Generate(char* uid, size_t bufferSize)
@@ -326,32 +347,13 @@ TEST_FUNCTION(UUID_from_string_invalid_fails)
     //Arrange
     int result;
     UUID_T uuid;
-    const char* invalid_uuids[] = {
-        "d",
-        "-",
-        "dec14a98",
-        "dec14a98-c5fc",
-        "dec14a98-c5fc-430e-b4e3-",
-        "dec14a98-c5fc-430e-b4e3-33c1c434dca",
-        "dec14a98c5fc-430e-b4e3-33c1c434dcaf",
-        "dec14a98-c5fc430e-b4e3-33c1c434dcaf",
-        "dec14a98-c5fc-430eb4e3-33c1c434dcaf",
-        "dec14a98-c5fc-430e-b4e333c1c434dcaf",
-        "dec14a98c5fc430eb4e333c1c434dcaf",
-        "dec14a98-c5fc-430e-b4e3-33c1c434dca-",
-        "dec14a98-c5fc-430e-b-e3-33c1c434dcaf",
-        "dec14a98-c5fc-43-e-b4e3-33c1c434dcaf",
-        "dec14a98-c-fc-430e-b4e3-33c1c434dcaf",
-        "dec14-98-c5fc-430e-b4e3-33c1c434dcaf",
-        "-ec14a98-c5fc-430e-b4e3-33c1c434dcaf",
-    };
 
     umock_c_reset_all_calls();
 
-    for (size_t i = 0; i < sizeof(invalid_uuids)/sizeof(invalid_uuids[0]); i++)
+    for (size_t i = 0; i < sizeof(INVALID_UUIDS)/sizeof(INVALID_UUIDS[0]); i++)
     {
         //Act
-        result = UUID_from_string(invalid_uuids[i], &uuid);
+        result = UUID_from_string(INVALID_UUIDS[i], &uuid);
 
         //Assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);

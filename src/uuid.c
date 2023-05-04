@@ -87,7 +87,8 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
                     }
                     else
                     {
-                        uuid_bytes[j] = (char)(higherOrderDigit * 16 + lowerOrderDigit);
+                        // Multiplying the higherOrderDigit by 16.
+                        uuid_bytes[j] = (char)((higherOrderDigit << 4) + lowerOrderDigit);
                         i += 2;
                         j++;
                     }
