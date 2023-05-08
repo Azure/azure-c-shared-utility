@@ -1,7 +1,7 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required (VERSION 3.5)
 
 if (TARGET aziotsharedutil)
     RETURN()
@@ -26,7 +26,7 @@ option(use_default_uuid "set use_default_uuid to ON to use the out of the box UU
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
 option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
 option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in httpapi_compact that comes with C shared utility (default is OFF)" OFF)
-option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
+option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
 
@@ -375,6 +375,7 @@ set(source_h_files
     ./inc/azure_c_shared_utility/tlsio.h
     ./inc/azure_c_shared_utility/optionhandler.h
     ./inc/azure_c_shared_utility/memory_data.h
+    ./inc/azure_c_shared_utility/safe_math.h    
     ${LOGGING_STACKTRACE_H_FILE}
 )
 
@@ -450,6 +451,19 @@ endif()
 FILE(GLOB aziotsharedutil_md_files "devdoc/*.md")
 SOURCE_GROUP(devdoc FILES ${aziotsharedutil_md_files})
 
+# Add ignore deprecated functions so we may use 1.1.1 APIs
+# in OpenSSL 3
+if(LINUX)
+  set_property(
+    SOURCE
+      ${CMAKE_CURRENT_LIST_DIR}/adapters/tlsio_openssl.c
+      ${CMAKE_CURRENT_LIST_DIR}/adapters/x509_openssl.c
+      ${CMAKE_CURRENT_LIST_DIR}/adapters/httpapi_curl.c
+    PROPERTY COMPILE_OPTIONS
+      -Wno-deprecated-declarations
+  )
+endif()
+
 #this is the product (a library)
 add_library(aziotsharedutil ${source_c_files} ${source_h_files} ${aziotsharedutil_md_files})
 setTargetBuildProperties(aziotsharedutil)
@@ -501,21 +515,20 @@ if(${use_http})
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} crypt32 winhttp)
     else()
         if (NOT use_builtin_httpapi)
-            if (CMAKE_CROSSCOMPILING)
-                # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
-                # pkg-config tool can not be used by cmake while cross compiling.
-                message(STATUS "Cross compiling not using pkg-config")
-            else()
-                # try pkg-config first
-                find_package(PkgConfig)
-                if(PKG_CONFIG_FOUND)
-                    pkg_check_modules(CURL libcurl)
-                endif()
-            endif()
 
-            # if that didn't work, try CMake find_package
-            if(NOT CURL_FOUND)
-                find_package(CURL)
+            # try CMake find_package first
+            find_package(CURL)
+
+            # As mentioned at https://cmake.org/Wiki/CMake_Cross_Compiling the
+            # pkg-config tool can not be used by cmake while cross compiling.
+            if (NOT CMAKE_CROSSCOMPILING)
+                # if find_package didn't work, try pkg-config
+                if(NOT CURL_FOUND)
+                    find_package(PkgConfig)
+                    if(PKG_CONFIG_FOUND)
+                        pkg_check_modules(CURL libcurl)
+                    endif()
+                endif()
             endif()
 
             set(CURL_FIND_REQUIRED 1)
@@ -536,8 +549,8 @@ endif()
 if(${use_mbedtls})
     if (WIN32)
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} ws2_32
-            $ENV{mbedtlsLibDir}/mbedtls.lib 
-            $ENV{mbedtlsLibDir}/mbedx509.lib 
+            $ENV{mbedtlsLibDir}/mbedtls.lib
+            $ENV{mbedtlsLibDir}/mbedx509.lib
             $ENV{mbedtlsLibDir}/mbedcrypto.lib
         )
         include_directories("$ENV{mbedtlsDir}/include")
@@ -548,7 +561,7 @@ endif()
 
 if(${use_bearssl})
     if (WIN32)
-        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} 
+        set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs}
             $ENV{bearsslDir}/build/bearssls.lib
         )
         include_directories("$ENV{bearsslDir}/inc")
@@ -599,6 +612,14 @@ if(LINUX)
             link_directories(${UUID_LIBRARY_DIRS})
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} -L${UUID_LIBRARY_DIRS} ${UUID_LIBRARIES})
         else()
+            if (DEFINED UUID_INCLUDE_DIR)
+                include_directories(${UUID_INCLUDE_DIR})
+            endif()
+
+            if (DEFINED UUID_LIBRARY_DIRS)
+                link_directories(${UUID_LIBRARY_DIRS})
+            endif()
+
             set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} uuid)
         endif()
     endif()
@@ -675,7 +696,7 @@ if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
     set(CMAKE_INSTALL_LIBDIR "lib")
 endif()
 
-set(package_location "cmake")
+set(package_location "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 
 if(${build_as_dynamic})
     set(targets aziotsharedutil aziotsharedutil_dll)
@@ -686,11 +707,12 @@ endif(${build_as_dynamic})
 install (TARGETS ${targets} EXPORT aziotsharedutilTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
 )
-install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_c_shared_utility)
+install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility)
 install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
+
 
 include(CMakePackageConfigHelpers)
 
@@ -723,4 +745,3 @@ DESTINATION
 )
 
 compileTargetAsC99(aziotsharedutil)
-

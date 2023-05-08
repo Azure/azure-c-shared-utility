@@ -75,7 +75,7 @@ SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY) 
 EOM
 
-build_folder=$build_root"/cmake/shared-util_linux"
+build_folder=$build_root"/cmake"
 
 # Set the default cores
 CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)

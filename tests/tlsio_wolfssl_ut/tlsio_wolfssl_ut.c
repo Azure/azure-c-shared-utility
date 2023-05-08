@@ -69,6 +69,7 @@ static XIO_HANDLE TEST_IO_HANDLE = (XIO_HANDLE)0x0015;
 static const unsigned char TEST_BUFFER[] = { 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA };
 static const size_t TEST_BUFFER_LEN = BUFFER_LEN;
 static const char* TEST_TRUSTED_CERT = "test_trusted_cert";
+static const char* TEST_HOSTNAME = "hostname.test";
 
 static HandShakeDoneCb g_handshake_done_cb = NULL;
 static void* g_handshake_done_ctx = NULL;
@@ -130,7 +131,17 @@ MOCK_FUNCTION_END(SSL_SUCCESS)
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_SetDevId, WOLFSSL*, ssl, int, devId)
 MOCK_FUNCTION_END(WOLFSSL_SUCCESS)
 #endif
+MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_get_error, WOLFSSL*, ssl, int, ret)
+MOCK_FUNCTION_END(SSL_SUCCESS)
+MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_check_domain_name, WOLFSSL*, ssl, const char*, dn)
+MOCK_FUNCTION_END(SSL_SUCCESS)
 
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
+MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_Debugging_ON)
+MOCK_FUNCTION_END(SSL_SUCCESS)
+MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_SetLoggingCb, wolfSSL_Logging_cb, log_function)
+MOCK_FUNCTION_END(SSL_SUCCESS)
+#endif
 
 MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
@@ -193,6 +204,9 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(CONCRETE_IO_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(XIO_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(CallbackIORecv, void*);
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
+    REGISTER_UMOCK_ALIAS_TYPE(wolfSSL_Logging_cb, void*);
+#endif
     REGISTER_UMOCK_ALIAS_TYPE(HandShakeDoneCb, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_IO_OPEN_COMPLETE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_BYTES_RECEIVED, void*);
@@ -249,6 +263,7 @@ TEST_FUNCTION(tlsio_wolfssl_create_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
 
     /*STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(wolfTLSv1_2_client_method());
@@ -285,13 +300,15 @@ TEST_FUNCTION(tlsio_wolfssl_destroy_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(wolfSSL_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(wolfSSL_CTX_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_destroy(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // hostname
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG)); // tlsio
 
     //act
     tlsio_wolfssl_destroy(io_handle);
@@ -334,6 +351,7 @@ TEST_FUNCTION(tlsio_wolfssl_open_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
@@ -353,6 +371,7 @@ TEST_FUNCTION(tlsio_wolfssl_open_with_cert_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_setoption(io_handle, SU_OPTION_X509_CERT, TEST_TRUSTED_CERT);
     (void)tlsio_wolfssl_setoption(io_handle, SU_OPTION_X509_PRIVATE_KEY, TEST_TRUSTED_CERT);
@@ -374,10 +393,12 @@ TEST_FUNCTION(tlsio_wolfssl_open_set_dev_id_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(wolfSSL_SetDevId(TEST_WOLFSSL, 11));
+    STRICT_EXPECTED_CALL(wolfSSL_check_domain_name(TEST_WOLFSSL, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(wolfSSL_connect(TEST_WOLFSSL));
 
@@ -402,9 +423,11 @@ TEST_FUNCTION(tlsio_wolfssl_open_set_dev_id_2_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(wolfSSL_check_domain_name(TEST_WOLFSSL, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(wolfSSL_connect(TEST_WOLFSSL));
     STRICT_EXPECTED_CALL(wolfSSL_SetDevId(TEST_WOLFSSL, 11));
@@ -430,6 +453,7 @@ TEST_FUNCTION(tlsio_wolfssl_on_handshake_done_succeed)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -463,6 +487,7 @@ TEST_FUNCTION(tlsio_wolfssl_close_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -482,6 +507,7 @@ TEST_FUNCTION(tlsio_wolfssl_close_not_open_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
@@ -514,6 +540,7 @@ TEST_FUNCTION(tlsio_wolfssl_send_buffer_0_fail)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -534,6 +561,7 @@ TEST_FUNCTION(tlsio_wolfssl_send_not_open_fail)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
@@ -552,6 +580,7 @@ TEST_FUNCTION(tlsio_wolfssl_send_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -572,6 +601,7 @@ TEST_FUNCTION(tlsio_wolfssl_send_write_returns_zero_fail)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -607,6 +637,7 @@ TEST_FUNCTION(tlsio_wolfssl_dowork_NOT_OPEN_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
@@ -625,6 +656,7 @@ TEST_FUNCTION(tlsio_wolfssl_dowork_succeeds)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -685,6 +717,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_option_name_NULL_Fail)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
@@ -703,6 +736,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_trusted_cert_succeed)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
@@ -721,6 +755,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_trusted_cert_twice_succeed)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
@@ -743,6 +778,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_device_id_succeed)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
@@ -762,6 +798,7 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_device_id_fail)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     umock_c_reset_all_calls();
 
@@ -779,11 +816,58 @@ TEST_FUNCTION(tlsio_wolfssl_setoption_device_id_fail)
 }
 #endif
 
+#if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
+TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_succeed)
+{
+    //arrange
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(wolfSSL_Debugging_ON()).SetReturn(1);
+    STRICT_EXPECTED_CALL(wolfSSL_SetLoggingCb(IGNORED_PTR_ARG)).SetReturn(1);
+
+    //act
+    int debugLogEnable = true;
+    int test_result = tlsio_wolfssl_setoption(io_handle, "debug_log", &debugLogEnable);
+
+    //assert
+    ASSERT_ARE_EQUAL(int, 0, test_result);
+
+    //clean
+    tlsio_wolfssl_destroy(io_handle);
+}
+
+TEST_FUNCTION(tlsio_wolfssl_setoption_debug_log_disable_fail)
+{
+    //arrange
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    umock_c_reset_all_calls();
+
+    //act
+    // Unlike standard option handlers, turning debug_log off is done via NULL instead of a non-zero int.
+    int* debugLogEnable = NULL;
+    int test_result = tlsio_wolfssl_setoption(io_handle, "debug_log", NULL);
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, test_result);
+
+    //clean
+    tlsio_wolfssl_destroy(io_handle);
+}
+#endif
+
 TEST_FUNCTION(tlsio_wolfssl_on_underlying_io_bytes_received_ctx_NULL_succeess)
 {
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -803,6 +887,7 @@ TEST_FUNCTION(tlsio_wolfssl_on_underlying_io_bytes_received_realloc_NULL_success
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -824,6 +909,7 @@ TEST_FUNCTION(tlsio_wolfssl_on_underlying_io_bytes_received_success)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -845,6 +931,7 @@ TEST_FUNCTION(tlsio_wolfssl_on_underlying_io_error_success)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -864,6 +951,7 @@ TEST_FUNCTION(tlsio_wolfssl_on_underlying_io_error_ctx_NULL_success)
     //arrange
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -884,6 +972,7 @@ TEST_FUNCTION(tlsio_wolfssl_on_io_recv_on_open_success)
     char recv_buff[BUFFER_LEN];
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     (void)tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
     umock_c_reset_all_calls();
@@ -905,6 +994,7 @@ TEST_FUNCTION(tlsio_wolfssl_on_io_recv_timeout_success)
     char recv_buff[BUFFER_LEN];
     TLSIO_CONFIG tls_io_config;
     memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
     CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
     // ensure we stay in the handshake mode
     g_handshake_done_cb = NULL;

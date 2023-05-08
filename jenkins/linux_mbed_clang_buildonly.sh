@@ -7,7 +7,7 @@ set -e
 build_root=$(cd "$(dirname "$0")/.." && pwd)
 cd $build_root
 
-build_folder=$build_root"/cmake/shared-util_linux"
+build_folder=$build_root"/cmake"
 
 # Set the default cores
 CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
@@ -15,8 +15,7 @@ CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
 rm -r -f $build_folder
 mkdir -p $build_folder
 pushd $build_folder
-cmake $build_root -Drun_unittests:BOOL=ON -Drun_valgrind:BOOL=ON
+cmake -Drun_valgrind:BOOL=ON -Duse_mbedtls=ON -Duse_openssl=OFF $build_root -Drun_unittests:BOOL=ON -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++
 make --jobs=$CORES
-ctest -j $CORES "debug" -c -V --output-on-failure
 
 popd

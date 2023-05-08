@@ -15,6 +15,10 @@
 #undef SOCKETIO_BERKELEY_UNDEF_BSD_SOURCE
 #endif
 
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 #include <signal.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -126,11 +130,9 @@ static void* socketio_CloneOption(const char* name, const void* value)
                 {
                     LogError("Failed cloning option %s (malloc failed)", name);
                 }
-                else if (strcpy((char*)result, (char*)value) == NULL)
+                else
                 {
-                    LogError("Failed cloning option %s (strcpy failed)", name);
-                    free(result);
-                    result = NULL;
+                    strcpy((char *)result, (char *)value);
                 }
             }
         }
@@ -481,14 +483,10 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
         destroy_network_interface_descriptions(result);
         result = NULL;
     }
-    else if (strcpy(result->name, ifr->ifr_name) == NULL)
-    {
-        LogError("failed setting interface description name (strcpy failed)");
-        destroy_network_interface_descriptions(result);
-        result = NULL;
-    }
     else
     {
+        strcpy(result->name, ifr->ifr_name);
+
         char* ip_address;
         unsigned char* mac = (unsigned char*)ifr->ifr_hwaddr.sa_data;
 
@@ -516,14 +514,9 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
             destroy_network_interface_descriptions(result);
             result = NULL;
         }
-        else if (strcpy(result->ip_address, ip_address) == NULL)
-        {
-            LogError("failed setting the ip address (strcpy failed)");
-            destroy_network_interface_descriptions(result);
-            result = NULL;
-        }
         else
         {
+            strcpy(result->ip_address, ip_address);
             result->next = NULL;
 
             if (previous_nid != NULL)
@@ -809,7 +802,7 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             socket_io_instance->socket = socket (socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX, SOCK_STREAM, 0);
             if (socket_io_instance->socket < SOCKET_SUCCESS)
             {
-                LogError("Failure: socket create failure %d.", socket_io_instance->socket);
+                LogError("Failure: socket create failure %d. errno=%d", socket_io_instance->socket, errno);
                 result = MU_FAILURE;
             }
 #ifndef __APPLE__
@@ -932,21 +925,21 @@ int socketio_send(CONCRETE_IO_HANDLE socket_io, const void* buffer, size_t size,
             {
                 signal(SIGPIPE, SIG_IGN);
 
-                ssize_t send_result = send(socket_io_instance->socket, buffer, size, 0);
+                ssize_t send_result = send(socket_io_instance->socket, buffer, size, MSG_NOSIGNAL);
                 if ((size_t)send_result != size)
                 {
-                    if (send_result == SOCKET_SEND_FAILURE && errno != EAGAIN)
+                    if (send_result == SOCKET_SEND_FAILURE && errno != EAGAIN && errno != ENOBUFS)
                     {
                         LogError("Failure: sending socket failed. errno=%d (%s).", errno, strerror(errno));
                         result = MU_FAILURE;
                     }
                     else
                     {
-                        /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
+                        /*send says "come back later" with EAGAIN, ENOBUFS - likely the socket buffer cannot accept more data*/
                         /* queue data */
                         size_t bytes_sent = (send_result < 0 ? 0 : send_result);
 
-                        if (add_pending_io(socket_io_instance, buffer + bytes_sent, size - bytes_sent, on_send_complete, callback_context) != 0)
+                        if (add_pending_io(socket_io_instance, (const unsigned char*)buffer + bytes_sent, size - bytes_sent, on_send_complete, callback_context) != 0)
                         {
                             LogError("Failure: add_pending_io failed.");
                             result = MU_FAILURE;
@@ -993,12 +986,12 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     break;
                 }
 
-                ssize_t send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, 0);
+                ssize_t send_result = send(socket_io_instance->socket, pending_socket_io->bytes, pending_socket_io->size, MSG_NOSIGNAL);
                 if ((send_result < 0) || ((size_t)send_result != pending_socket_io->size))
                 {
                     if (send_result == INVALID_SOCKET)
                     {
-                        if (errno == EAGAIN) /*send says "come back later" with EAGAIN - likely the socket buffer cannot accept more data*/
+                        if (errno == EAGAIN  || errno == ENOBUFS) /*send says "come back later" with EAGAIN, ENOBUFS - likely the socket buffer cannot accept more data*/
                         {
                             /*do nothing until next dowork */
                             break;
@@ -1189,15 +1182,9 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
                 LogError("failed setting net_interface_mac_address option (malloc failed)");
                 result = MU_FAILURE;
             }
-            else if (strcpy(socket_io_instance->target_mac_address, value) == NULL)
-            {
-                LogError("failed setting net_interface_mac_address option (strcpy failed)");
-                free(socket_io_instance->target_mac_address);
-                socket_io_instance->target_mac_address = NULL;
-                result = MU_FAILURE;
-            }
             else
             {
+                strcpy(socket_io_instance->target_mac_address, value);
                 strtoup(socket_io_instance->target_mac_address);
                 result = 0;
             }

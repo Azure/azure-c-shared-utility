@@ -1,11 +1,41 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 resources:
-- repo: self
-  clean: true
+  containers:
+  - container: linux-c-ubuntu-2204
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-2204:latest
+  - container: linux-c-ubuntu-2004
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-2004:latest
+  - container: linux-c-ubuntu-1804
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-1804:latest
+  - container: linux-c-ubuntu-clang
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-clang:latest
+  - container: linux-c-ubuntu-c-ares
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-c-ares:latest
+  - container: linux-c-ubuntu-wolfssl
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-wolfssl:latest
+  - container: linux-c-ubuntu-bearssl
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-bearssl:latest
+  - container: linux-c-ubuntu-mbed
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-mbed:latest
+  - container: linux-c-debian
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/linux-c-debian:latest
+  - container: raspberrypi-c-buster
+    endpoint: csdk-containers
+    image: csdkcontainerregistry.azurecr.io/raspberrypi-c-buster:brown
 jobs:
 - job: checksubmodule
+  displayName: Check Submodule
   pool:
-    name: Hosted Ubuntu 1604
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update && apt-get install -y \
@@ -14,22 +44,26 @@ jobs:
       python-software-properties \
       build-essential \
       pkg-config
-      sudo curl -sL https://deb.nodesource.com/setup_6.x | bash -
+      sudo curl -sL https://deb.nodesource.com/setup_16.x | bash -
       sudo apt-get install -y nodejs
-    displayName: 'setup'
+    displayName: 'Setup'
   - script: |
       npm install check_submodules
       ./../../node_modules/.bin/check_submodules . master
-    displayName: 'build'
+    displayName: 'Build'
 - job: windowsx86
+  displayName: Windows x86
   pool:
-    name: 'aziotbld-win03'
+    name: 'sdk-c--win-vs2017'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
-      call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd)
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j 16 --schedule-random
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -45,120 +79,24 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
-- job: raspberrypi
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/raspberrypi-c-buster:brown"
-  pool: aziotbld-lin01
-  displayName: raspberrypi
-  steps:
-  - script: |
-     chmod +x jenkins/raspberrypi_c_buster.sh
-     ./jenkins/raspberrypi_c_buster.sh
-    displayName: 'build'
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-- job: gcc44
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu-gcc4.4"
-  pool: aziotbld-lin01
-  displayName: 'gcc4.4'
-  steps:
-  - script: |
-     if [ -f "jenkins/linux_c_gcc44.sh" ]
-     then
-      sudo ./jenkins/linux_c_gcc44.sh
-     fi
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-    displayName: 'build'
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
-- job: gcc46
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/gcc-4.6:latest"
-  pool: aziotbld-lin01
-  displayName: 'gcc-4.6'
-  steps:
-  - script: |
-     if [ -f "jenkins/linux_c_gcc44.sh" ]
-     then
-      sudo ./jenkins/linux_c_gcc44.sh
-     fi
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-    displayName: 'build'
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
-- job: linuxoptions
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-linux-c-ubuntu"
-  pool: aziotbld-lin01
-  displayName: 'linux-options'
-  steps:
-  - script: |
-     if [ -f "jenkins/linux_c_option_test.sh" ]
-     then
-      sudo ./jenkins/linux_c_option_test.sh
-     fi
-    displayName: 'build'
-    condition: always()
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
-- job: windowsdynamic
+- job: windowsx64
   pool:
-    name: 'aziotbld-win03'
+    name: 'sdk-c--win-vs2017'
+  displayName: 'Windows x64'
   steps:
   - script: |
-     if exist jenkins\windows_c_build_as_dynamic.cmd (
-      call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
-      call jenkins\windows_c_build_as_dynamic.cmd)
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'cleanup'
-    condition: always()
-- job: OSX
-  pool:
-    name: OSX
-  steps:
+     if exist jenkins\windows_c.cmd (
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+      call jenkins\windows_c.cmd --platform x64)
+    displayName: 'Build'
   - script: |
-     if [ -f "jenkins/osx_gcc_openssl.sh" ]
-     then
-      ./jenkins/osx_gcc_openssl.sh
-     fi
-    displayName: 'build'
+      cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j 16 --schedule-random
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -177,14 +115,48 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
+  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
+    displayName: 'Cleanup'
+    condition: always()
+- job: windowsdynamic
+  displayName: Windows Dynamic
+  pool:
+    name: 'sdk-c--win-vs2017'
+  steps:
+  - script: |
+     if exist jenkins\windows_c_build_as_dynamic.cmd (
+      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+      call jenkins\windows_c_build_as_dynamic.cmd)
+    displayName: 'Build'
+    env:
+      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
+      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
+      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
+      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
+      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
+      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
+      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
+      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
+      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
+      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
+      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
+      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
+      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
+  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
+    displayName: 'Cleanup'
     condition: always()
 - job: clang
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/ubuntu-clang"
-  pool: aziotbld-lin01
-  displayName: 'clang'
+  container: linux-c-ubuntu-clang
+  pool:
+      name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux Ubuntu Clang'
   steps:
   - script: |
      if [ -f "jenkins/ubuntu_clang.sh" ]
@@ -193,7 +165,10 @@ jobs:
       sudo chmod -R 755 .
       sudo -E ./jenkins/ubuntu_clang.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -212,23 +187,23 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
-- job: ubuntu1604
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu"
-  pool: aziotbld-lin02
-  displayName: 'ubuntu1604'
+- job: ubuntu1804
+  container: linux-c-ubuntu-1804
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux Ubuntu 18.04'
   steps:
   - script: |
-     if [ -f "jenkins/ubuntu1604_c.sh" ]
+     if [ -f "jenkins/ubuntu_c.sh" ]
      then
       export OPENSSL_ia32cap=0x00000000
       sudo chmod -R 755 .
-      sudo -E ./jenkins/ubuntu1604_c.sh
+      sudo -E ./jenkins/ubuntu_c.sh
      fi
-    displayName: 'build'
+    displayName: "Build"
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -247,14 +222,165 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+- job: ubuntu2004
+  container: linux-c-ubuntu-2004
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux Ubuntu 20.04'
+  steps:
+  - script: |
+     if [ -f "jenkins/ubuntu_c.sh" ]
+     then
+      export OPENSSL_ia32cap=0x00000000
+      sudo chmod -R 755 .
+      sudo -E ./jenkins/ubuntu_c.sh
+     fi
+    displayName: 'Build'
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
+    env:
+      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
+      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
+      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
+      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
+      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
+      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
+      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
+      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
+      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
+      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
+      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
+      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
+      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+- job: ubuntu2204
+  container: linux-c-ubuntu-2204
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux Ubuntu 22.04'
+  steps:
+  - script: |
+     if [ -f "jenkins/ubuntu_c.sh" ]
+     then
+      export OPENSSL_ia32cap=0x00000000
+      sudo chmod -R 755 .
+      sudo -E ./jenkins/ubuntu_c.sh
+     fi
+    displayName: 'Build'
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
+    env:
+      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
+      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
+      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
+      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
+      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
+      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
+      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
+      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
+      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
+      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
+      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
+      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
+      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+- job: linuxoptions
+  displayName: 'Linux Ubuntu 20.04 with Options'
+  container: linux-c-ubuntu-2004
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  steps:
+  - script: |
+     if [ -f "jenkins/linux_c_option_test.sh" ]
+     then
+      sudo ./jenkins/linux_c_option_test.sh
+     fi
+    displayName: 'Build'
     condition: always()
+- job: linux_installed_deps
+  container: linux-c-ubuntu-2004
+  pool: 
+    name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux with Installed Deps'
+  steps:
+  - script: |
+      export OPENSSL_ia32cap=0x00000000
+      sudo chmod -R 755 .
+      sudo -E ./jenkins/linux_install_deps.sh
+    displayName: 'Build'
+    env:
+      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
+      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
+      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
+      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
+      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
+      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
+      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
+      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
+      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
+      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
+      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
+      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+      IOT_DPS_INDIVIDUAL_X509_CERTIFICATE: $(IOTHUB-E2E-X509-ECC-CERT-BASE64)
+      IOT_DPS_INDIVIDUAL_X509_KEY: $(IOTHUB-E2E-X509-ECC-PRIVATE-KEY-BASE64)
+      IOT_DPS_INDIVIDUAL_REGISTRATION_ID: $(IOT-DPS-INDIVIDUAL-REGISTRATION-ID)
+- job: cares
+  container: linux-c-ubuntu-c-ares
+  pool: 
+    name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux with C-Ares'
+  steps:
+  - script: |
+      sudo -E bash jenkins/linux_cares.sh
+    displayName: 'Build'
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
+    env:
+      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
+      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
+      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
+      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
+      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
+      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
+      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
+      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
+      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
+      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
+      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
+      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
+      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
+      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
+      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
+      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+      IOT_DPS_INDIVIDUAL_X509_CERTIFICATE: $(IOTHUB-E2E-X509-ECC-CERT-BASE64)
+      IOT_DPS_INDIVIDUAL_X509_KEY: $(IOTHUB-E2E-X509-ECC-PRIVATE-KEY-BASE64)
+      IOT_DPS_INDIVIDUAL_REGISTRATION_ID: $(IOT-DPS-INDIVIDUAL-REGISTRATION-ID)
+  - task: PublishTestResults@2
+    displayName: 'Publish C Ares Results'
+    inputs:
+      testRunner: CTest
+      testResultsFiles: '**/Test.xml'
+      mergeTestResults: true
+      testRunTitle: 'cares'
+    condition: succeededOrFailed()
 - job: debian
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/c-debian"
-  pool: aziotbld-lin01
-  displayName: 'debian'
+  container: linux-c-debian
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  displayName: 'Linux Debian'
   steps:
   - script: |
      if [ -f "jenkins/debian_c.sh" ]
@@ -263,7 +389,10 @@ jobs:
       sudo -E ./debian_c.sh
       sudo jenkins/debian_c.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      cd cmake && sudo -E ../build_all/linux/run_tests.sh
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -282,22 +411,23 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
 - job: linux_mbed
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-mbed"
-  pool: aziotbld-lin01
-  displayName: 'linux_mbed'
+  container: linux-c-ubuntu-mbed
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  displayName: 'mbedTLS'
   steps:
+  - script: |
+     chmod +x jenkins/linux_mbed_clang_buildonly.sh
+     ./jenkins/linux_mbed_clang_buildonly.sh
+    displayName: 'Clang Build'
   - script: |
       if [ -f "jenkins/debian_c.sh" ]
       then
         sudo chmod 755 jenkins/linux_mbed.sh
         sudo -E ./jenkins/linux_mbed.sh
       fi
-    displayName: 'build'
+    displayName: 'Build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -315,15 +445,16 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
 - job: wolfssl
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-wolfssl"
-  pool: aziotbld-lin01
-  displayName: 'wolfssl'
+  container: linux-c-ubuntu-wolfssl
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  displayName: 'WolfSSL'
   steps:
+  - script: |
+     chmod +x jenkins/linux_wolfssl_clang_buildonly.sh
+     ./jenkins/linux_wolfssl_clang_buildonly.sh
+    displayName: 'Clang Build'
   - script: |
      cmake --version
      cc --version
@@ -335,7 +466,7 @@ jobs:
       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
       sudo jenkins/linux_wolfssl.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -354,15 +485,16 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
 - job: bearssl
-  variables:
-    _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-bearssl"
-  pool: aziotbld-lin01
-  displayName: 'bearssl'
+  container: linux-c-ubuntu-bearssl
+  pool: 
+      name: 'sdk-c--ubuntu-18'
+  displayName: 'BearSSL'
   steps:
+  - script: |
+     chmod +x jenkins/linux_bearssl_clang_buildonly.sh
+     ./jenkins/linux_bearssl_clang_buildonly.sh
+    displayName: 'Clang Build'
   - script: |
       LD_LIBRARY_PATH=/usr/local/lib
       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
@@ -370,7 +502,7 @@ jobs:
       bearsslDir=/beary
       export bearsslDir
       sudo bash jenkins/linux_bearssl.sh
-    displayName: 'build'
+    displayName: 'Build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -389,19 +521,20 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: sudo rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
-    condition: always()
-- job: windowsx64
+- job: OSX
+  displayName: OSX
   pool:
-    name: 'aziotbld-win03'
-  displayName: 'windowsx64'
+    name: OSX
   steps:
   - script: |
-     if exist jenkins\windows_c.cmd (
-      call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
-      call jenkins\windows_c.cmd --platform x64)
-    displayName: 'build'
+     if [ -f "jenkins/osx_gcc_openssl.sh" ]
+     then
+      ./jenkins/osx_gcc_openssl.sh
+     fi
+    displayName: 'Build'
+  - script: |
+      cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j 8 --schedule-random
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -420,10 +553,13 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'cleanup'
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
+  - script: rm -rf $(Agent.BuildDirectory)/*
+    displayName: 'Cleanup'
     condition: always()
 - job: xcodenative
+  displayName: XCode Native
   pool:
     name: OSX
   steps:
@@ -433,7 +569,11 @@ jobs:
       DYLD_LIBRARY_PATH=/usr/local/Cellar/curl/7.61.0/lib
       ./jenkins/osx_xcode_native.sh
      fi
-    displayName: 'build'
+    displayName: 'Build'
+  - script: |
+      export DYLD_LIBRARY_PATH=/usr/local/Cellar/curl/7.61.0/lib
+      cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j $TEST_JOB_COUNT --schedule-random
+    displayName: "Run Tests"
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -452,6 +592,18 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
   - script: rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'cleanup'
+    displayName: 'Cleanup'
     condition: always()
+- job: raspberrypi
+  displayName: Raspberry Pi
+  container: raspberrypi-c-buster
+  pool: 
+    name: 'sdk-c--ubuntu-18'
+  steps:
+  - script: |
+     chmod +x jenkins/raspberrypi_c_buster.sh
+     ./jenkins/raspberrypi_c_buster.sh
+    displayName: 'Build'
