@@ -200,8 +200,10 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 httpHandleData->certificates = NULL;
 #ifdef USE_OPENSSL
                 httpHandleData->x509privatekeytype = KEY_TYPE_DEFAULT;
+#ifndef OPENSSL_NO_ENGINE
                 httpHandleData->engineId = NULL;
                 httpHandleData->engine = NULL;
+#endif // OPENSSL_NO_ENGINE
 #elif USE_MBEDTLS
                 mbedtls_x509_crt_init(&httpHandleData->cert);
                 mbedtls_pk_init(&httpHandleData->key);
@@ -329,12 +331,16 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             LogError("unable to load engine by ID: %s", httpHandleData->engineId);
             result = CURLE_SSL_CERTPROBLEM;
         }
-        else
-#endif // OPENSSL_NO_ENGINE
-        if (
+        else if (
             (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
             (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey, httpHandleData->x509privatekeytype, httpHandleData->engine) != 0)
            )
+#else // OPENSSL_NO_ENGINE
+        if (
+            (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
+            (x509_openssl_add_credentials(ssl_ctx, httpHandleData->x509certificate, httpHandleData->x509privatekey, httpHandleData->x509privatekeytype) != 0)
+           )
+#endif // OPENSSL_NO_ENGINE
         {
             LogError("unable to x509_openssl_add_credentials");
             result = CURLE_SSL_CERTPROBLEM;
@@ -861,6 +867,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 result = HTTPAPI_ERROR;
             }
         }
+#ifndef OPENSSL_NO_ENGINE
         else if (strcmp(OPTION_OPENSSL_ENGINE, optionName) == 0)
         {
             if (mallocAndStrcpy_s((char**)&httpHandleData->engineId, value) != 0)
@@ -873,6 +880,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 result = HTTPAPI_OK;
             }
         }
+#endif // OPENSSL_NO_ENGINE
 #endif
         else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
         {
