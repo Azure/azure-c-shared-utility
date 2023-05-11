@@ -55,7 +55,7 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNS
     }
     else
     {
-        result = malloc(sizeof(DNSRESOLVER_INSTANCE));
+        result = calloc(1, sizeof(DNSRESOLVER_INSTANCE));
         if (result == NULL)
         {
             /* Codes_SRS_dns_resolver_30_014: [ On any failure, dns_resolver_create shall log an error and return NULL. ]*/
@@ -146,7 +146,6 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
             ptr = dns->addrInfo;
 
             ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in6));
-            addr6 = (void *)ptr->ai_addr;
 
             if(ptr->ai_addr == NULL)
             {
@@ -155,14 +154,22 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
                 dns->is_failed = true;
                 dns->is_complete = true;
                 dns->in_progress = false;
-            } else {
+            } 
+            else 
+            {
+                addr6 = (void *)ptr->ai_addr;
+
                 memcpy(&addr6->sin6_addr, he->h_addr_list[0], sizeof(struct in6_addr));
-                addr6->sin6_family = he->h_addrtype;
+                addr6->sin6_family = AF_INET6;
                 addr6->sin6_port = htons((unsigned short)dns->port);
 
                 /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
                 memcpy(dns->ip_v6, EXTRACT_IPV6(ptr), 16); // IPv6 address is 16 bytes
+                dns->addrInfo->ai_addrlen = sizeof(struct sockaddr_in6);
                 dns->addrInfo->ai_family = AF_INET6;
+                dns->addrInfo->ai_socktype = SOCK_STREAM;
+                dns->addrInfo->ai_protocol = IPPROTO_TCP;
+
                 dns->is_failed = (dns->ip_v6 == 0);
                 dns->is_complete = true;
                 dns->in_progress = false;
@@ -174,7 +181,6 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
             ptr = dns->addrInfo;
 
             ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in));
-            addr = (void *)ptr->ai_addr;
 
             if(ptr->ai_addr == NULL)
             {
@@ -183,17 +189,30 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
                 dns->is_failed = true;
                 dns->is_complete = true;
                 dns->in_progress = false;
-            } else {
-                memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
-                addr->sin_family = he->h_addrtype;
-                addr->sin_port = htons((unsigned short)dns->port);
+            } 
+            else 
+            {
+                addr = (void *)ptr->ai_addr;
 
-                /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-                dns->ip_v4 = EXTRACT_IPV4(ptr);
-                dns->addrInfo->ai_family = AF_INET;
-                dns->is_failed = (dns->ip_v4 == 0);
-                dns->is_complete = true;
-                dns->in_progress = false;
+                if (he->h_addrtype == AF_INET)
+                {
+                    memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
+                    addr->sin_family = he->h_addrtype;
+                    addr->sin_port = htons((unsigned short)dns->port);
+
+                    /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
+                    dns->ip_v4 = EXTRACT_IPV4(ptr);
+                    dns->addrInfo->ai_addrlen = sizeof(struct sockaddr_in);
+                    dns->addrInfo->ai_family = AF_INET;
+                    dns->addrInfo->ai_socktype = SOCK_STREAM;
+                    dns->addrInfo->ai_protocol = IPPROTO_TCP;
+
+                    dns->is_failed = (dns->ip_v4 == 0);
+                    dns->is_complete = true;
+                    dns->in_progress = false;
+                }
+
+
             }
         }
     }

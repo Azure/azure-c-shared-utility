@@ -52,7 +52,7 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNS
     }
     else
     {
-        result = malloc(sizeof(DNSRESOLVER_INSTANCE));
+        result = calloc(1, sizeof(DNSRESOLVER_INSTANCE));
         if (result == NULL)
         {
             /* Codes_SRS_dns_resolver_30_014: [ On any failure, dns_resolver_create shall log an error and return NULL. ]*/
@@ -64,10 +64,6 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNS
             int ms_result;
             result->is_complete = false;
             result->is_failed = false;
-            result->ip_v4 = 0;
-#ifdef IPV6_ENABLED
-            memset(result->ip_v6, 0, 16); // Zero out the IPv6 address
-#endif // IPV6_ENABLED
             result->port = port;
             /* Codes_SRS_dns_resolver_30_010: [ dns_resolver_create shall make a copy of the hostname parameter to allow immediate deletion by the caller. ]*/
             ms_result = mallocAndStrcpy_s(&result->hostname, hostname);
@@ -145,18 +141,21 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
                     case AF_INET:
                         /* Codes_SRS_dns_resolver_30_032: [ If dns_resolver_is_create_complete has returned true and the lookup process has succeeded, dns_resolver_get_ipv4 shall return the discovered IPv4 address. ]*/
                         dns->ip_v4 = EXTRACT_IPV4(ptr);
-#ifdef IPV6_ENABLED
                         dns->is_failed = false;
                         break;
+#ifdef IPV6_ENABLED
                     case AF_INET6:
                         memcpy(dns->ip_v6, EXTRACT_IPV6(ptr), 16);
                         dns->is_failed = false;
-#endif // IPV6_ENABLED
                         break;     
+#endif // IPV6_ENABLED
                     }
                 }
                 /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-#ifndef IPV6_ENABLED
+#ifdef IPV6_ENABLED
+                uint8_t zero[16] = { 0 }; // IPv6 address of all zeroes
+                dns->is_failed = (dns->ip_v4 == 0) && (memcmp(dns->ip_v6, zero, 16) == 0);
+#else
                 dns->is_failed = (dns->ip_v4 == 0);
 #endif // IPV6_ENABLED
             }
