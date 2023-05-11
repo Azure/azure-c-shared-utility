@@ -29,6 +29,7 @@ option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in ht
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
+option(no_openssl_engine "Disables the use of ENGINEs in OpenSSL, if the target version supports it" OFF)
 
 if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
@@ -106,6 +107,10 @@ if(${memory_trace})
 endif()
 
 if(${use_openssl})
+    if(${no_openssl_engine})
+        add_definitions(-DOPENSSL_NO_ENGINE)
+    endif()
+
     if("${OPENSSL_ROOT_DIR}" STREQUAL "" AND NOT ("$ENV{OpenSSLDir}" STREQUAL ""))
         set(OPENSSL_ROOT_DIR $ENV{OpenSSLDir} CACHE PATH "")
     endif()
