@@ -115,6 +115,11 @@ if(${use_openssl})
     if (NOT TARGET OpenSSL::SSL OR NOT TARGET OpenSSL::Crypto OR NOT ${OPENSSL_INCLUDE_DIR})
         find_package(OpenSSL REQUIRED)
     endif()
+
+    if (DEFINED OPENSSL_VERSION AND (${OPENSSL_VERSION} GREATER_EQUAL 3))
+        add_definitions(-DOPENSSL_API_COMPAT=0x10101000L)
+    endif()
+
     include_directories(${OPENSSL_INCLUDE_DIR})
 endif()
 
