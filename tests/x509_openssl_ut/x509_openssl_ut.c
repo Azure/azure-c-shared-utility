@@ -404,7 +404,11 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         //arrange
 
         //act
+        #ifndef OPENSSL_NO_ENGINE
         int result = x509_openssl_add_credentials(NULL, TEST_PUBLIC_CERTIFICATE, "privatekey", KEY_TYPE_DEFAULT, NULL);
+        #else // OPENSSL_NO_ENGINE
+        int result = x509_openssl_add_credentials(NULL, TEST_PUBLIC_CERTIFICATE, "privatekey", KEY_TYPE_DEFAULT);
+        #endif // OPENSSL_NO_ENGINE
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -418,7 +422,11 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         //arrange
 
         //act
+        #ifndef OPENSSL_NO_ENGINE
         int result = x509_openssl_add_credentials(TEST_SSL_CTX, NULL, "privatekey", KEY_TYPE_DEFAULT, NULL);
+        #else // OPENSSL_NO_ENGINE
+        int result = x509_openssl_add_credentials(TEST_SSL_CTX, NULL, "privatekey", KEY_TYPE_DEFAULT);
+        #endif // OPENSSL_NO_ENGINE
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -432,7 +440,11 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         //arrange
 
         //act
-        int result = x509_openssl_add_credentials(TEST_SSL_CTX, TEST_PUBLIC_CERTIFICATE, NULL, KEY_TYPE_DEFAULT, NULL);
+        #ifndef OPENSSL_NO_ENGINE
+        int result = x509_openssl_add_credentials(TEST_SSL_CTX, TEST_PUBLIC_CERTIFICATE, NULL, KEY_TYPE_DEFAULT, TEST_ENGINE);
+        #else // OPENSSL_NO_ENGINE
+        int result = x509_openssl_add_credentials(TEST_SSL_CTX, TEST_PUBLIC_CERTIFICATE, NULL, KEY_TYPE_DEFAULT);
+        #endif // OPENSSL_NO_ENGINE
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -440,36 +452,41 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         //cleanup
     }
 
-    #ifndef OPENSSL_NO_ENGINE
     TEST_FUNCTION(x509_openssl_engine_add_credentials_with_NULL_certificate_fails)
     {
         //arrange
 
         //act
+        #ifndef OPENSSL_NO_ENGINE
         int result = x509_openssl_add_credentials(TEST_SSL_CTX, NULL, "privatekey", KEY_TYPE_ENGINE, TEST_ENGINE);
+        #else
+        int result = x509_openssl_add_credentials(TEST_SSL_CTX, NULL, "privatekey", KEY_TYPE_DEFAULT);
+        #endif // OPENSSL_NO_ENGINE
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         //cleanup
     }
-    #endif // OPENSSL_NO_ENGINE
 
-    #ifndef OPENSSL_NO_ENGINE
     TEST_FUNCTION(x509_openssl_engine_add_credentials_with_NULL_privatekey_fails)
     {
         //arrange
 
         //act
+        #ifndef OPENSSL_NO_ENGINE
         int result = x509_openssl_add_credentials(TEST_SSL_CTX, TEST_PUBLIC_CERTIFICATE, NULL, KEY_TYPE_ENGINE, TEST_ENGINE);
+        #else
+        int result = x509_openssl_add_credentials(TEST_SSL_CTX, TEST_PUBLIC_CERTIFICATE, NULL, KEY_TYPE_DEFAULT);
+        #endif // OPENSSL_NO_ENGINE
 
         //assert
         ASSERT_ARE_NOT_EQUAL(int, 0, result);
 
         //cleanup
     }
-    #endif // OPENSSL_NO_ENGINE
 
+    #ifndef OPENSSL_NO_ENGINE
     TEST_FUNCTION(x509_openssl_engine_add_credentials_with_NULL_engine_fails)
     {
         //arrange
@@ -482,6 +499,7 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 
         //cleanup
     }
+    #endif // OPENSSL_NO_ENGINE
 
     /*Tests_SRS_X509_OPENSSL_02_002: [ x509_openssl_add_credentials shall use BIO_new_mem_buf to create a memory BIO from the x509 certificate. ] */
     /*Tests_SRS_X509_OPENSSL_02_003: [ x509_openssl_add_credentials shall use PEM_read_bio_X509 to read the x509 certificate. ] */
@@ -495,7 +513,11 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         setup_add_credentials_pem_file(true);
 
         //act
+        #ifndef OPENSSL_NO_ENGINE
         int result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE, KEY_TYPE_DEFAULT, NULL);
+        #else // OPENSSL_NO_ENGINE
+        int result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE, KEY_TYPE_DEFAULT);
+        #endif // OPENSSL_NO_ENGINE
 
         //assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -509,7 +531,11 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
         setup_add_credentials_pem_file(false);
 
         //act
+        #ifndef OPENSSL_NO_ENGINE
         int result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE, KEY_TYPE_DEFAULT, NULL);
+        #else // OPENSSL_NO_ENGINE
+        int result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE, KEY_TYPE_DEFAULT);
+        #endif // OPENSSL_NO_ENGINE
 
         //assert
         ASSERT_ARE_EQUAL(int, 0, result);
@@ -612,7 +638,11 @@ BEGIN_TEST_SUITE(x509_openssl_unittests)
 
             if (!use_engine)
             {
+                #ifndef OPENSSL_NO_ENGINE
                 result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE, KEY_TYPE_DEFAULT, NULL);
+                #else // OPENSSL_NO_ENGINE
+                result = x509_openssl_add_credentials(TEST_SSL_CTX_STRUCTURE, TEST_PUBLIC_CERTIFICATE, TEST_PRIVATE_CERTIFICATE, KEY_TYPE_DEFAULT);
+                #endif // OPENSSL_NO_ENGINE
             }
             #ifndef OPENSSL_NO_ENGINE
             else
