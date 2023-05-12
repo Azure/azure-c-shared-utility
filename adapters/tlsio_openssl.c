@@ -1119,8 +1119,12 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
             tlsInstance->ssl_context, 
             tlsInstance->x509_certificate, 
             tlsInstance->x509_private_key,
+    #ifndef OPENSSL_NO_ENGINE
             tlsInstance->x509_private_key_type,
             tlsInstance->engine) != 0)
+    #else // OPENSSL_NO_ENGINE
+            tlsInstance->x509_private_key_type) != 0)
+    #endif // OPENSSL_NO_ENGINE
         )
     {
         engine_destroy(tlsInstance);
