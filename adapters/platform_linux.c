@@ -32,7 +32,7 @@ const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description();
 int platform_init(void)
 {
     int result = 0;
-#if defined(USE_HTTP)
+#ifdef USE_HTTP
 #ifndef DONT_USE_UPLOADTOBLOB
     if (HTTPAPIEX_Init() == HTTPAPIEX_ERROR)
     {
@@ -95,7 +95,7 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 
 void platform_deinit(void)
 {
-#if defined(USE_HTTP)
+#ifdef USE_HTTP
 #ifndef DONT_USE_UPLOADTOBLOB
     HTTPAPIEX_Deinit();
 #endif /* DONT_USE_UPLOADTOBLOB */
