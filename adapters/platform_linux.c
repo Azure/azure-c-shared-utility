@@ -4,7 +4,9 @@
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/xlogging.h"
+#ifdef USE_HTTP
 #include "azure_c_shared_utility/httpapiex.h"
+#endif // USE_HTTP
 #ifdef USE_OPENSSL
 #include "azure_c_shared_utility/tlsio_openssl.h"
 #else
@@ -30,15 +32,15 @@ const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description();
 int platform_init(void)
 {
     int result = 0;
+#if defined(USE_HTTP)
 #ifndef DONT_USE_UPLOADTOBLOB
-#if !defined(HTTP_DISABLED)
     if (HTTPAPIEX_Init() == HTTPAPIEX_ERROR)
     {
         LogError("HTTP for upload to blob failed on initialization.");
         result = MU_FAILURE;
     }
-#endif /* HTTP_DISABLED */
 #endif /* DONT_USE_UPLOADTOBLOB */
+#endif /* USE_HTTP */
 #ifdef USE_OPENSSL
     if (result == 0)
     {
@@ -93,11 +95,12 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 
 void platform_deinit(void)
 {
+#if defined(USE_HTTP)
 #ifndef DONT_USE_UPLOADTOBLOB
-#if !defined(HTTP_DISABLED)
     HTTPAPIEX_Deinit();
-#endif /* HTTP_DISABLED */
 #endif /* DONT_USE_UPLOADTOBLOB */
+#endif /* USE_HTTP */
+
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();
 #elif USE_WOLFSSL
