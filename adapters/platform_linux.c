@@ -31,11 +31,13 @@ int platform_init(void)
 {
     int result = 0;
 #ifndef DONT_USE_UPLOADTOBLOB
+#if !defined(HTTP_DISABLED)
     if (HTTPAPIEX_Init() == HTTPAPIEX_ERROR)
     {
         LogError("HTTP for upload to blob failed on initialization.");
         result = MU_FAILURE;
     }
+#endif /* HTTP_DISABLED */
 #endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     if (result == 0)
@@ -92,7 +94,9 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 void platform_deinit(void)
 {
 #ifndef DONT_USE_UPLOADTOBLOB
+#if !defined(HTTP_DISABLED)
     HTTPAPIEX_Deinit();
+#endif /* HTTP_DISABLED */
 #endif /* DONT_USE_UPLOADTOBLOB */
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();

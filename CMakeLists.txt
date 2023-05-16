@@ -276,6 +276,8 @@ if(${use_http})
         ./src/httpheaders.c
         ${HTTP_C_FILE}
     )
+else()
+    add_definitions(-DHTTP_DISABLED)
 endif()
 
 if(${use_schannel})
