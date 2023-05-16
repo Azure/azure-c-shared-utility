@@ -276,6 +276,7 @@ if(${use_http})
         ./src/httpheaders.c
         ${HTTP_C_FILE}
     )
+    add_definitions(-DUSE_HTTP)
 endif()
 
 if(${use_schannel})

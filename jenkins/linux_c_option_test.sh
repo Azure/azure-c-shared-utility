@@ -42,6 +42,7 @@ declare -a arr=(
     "-Duse_builtin_httpapi=ON"
     "-Duse_default_uuid=ON"
     "-Dno_openssl_engine=ON"
+    "-Duse_http=OFF"
 )
 
 for item in "${arr[@]}"
