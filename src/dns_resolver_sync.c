@@ -21,11 +21,15 @@
 // The default definition handles lwIP. Please add comments for other systems tested.
 #define EXTRACT_IPV4(ptr) ((struct sockaddr_in *) ptr->ai_addr)->sin_addr.s_addr
 
+// EXTRACT_IPV6 pulls the uint32_t IPv6 address out of an addrinfo struct
+#define EXTRACT_IPV6(ptr) ((struct sockaddr_in6 *) ptr->ai_addr)->sin6_addr.s6_addr
+
 typedef struct
 {
     char* hostname;
     int port;
     uint32_t ip_v4;
+    uint8_t ip_v6[16];
     bool is_complete;
     bool is_failed;
     struct addrinfo* addrInfo;
@@ -102,7 +106,7 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
             // Setup the hints address info structure
             // which is passed to the getaddrinfo() function
             memset(&hints, 0, sizeof(hints));
-            hints.ai_family = AF_INET;
+            hints.ai_family = AF_UNSPEC;
             hints.ai_socktype = SOCK_STREAM;
             hints.ai_protocol = 0;
 
@@ -128,13 +132,18 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
                     switch (ptr->ai_family)
                     {
                     case AF_INET:
-                        /* Codes_SRS_dns_resolver_30_032: [ If dns_resolver_is_create_complete has returned true and the lookup process has succeeded, dns_resolver_get_ipv4 shall return the discovered IPv4 address. ]*/
                         dns->ip_v4 = EXTRACT_IPV4(ptr);
+                        dns->is_failed = false;
+                        break;
+                    case AF_INET6:
+                        memcpy(dns->ip_v6, EXTRACT_IPV6(ptr), 16);
+                        dns->is_failed = false;
                         break;
                     }
+                    /* Codes_SRS_dns_resolver_30_032: [ If dns_resolver_is_create_complete has returned true and the lookup process has succeeded, dns_resolver_get_ipv4 shall return the discovered IPv4 address. ]*/
                 }
                 /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-                dns->is_failed = (dns->ip_v4 == 0);
+                // dns->is_failed = (dns->ip_v4 == 0);
             }
             else
             {
