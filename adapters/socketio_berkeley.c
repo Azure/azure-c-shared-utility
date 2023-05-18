@@ -494,12 +494,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     int result;
     int flags;
     struct addrinfo* addr = NULL;
-    struct sockaddr* connect_addr = NULL;
-#ifdef IPV6_ENABLED
-    struct sockaddr_in6* connect_addr6 = NULL;
-#endif // IPV6_ENABLED
     struct sockaddr_un addrInfoUn;
-    socklen_t connect_addr_len;
 
     if(socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {
@@ -516,19 +511,9 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             {
                 LogError("DNS resolution failed");
                 result = MU_FAILURE;
-            }
-#ifdef IPV6_ENABLED
-            else if (addr->ai_family == AF_INET6)
+            } 
+            else 
             {
-                connect_addr6 = (struct sockaddr_in6*) addr->ai_addr;
-                connect_addr_len = sizeof(struct sockaddr_in6);
-                result = 0;
-            }
-#endif // IPV6_ENABLED
-            else
-            {
-                connect_addr = addr->ai_addr;
-                connect_addr_len = sizeof(*addr->ai_addr);
                 result = 0;
             }
         }
@@ -547,14 +532,17 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             addrInfoUn.sun_family = AF_UNIX;
             // No need to add NULL terminator due to the above memset
             (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
-
-            connect_addr = (struct sockaddr*)&addrInfoUn;
-            connect_addr_len = sizeof(addrInfoUn);
+            
+            addr->ai_addrlen = sizeof(addrInfoUn);
+            addr->ai_addr = (struct sockaddr*)&addrInfoUn;
+            addr->ai_family = AF_UNIX;
+            addr->ai_socktype = SOCK_STREAM;
+            addr->ai_protocol = 0;
             result = 0;
         }
     }
 
-    socket_io_instance->socket = socket (socket_io_instance->address_type == ADDRESS_TYPE_IP ? addr->ai_family : AF_UNIX, SOCK_STREAM, 0);
+    socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 
     if (socket_io_instance->socket < SOCKET_SUCCESS)
     {
@@ -580,18 +568,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         }
         else
         {
-#ifndef IPV6_ENABLED
-            result = connect(socket_io_instance->socket, connect_addr, connect_addr_len);
-#else
-            if (addr->ai_family == AF_INET6)
-            {
-                result = connect(socket_io_instance->socket, (struct sockaddr*)connect_addr6, connect_addr_len);
-            }
-            else 
-            {
-                result = connect(socket_io_instance->socket, connect_addr, connect_addr_len);
-            }
-#endif // IPV6_ENABLED
+            result = connect(socket_io_instance->socket, addr->ai_addr, addr->ai_addrlen);
             
             if ((result != 0) && (errno != EINPROGRESS))
             {
