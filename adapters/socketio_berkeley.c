@@ -496,6 +496,9 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     struct addrinfo* addr = NULL;
     struct sockaddr_un addrInfoUn;
 
+    struct sockaddr* connect_addr = NULL;
+    socklen_t connect_addr_len;
+
     if(socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {
         if(!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
@@ -514,6 +517,8 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             } 
             else 
             {
+                connect_addr = addr->ai_addr;
+                connect_addr_len = sizeof(*addr->ai_addr);
                 result = 0;
             }
         }
@@ -531,18 +536,31 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             memset(&addrInfoUn, 0, sizeof(addrInfoUn));
             addrInfoUn.sun_family = AF_UNIX;
             // No need to add NULL terminator due to the above memset
+
             (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
             
+            connect_addr = (struct sockaddr*)&addrInfoUn;
+            connect_addr_len = sizeof(addrInfoUn);
+            /*
             addr->ai_addrlen = sizeof(addrInfoUn);
             addr->ai_addr = (struct sockaddr*)&addrInfoUn;
             addr->ai_family = AF_UNIX;
             addr->ai_socktype = SOCK_STREAM;
             addr->ai_protocol = 0;
+            */
             result = 0;
         }
     }
 
-    socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP) 
+    {
+        socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    }
+    else 
+    {
+        socket_io_instance->socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    }
+    
 
     if (socket_io_instance->socket < SOCKET_SUCCESS)
     {
@@ -568,7 +586,15 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         }
         else
         {
-            result = connect(socket_io_instance->socket, addr->ai_addr, addr->ai_addrlen);
+            if (socket_io_instance->address_type == ADDRESS_TYPE_IP) 
+            {
+                result = connect(socket_io_instance->socket, addr->ai_addr, addr->ai_addrlen);
+            }
+            else 
+            {
+                result = connect(socket_io_instance->socket, connect_addr, connect_addr_len);
+            }
+            
             
             if ((result != 0) && (errno != EINPROGRESS))
             {
