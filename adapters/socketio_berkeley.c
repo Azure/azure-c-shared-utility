@@ -532,17 +532,18 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             addrInfoUn.sun_family = AF_UNIX;
             // No need to add NULL terminator due to the above memset
             (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
-            
-            addr->ai_addrlen = sizeof(addrInfoUn);
-            addr->ai_addr = (struct sockaddr*)&addrInfoUn;
-            addr->ai_family = AF_UNIX;
-            addr->ai_socktype = SOCK_STREAM;
-            addr->ai_protocol = 0;
             result = 0;
         }
     }
 
-    socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+    {
+        socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    }
+    else
+    {
+        socket_io_instance->socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    }
 
     if (socket_io_instance->socket < SOCKET_SUCCESS)
     {
@@ -568,8 +569,15 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         }
         else
         {
-            result = connect(socket_io_instance->socket, addr->ai_addr, addr->ai_addrlen);
-            
+            if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+            {
+                result = connect(socket_io_instance->socket, addr->ai_addr, addr->ai_addrlen);
+            }
+            else
+            {
+                result = connect(socket_io_instance->socket, (struct sockaddr *)&addrInfoUn, sizeof(addrInfoUn));
+            }
+
             if ((result != 0) && (errno != EINPROGRESS))
             {
                 LogError("Failure: connect failure %d.", errno);
