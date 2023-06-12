@@ -541,19 +541,26 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             
             connect_addr = (struct sockaddr*)&addrInfoUn;
             connect_addr_len = sizeof(addrInfoUn);
-
-            addr->ai_family = AF_UNIX;
-            addr->ai_socktype = SOCK_STREAM;
-            addr->ai_protocol = 0;
             /*
             addr->ai_addrlen = sizeof(addrInfoUn);
             addr->ai_addr = (struct sockaddr*)&addrInfoUn;
+            addr->ai_family = AF_UNIX;
+            addr->ai_socktype = SOCK_STREAM;
+            addr->ai_protocol = 0;
             */
             result = 0;
         }
     }
 
-    socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP) 
+    {
+        socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    }
+    else 
+    {
+        socket_io_instance->socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    }
+    
 
     if (socket_io_instance->socket < SOCKET_SUCCESS)
     {
