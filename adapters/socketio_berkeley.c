@@ -517,8 +517,6 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             } 
             else 
             {
-                connect_addr = addr->ai_addr;
-                connect_addr_len = sizeof(*addr->ai_addr);
                 result = 0;
             }
         }
