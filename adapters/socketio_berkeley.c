@@ -517,6 +517,8 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             } 
             else 
             {
+                connect_addr = addr->ai_addr;
+                connect_addr_len = sizeof(*addr->ai_addr);
                 result = 0;
             }
         }
@@ -550,7 +552,14 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         }
     }
 
-    socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP) 
+    {
+        socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+    }
+    else 
+    {
+        socket_io_instance->socket = socket(AF_UNIX, SOCK_STREAM, 0);
+    }
     
 
     if (socket_io_instance->socket < SOCKET_SUCCESS)
