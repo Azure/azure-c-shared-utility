@@ -444,7 +444,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
         }
         else
         {
-            if (curl_easy_setopt(httpHandleData->curl, CURLOPT_VERBOSE, httpHandleData->verbose) != CURLE_OK)
+            if (curl_easy_setopt(httpHandleData->curl, CURLOPT_VERBOSE, 1/*httpHandleData->verbose*/ ) != CURLE_OK)
             {
                 result = HTTPAPI_SET_OPTION_FAILED;
                 LogError("failed to set CURLOPT_VERBOSE (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
