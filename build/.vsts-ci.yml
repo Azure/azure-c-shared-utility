@@ -82,6 +82,8 @@ jobs:
   - task: ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
 - job: windowsx64
+  variables:
+    CodeQL.Enabled: false
   pool:
     name: 'sdk-c--win-vs2017'
   displayName: 'Windows x64'
