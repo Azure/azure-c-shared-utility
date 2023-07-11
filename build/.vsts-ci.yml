@@ -83,7 +83,7 @@ jobs:
     displayName: 'Component Detection'
 - job: windowsx64
   variables:
-    CodeQL.Enabled: false
+    CodeQL.Enabled: true
   pool:
     name: 'sdk-c--win-vs2017'
   displayName: 'Windows x64'
