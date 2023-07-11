@@ -79,11 +79,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  - task: ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
-  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'Cleanup'
-    condition: always()
 - job: windowsx64
   pool:
     name: 'sdk-c--win-vs2017'
@@ -115,11 +112,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  - task: ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
-  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'Cleanup'
-    condition: always()
 - job: windowsdynamic
   displayName: Windows Dynamic
   pool:
@@ -147,11 +141,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  - task: ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
-  - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
-    displayName: 'Cleanup'
-    condition: always()
 - job: clang
   container: linux-c-ubuntu-clang
   pool:
@@ -555,10 +546,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  - task: ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
-  - script: rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
     condition: always()
 - job: xcodenative
   displayName: XCode Native
@@ -596,11 +585,8 @@ jobs:
       IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  - task: ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
-  - script: rm -rf $(Agent.BuildDirectory)/*
-    displayName: 'Cleanup'
-    condition: always()
 - job: raspberrypi
   displayName: Raspberry Pi
   container: raspberrypi-c-buster
