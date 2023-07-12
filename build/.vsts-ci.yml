@@ -601,10 +601,10 @@ jobs:
      ./jenkins/raspberrypi_c_buster.sh
     displayName: 'Build'
 - job: DotNet
-  displayName: .Net
+  displayName: .NET
   variables:
     CodeQL.Enabled: true
-    CodeQL.Language: cpp
+    CodeQL.Language: csharp
   pool: 
     vmImage: 'windows-latest'
   steps:
