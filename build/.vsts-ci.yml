@@ -84,6 +84,7 @@ jobs:
 - job: windowsx64
   variables:
     CodeQL.Enabled: true
+    CodeQL.Language: cpp
   pool:
     name: 'sdk-c--win-vs2017'
   displayName: 'Windows x64'
@@ -598,4 +599,15 @@ jobs:
   - script: |
      chmod +x jenkins/raspberrypi_c_buster.sh
      ./jenkins/raspberrypi_c_buster.sh
+    displayName: 'Build'
+- job: DotNet
+  displayName: .Net
+  variables:
+    CodeQL.Enabled: true
+    CodeQL.Language: cpp
+  pool: 
+    vmImage: 'windows-latest'
+  steps:
+  - script: |
+     dotnet build testtools\SerialPort\SerialPort.sln
     displayName: 'Build'
