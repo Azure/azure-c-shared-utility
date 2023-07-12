@@ -596,7 +596,7 @@ jobs:
      chmod +x jenkins/raspberrypi_c_buster.sh
      ./jenkins/raspberrypi_c_buster.sh
     displayName: 'Build'
-- job: DotNet
+- job: DotNET
   displayName: .NET
   variables:
     CodeQL.Enabled: true
