@@ -146,7 +146,7 @@ jobs:
 - job: clang
   container: linux-c-ubuntu-clang
   pool:
-      name: 'sdk-c--ubuntu-18'
+      name: 'sdk-c--ubuntu-22'
   displayName: 'Linux Ubuntu Clang'
   steps:
   - script: |
@@ -181,7 +181,7 @@ jobs:
 - job: ubuntu2004
   container: linux-c-ubuntu-2004
   pool: 
-      name: 'sdk-c--ubuntu-18'
+      name: 'sdk-c--ubuntu-22'
   displayName: 'Linux Ubuntu 20.04'
   steps:
   - script: |
@@ -216,7 +216,7 @@ jobs:
 - job: ubuntu2204
   container: linux-c-ubuntu-2204
   pool: 
-      name: 'sdk-c--ubuntu-18'
+      name: 'sdk-c--ubuntu-22'
   displayName: 'Linux Ubuntu 22.04'
   steps:
   - script: |
@@ -252,7 +252,7 @@ jobs:
   displayName: 'Linux Ubuntu 20.04 with Options'
   container: linux-c-ubuntu-2004
   pool: 
-      name: 'sdk-c--ubuntu-18'
+      name: 'sdk-c--ubuntu-22'
   steps:
   - script: |
      if [ -f "jenkins/linux_c_option_test.sh" ]
@@ -264,7 +264,7 @@ jobs:
 - job: linux_installed_deps
   container: linux-c-ubuntu-2004
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: 'Linux with Installed Deps'
   steps:
   - script: |
@@ -295,7 +295,7 @@ jobs:
 - job: cares
   container: linux-c-ubuntu-c-ares
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   displayName: 'Linux with C-Ares'
   steps:
   - script: |
@@ -335,7 +335,7 @@ jobs:
 - job: debian
   container: linux-c-debian
   pool: 
-      name: 'sdk-c--ubuntu-18'
+      name: 'sdk-c--ubuntu-22'
   displayName: 'Linux Debian'
   steps:
   - script: |
@@ -370,7 +370,7 @@ jobs:
 - job: linux_mbed
   container: linux-c-ubuntu-mbed
   pool: 
-      name: 'sdk-c--ubuntu-18'
+      name: 'sdk-c--ubuntu-22'
   displayName: 'mbedTLS'
   steps:
   - script: |
@@ -404,7 +404,7 @@ jobs:
 - job: wolfssl
   container: linux-c-ubuntu-wolfssl
   pool: 
-      name: 'sdk-c--ubuntu-18'
+      name: 'sdk-c--ubuntu-22'
   displayName: 'WolfSSL'
   steps:
   - script: |
@@ -444,7 +444,7 @@ jobs:
 - job: bearssl
   container: linux-c-ubuntu-bearssl
   pool: 
-      name: 'sdk-c--ubuntu-18'
+      name: 'sdk-c--ubuntu-22'
   displayName: 'BearSSL'
   steps:
   - script: |
@@ -552,7 +552,7 @@ jobs:
   displayName: Raspberry Pi
   container: raspberrypi-c-buster
   pool: 
-    name: 'sdk-c--ubuntu-18'
+    name: 'sdk-c--ubuntu-22'
   steps:
   - script: |
      chmod +x jenkins/raspberrypi_c_buster.sh
