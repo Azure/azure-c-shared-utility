@@ -560,8 +560,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             result = MU_FAILURE;
         }
         #endif //__APPLE__
-
-        if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
+        else if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
             (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
         {
             LogError("Failure: fcntl failure.");
