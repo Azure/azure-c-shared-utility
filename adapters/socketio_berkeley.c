@@ -536,31 +536,31 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
         }
     }
 
-    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
-    {
-        socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-    }
-    else
-    {
-        socket_io_instance->socket = socket(AF_UNIX, SOCK_STREAM, 0);
-    }
-
-    if (socket_io_instance->socket < SOCKET_SUCCESS)
-    {
-        LogError("Failure: socket create failure %d.", socket_io_instance->socket);
-        result = MU_FAILURE;
-    }
-#ifndef __APPLE__
-    else if (socket_io_instance->target_mac_address != NULL &&
-                set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
-    {
-        LogError("Failure: failed selecting target network interface (MACADDR=%s).", socket_io_instance->target_mac_address);
-        result = MU_FAILURE;
-    }
-#endif //__APPLE__
-
     if(result == 0)
     {
+        if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+        {
+            socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+        }
+        else
+        {
+            socket_io_instance->socket = socket(AF_UNIX, SOCK_STREAM, 0);
+        }
+
+        if (socket_io_instance->socket < SOCKET_SUCCESS)
+        {
+            LogError("Failure: socket create failure %d.", socket_io_instance->socket);
+            result = MU_FAILURE;
+        }
+        #ifndef __APPLE__
+        else if (socket_io_instance->target_mac_address != NULL &&
+                    set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
+        {
+            LogError("Failure: failed selecting target network interface (MACADDR=%s).", socket_io_instance->target_mac_address);
+            result = MU_FAILURE;
+        }
+        #endif //__APPLE__
+
         if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
             (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
         {
