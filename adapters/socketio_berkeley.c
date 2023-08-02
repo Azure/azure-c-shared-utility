@@ -520,19 +520,27 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     }
     else
     {
-        size_t hostname_len = strlen(socket_io_instance->hostname);
-        if (hostname_len + 1 > sizeof(addrInfoUn.sun_path))
+        if (socket_io_instance->hostname != NULL)
         {
-            LogError("Hostname %s is too long for a unix socket (max len = %lu)", socket_io_instance->hostname, (unsigned long)sizeof(addrInfoUn.sun_path));
-            result = MU_FAILURE;
+            size_t hostname_len = strlen(socket_io_instance->hostname);
+            if (hostname_len + 1 > sizeof(addrInfoUn.sun_path))
+            {
+                LogError("Hostname %s is too long for a unix socket (max len = %lu)", socket_io_instance->hostname, (unsigned long)sizeof(addrInfoUn.sun_path));
+                result = MU_FAILURE;
+            }
+            else
+            {
+                memset(&addrInfoUn, 0, sizeof(addrInfoUn));
+                addrInfoUn.sun_family = AF_UNIX;
+                // No need to add NULL terminator due to the above memset
+                (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
+                result = 0;
+            }
         }
         else
         {
-            memset(&addrInfoUn, 0, sizeof(addrInfoUn));
-            addrInfoUn.sun_family = AF_UNIX;
-            // No need to add NULL terminator due to the above memset
-            (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
-            result = 0;
+            LogError("Hostname is NULL");
+            result = MU_FAILURE;
         }
     }
 
@@ -582,7 +590,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
                 LogError("Failure: connect failure %d.", errno);
                 result = MU_FAILURE;
             }
-            else
+            else  // result == 0 || errno == EINPROGRESS
             {
                 // Async connect will return -1.
                 result = 0;
