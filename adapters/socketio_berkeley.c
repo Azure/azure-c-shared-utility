@@ -520,48 +520,55 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     }
     else
     {
-        size_t hostname_len = strlen(socket_io_instance->hostname);
-        if (hostname_len + 1 > sizeof(addrInfoUn.sun_path))
+        if (socket_io_instance->hostname != NULL)
         {
-            LogError("Hostname %s is too long for a unix socket (max len = %lu)", socket_io_instance->hostname, (unsigned long)sizeof(addrInfoUn.sun_path));
-            result = MU_FAILURE;
+            size_t hostname_len = strlen(socket_io_instance->hostname);
+            if (hostname_len + 1 > sizeof(addrInfoUn.sun_path))
+            {
+                LogError("Hostname %s is too long for a unix socket (max len = %lu)", socket_io_instance->hostname, (unsigned long)sizeof(addrInfoUn.sun_path));
+                result = MU_FAILURE;
+            }
+            else
+            {
+                memset(&addrInfoUn, 0, sizeof(addrInfoUn));
+                addrInfoUn.sun_family = AF_UNIX;
+                // No need to add NULL terminator due to the above memset
+                (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
+                result = 0;
+            }
         }
         else
         {
-            memset(&addrInfoUn, 0, sizeof(addrInfoUn));
-            addrInfoUn.sun_family = AF_UNIX;
-            // No need to add NULL terminator due to the above memset
-            (void)memcpy(addrInfoUn.sun_path, socket_io_instance->hostname, hostname_len);
-            result = 0;
+            LogError("Hostname is NULL");
+            result = MU_FAILURE;
         }
     }
 
-    if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
-    {
-        socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-    }
-    else
-    {
-        socket_io_instance->socket = socket(AF_UNIX, SOCK_STREAM, 0);
-    }
-
-    if (socket_io_instance->socket < SOCKET_SUCCESS)
-    {
-        LogError("Failure: socket create failure %d.", socket_io_instance->socket);
-        result = MU_FAILURE;
-    }
-#ifndef __APPLE__
-    else if (socket_io_instance->target_mac_address != NULL &&
-                set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
-    {
-        LogError("Failure: failed selecting target network interface (MACADDR=%s).", socket_io_instance->target_mac_address);
-        result = MU_FAILURE;
-    }
-#endif //__APPLE__
-
     if(result == 0)
     {
-        if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
+        if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
+        {
+            socket_io_instance->socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+        }
+        else
+        {
+            socket_io_instance->socket = socket(AF_UNIX, SOCK_STREAM, 0);
+        }
+
+        if (socket_io_instance->socket < SOCKET_SUCCESS)
+        {
+            LogError("Failure: socket create failure %d.", socket_io_instance->socket);
+            result = MU_FAILURE;
+        }
+        #ifndef __APPLE__
+        else if (socket_io_instance->target_mac_address != NULL &&
+                    set_target_network_interface(socket_io_instance->socket, socket_io_instance->target_mac_address) != 0)
+        {
+            LogError("Failure: failed selecting target network interface (MACADDR=%s).", socket_io_instance->target_mac_address);
+            result = MU_FAILURE;
+        }
+        #endif //__APPLE__
+        else if ((-1 == (flags = fcntl(socket_io_instance->socket, F_GETFL, 0))) ||
             (fcntl(socket_io_instance->socket, F_SETFL, flags | O_NONBLOCK) == -1))
         {
             LogError("Failure: fcntl failure.");
@@ -583,7 +590,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
                 LogError("Failure: connect failure %d.", errno);
                 result = MU_FAILURE;
             }
-            else
+            else  // result == 0 || errno == EINPROGRESS
             {
                 // Async connect will return -1.
                 result = 0;
