@@ -472,7 +472,7 @@ SOURCE_GROUP(devdoc FILES ${aziotsharedutil_md_files})
 
 # Add ignore deprecated functions so we may use 1.1.1 APIs
 # in OpenSSL 3
-if(LINUX)
+if(LINUX OR MACOSX)
   set_property(
     SOURCE
       ${CMAKE_CURRENT_LIST_DIR}/adapters/tlsio_openssl.c
