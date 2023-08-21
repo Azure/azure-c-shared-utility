@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstddef>
 #else
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #endif
