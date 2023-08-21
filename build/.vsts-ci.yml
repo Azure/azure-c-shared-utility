@@ -477,7 +477,7 @@ jobs:
 - job: OSX
   displayName: OSX
   pool:
-    vmImage: 'macOS-11'
+    vmImage: 'macOS-12'
   steps:
   - script: |
      if [ -f "jenkins/osx_gcc_openssl.sh" ]
@@ -512,7 +512,7 @@ jobs:
 - job: xcodenative
   displayName: XCode Native
   pool:
-    vmImage: 'macOS-11'
+    vmImage: 'macOS-12'
   steps:
   - script: |
      if [ -f "jenkins/osx_xcode_native.sh" ]
