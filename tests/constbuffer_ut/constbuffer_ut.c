@@ -13,8 +13,6 @@
 #endif
 
 #include "azure_macro_utils/macro_utils.h"
-#include "umock_c/umock_c.h"
-#include "azure_c_shared_utility/buffer_.h"
 #include "testrunnerswitcher.h"
 
 void* my_gballoc_malloc(size_t size)
