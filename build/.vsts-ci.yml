@@ -51,11 +51,10 @@ jobs:
 - job: windowsx86
   displayName: Windows x86
   pool:
-    name: 'sdk-c--win-vs2017'
+    name: 'sdk-c--win-vs2022'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd)
     displayName: 'Build'
   - script: |
@@ -83,12 +82,11 @@ jobs:
     CodeQL.Enabled: true
     CodeQL.Language: cpp
   pool:
-    name: 'sdk-c--win-vs2017'
+    name: 'sdk-c--win-vs2022'
   displayName: 'Windows x64'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd --platform x64)
     displayName: 'Build'
   - script: |
@@ -117,11 +115,10 @@ jobs:
 - job: windowsdynamic
   displayName: Windows Dynamic
   pool:
-    name: 'sdk-c--win-vs2017'
+    name: 'sdk-c--win-vs2022'
   steps:
   - script: |
      if exist jenkins\windows_c_build_as_dynamic.cmd (
-      call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c_build_as_dynamic.cmd)
     displayName: 'Build'
     env:
