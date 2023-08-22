@@ -8,8 +8,8 @@ set(SHARED_UTIL_REAL_TEST_FOLDER ${CMAKE_CURRENT_LIST_DIR}/real_test_files CACHE
 
 
 if(MACOSX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wstrict-prototypes")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wstrict-prototypes")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-strict-prototypes")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-strict-prototypes")
 endif()
 
 if(${run_unittests})
