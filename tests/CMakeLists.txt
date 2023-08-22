@@ -47,7 +47,7 @@ if(${run_unittests})
     endif()
 
     #normally, with proper include paths, the below tests can be run under windows too.
-    if(${use_openssl})
+    if(${use_openssl} AND NOT MACOSX)
         add_subdirectory(x509_openssl_ut/engine)
         add_subdirectory(x509_openssl_ut/no_engine)
     endif()
