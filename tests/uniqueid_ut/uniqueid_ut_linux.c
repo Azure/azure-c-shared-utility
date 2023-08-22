@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #endif
 
+#include <stdio.h>
 #include "testrunnerswitcher.h"
 #include "azure_c_shared_utility/uniqueid.h"
 
