@@ -74,7 +74,6 @@ option(no_logging "disable logging (default is OFF)" OFF)
 if (MACOSX)
     if (${use_openssl})
         set(use_socketio ON)
-        add_definitions(-DOPENSSL_NO_DEPRECATED)
     else()
         # MACOSX only has native tls and open ssl, so this must be the native apple tls
         set(use_applessl ON)
