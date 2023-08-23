@@ -86,8 +86,8 @@ if(${run_unittests})
         add_subdirectory(tlsio_bearssl_ut)
     endif()
 
-    set(CMAKE_C_FLAGS "-fno-builtin ${CMAKE_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "-fno-builtin ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_C_FLAGS "-U_FORTIFY_SOURCE ${CMAKE_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-U_FORTIFY_SOURCE ${CMAKE_CXX_FLAGS}")
 
     add_subdirectory(utf8_checker_ut)
     add_subdirectory(http_proxy_io_ut)
