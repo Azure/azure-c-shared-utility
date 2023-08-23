@@ -100,12 +100,6 @@ if(${run_unittests})
         add_subdirectory(constbuffer_ut)
     endif()
     add_subdirectory(uniqueid_ut)
-    set_property(
-      SOURCE
-        uniqueid_ut
-      PROPERTY COMPILE_OPTIONS
-        -nobuiltininc
-    )
 
     #Add template as reference for new tests
     add_subdirectory(template_ut)
