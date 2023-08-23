@@ -379,7 +379,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
     {
         ///arrange
         DNSRESOLVER_HANDLE result;
-        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG));  // copy hostname
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));  // copy hostname
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance
 
         ///act
@@ -401,7 +401,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         int negativeTestsInitResult = umock_c_negative_tests_init();
         ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
-        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG));  // copy hostname
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_NUM_ARG, IGNORED_NUM_ARG));  // copy hostname
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance
         umock_c_negative_tests_snapshot();
 
