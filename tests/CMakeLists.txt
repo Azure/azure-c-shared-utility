@@ -93,8 +93,8 @@ if(${run_unittests})
 
     add_subdirectory(utf8_checker_ut)
     add_subdirectory(http_proxy_io_ut)
-    add_subdirectory(dns_resolver_ut)
     if(DEFINED LINUX)
+        add_subdirectory(dns_resolver_ut)
         add_subdirectory(socket_async_ut)
     endif()
 
