@@ -187,7 +187,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
     TEST_FUNCTION(dns_resolver__is_complete_repeated_call__succeeds)
     {
         ///arrange
-        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", 53, NULL);
         // We're calling this twice
         bool result = dns_resolver_is_lookup_complete(dns);
         uint32_t ipv4 = dns_resolver_get_ipv4(dns);
@@ -220,7 +220,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
     {
         ///arrange
         bool result;
-        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", 53, NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
@@ -240,7 +240,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         ///arrange
         bool result;
         uint32_t ipv4;
-        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", 53, NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         result = dns_resolver_is_lookup_complete(dns);
@@ -261,7 +261,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
     {
         ///arrange
         bool result;
-        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", 53, NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(GETADDRINFO_FAIL);
 
@@ -281,7 +281,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         ///arrange
         bool result;
         uint32_t ipv4;
-        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", 53, NULL);
         umock_c_reset_all_calls();
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(GETADDRINFO_FAIL);
         result = dns_resolver_is_lookup_complete(dns);
@@ -314,7 +314,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
     TEST_FUNCTION(dns_resolver__get_ipv4_too_early__fails)
     {
         ///arrange
-        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", 53, NULL);
 
         ///act
         uint32_t result = dns_resolver_get_ipv4(dns);
@@ -355,7 +355,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
     TEST_FUNCTION(dns_resolver__destroy__success)
     {
         ///arrange
-        DNSRESOLVER_HANDLE result = dns_resolver_create("fake.com", NULL);
+        DNSRESOLVER_HANDLE result = dns_resolver_create("fake.com", 53, NULL);
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_NUM_ARG));  // copy hostname
@@ -377,7 +377,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));  // instance
 
         ///act
-        result = dns_resolver_create("fake.com", NULL);
+        result = dns_resolver_create("fake.com", 53, NULL);
 
         ///assert
         ASSERT_IS_NOT_NULL(result);
@@ -407,7 +407,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
             umock_c_negative_tests_fail_call(i);
 
             ///act
-            result = dns_resolver_create("fake.com", NULL);
+            result = dns_resolver_create("fake.com", 53, NULL);
 
             ///assert
             ASSERT_IS_NULL(result);
@@ -423,7 +423,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         ///arrange
 
         ///act
-        DNSRESOLVER_HANDLE result = dns_resolver_create(NULL, NULL);
+        DNSRESOLVER_HANDLE result = dns_resolver_create(NULL, 53, NULL);
 
         ///assert
         ASSERT_IS_NULL(result, "Unexpected success with NULL hostname");
