@@ -93,9 +93,9 @@ if(${run_unittests})
 
     add_subdirectory(utf8_checker_ut)
     add_subdirectory(http_proxy_io_ut)
-    if(NOT DEFINED MACOSX)
+    add_subdirectory(dns_resolver_ut)
+    if(NOT DEFINED MACOSX OR NOT DEFINED WIN32)
         add_subdirectory(socket_async_ut)
-        add_subdirectory(dns_resolver_ut)
     endif()
 
     #Add template as reference for new tests
