@@ -86,8 +86,8 @@ if(${run_unittests})
         add_subdirectory(tlsio_bearssl_ut)
     endif()
 
-    set(CMAKE_C_FLAGS "-nobuiltininc ${CMAKE_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "-nobuiltininc ${CMAKE_CXX_FLAGS}")
+    #set(CMAKE_C_FLAGS "-nobuiltininc ${CMAKE_C_FLAGS}")
+    #set(CMAKE_CXX_FLAGS "-nobuiltininc ${CMAKE_CXX_FLAGS}")
 
     add_subdirectory(utf8_checker_ut)
     add_subdirectory(http_proxy_io_ut)
@@ -100,6 +100,12 @@ if(${run_unittests})
         add_subdirectory(constbuffer_ut)
     endif()
     add_subdirectory(uniqueid_ut)
+    set_property(
+      SOURCE
+        uniqueid_ut
+      PROPERTY COMPILE_OPTIONS
+        -nobuiltininc
+    )
 
     #Add template as reference for new tests
     add_subdirectory(template_ut)
