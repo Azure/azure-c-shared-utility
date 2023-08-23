@@ -39,9 +39,9 @@ void* my_gballoc_malloc(size_t size)
     return malloc(size);
 }
 
-void* my_gballoc_calloc(size_t size)
+void* my_gballoc_calloc(size_t nmemb, size_t size)
 {
-    return calloc(size);
+    return calloc(nmemb, size);
 }
 
 void* my_gballoc_realloc(void* ptr, size_t size)
