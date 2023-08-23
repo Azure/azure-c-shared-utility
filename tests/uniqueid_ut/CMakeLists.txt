@@ -24,8 +24,6 @@ set(${uniqueid_ut_test_file}_h_files
 if(APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_search_module(UUID REQUIRED uuid)
-    set(CMAKE_C_FLAGS "-nobuiltininc ${CMAKE_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "-nobuiltininc ${CMAKE_CXX_FLAGS}")
 endif()
 
 if(WIN32)
@@ -37,3 +35,5 @@ elseif(UNIX)
         build_c_test_artifacts(${uniqueid_ut_test_file} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS uuid)
     endif()
 endif()
+
+compile_c_test_artifacts_as(${theseTestsName} C99)

@@ -86,9 +86,6 @@ if(${run_unittests})
         add_subdirectory(tlsio_bearssl_ut)
     endif()
 
-    #set(CMAKE_C_FLAGS "-nobuiltininc ${CMAKE_C_FLAGS}")
-    #set(CMAKE_CXX_FLAGS "-nobuiltininc ${CMAKE_CXX_FLAGS}")
-
     add_subdirectory(utf8_checker_ut)
     add_subdirectory(http_proxy_io_ut)
     if(NOT DEFINED MACOSX)
