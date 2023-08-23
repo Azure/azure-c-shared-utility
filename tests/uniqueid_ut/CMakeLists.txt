@@ -36,4 +36,4 @@ elseif(UNIX)
     endif()
 endif()
 
-compile_c_test_artifacts_as(${theseTestsName} C99)
+compile_c_test_artifacts_as(${uniqueid_ut_test_file} C99)
