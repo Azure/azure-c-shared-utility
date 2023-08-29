@@ -22,9 +22,9 @@ resources:
   - container: linux-c-ubuntu-mbed
     endpoint: csdk-containers
     image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-mbed:latest
-  - container: linux-c-debian
+  - container: linux-c-debian-buster
     endpoint: csdk-containers
-    image: csdkcontainerregistry.azurecr.io/linux-c-debian:latest
+    image: csdkcontainerregistry.azurecr.io/linux-c-debian-buster:latest
   - container: raspberrypi-c-buster
     endpoint: csdk-containers
     image: csdkcontainerregistry.azurecr.io/raspberrypi-c-buster:brown
@@ -330,10 +330,10 @@ jobs:
       testRunTitle: 'cares'
     condition: succeededOrFailed()
 - job: debian
-  container: linux-c-debian
+  container: linux-c-debian-buster
   pool: 
       name: 'sdk-c--ubuntu-22'
-  displayName: 'Linux Debian'
+  displayName: 'Linux Debian (Buster)'
   steps:
   - script: |
      if [ -f "jenkins/debian_c.sh" ]
