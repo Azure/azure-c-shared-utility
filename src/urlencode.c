@@ -121,6 +121,11 @@ static size_t calculateDecodedStringSize(const char* encodedString, size_t len)
         size_t i = 0;
         while (i < len)
         {
+            //plus sign is decoded as space
+            if (encodedString[i] == '+'){
+                decodedSize++;
+                next_step = 1;
+            }else
             //percent encoded character
             if (encodedString[i] == '%')
             {
@@ -185,7 +190,11 @@ static void createDecodedString(const char* input, size_t input_size, char* outp
     {
         if (input[i] != '%')
         {
-            *output++ = input[i];
+            if (input[i]=='+')
+            { 
+                *output++ = ' ';    
+            }else
+                *output++ = input[i];
             i++;
         }
         else

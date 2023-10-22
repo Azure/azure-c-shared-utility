@@ -1293,4 +1293,24 @@ TEST_FUNCTION(URL_Decode_Extended_ASCII_chars)
     }
 }
 
+TEST_FUNCTION(Decode_plus_as_space)
+{
+    //arrange
+    STRING_HANDLE decodedString;
+    STRING_HANDLE newString = STRING_new();
+    ASSERT_ARE_EQUAL(int, 0, STRING_concat(newString, "hello+world")); 
+
+    //act
+    decodedString = URL_Decode(newString);
+
+    //assert
+    ASSERT_IS_NOT_NULL(decodedString);
+    ASSERT_ARE_EQUAL(char_ptr, "hello world", STRING_c_str(decodedString));
+
+    //cleanup
+    STRING_delete(newString);
+    STRING_delete(decodedString)
+}
+
+
 END_TEST_SUITE(URLEncode_UnitTests)
