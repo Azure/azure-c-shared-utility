@@ -1029,6 +1029,20 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 result = 0;
             }
         }
+         else if (strcmp(optionName, OPTION_DISABLE_TLS_VERIFICATION) == 0)
+        {
+            if (value == NULL)
+            {
+                LogError("Invalid value set for tls verification");
+                result = MU_FAILURE;
+            }
+            else
+            {
+                bool set_verification = *((bool*)(value));
+                mbedtls_ssl_conf_authmode(&tls_io_instance->config, set_verification ? MBEDTLS_SSL_VERIFY_NONE: MBEDTLS_SSL_VERIFY_REQUIRED);
+                result = 0 ;
+            }
+        }
         else
         {
             // tls_io_instance->socket_io is never NULL
