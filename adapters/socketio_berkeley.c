@@ -127,13 +127,13 @@ static void* socketio_CloneOption(const char* name, const void* value)
             }
             else
             {
-                size_t malloc_size = safe_add_size_t(strlen((char*)value) + 1);
+                size_t malloc_size = safe_add_size_t(strlen((char*)value), 1);
                 malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
                 if (malloc_size == SIZE_MAX)
                 {
                     LogError("Invalid malloc size");
                 }
-                else if ((result = malloc(malloc_size) == NULL)
+                else if ((result = malloc(malloc_size)) == NULL)
                 {
                     LogError("Failed cloning option %s (malloc failed)", name);
                 }
@@ -1197,7 +1197,6 @@ static int socketio_setaddresstype_option(SOCKET_IO_INSTANCE* socket_io_instance
 int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, const void* value)
 {
     int result;
-    size_t malloc_size;
 
     if (socket_io == NULL ||
         optionName == NULL ||
@@ -1234,6 +1233,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
             LogError("option not supported.");
             result = MU_FAILURE;
 #else
+            size_t malloc_size;
             if (strlen(value) == 0)
             {
                 LogError("option value must be a valid mac address");
