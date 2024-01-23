@@ -1,6 +1,4 @@
-LogError("Failed allocating memory for received bytes");
-tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-indicate_error(tls_io_instance);// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
