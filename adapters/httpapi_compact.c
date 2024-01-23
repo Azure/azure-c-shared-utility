@@ -1523,7 +1523,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         result = HTTPAPI_OK;
 #else
         certLen = strlen((const char*)value);
-        size_t malloc_size = safe_add_size_t(len, 1);
+        size_t malloc_size = safe_add_size_t(certLen, 1);
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
         if (malloc_size == SIZE_MAX)
         {
@@ -1551,7 +1551,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
     else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
     {
         certLen = strlen((const char*)value);
-        size_t malloc_size = safe_add_size_t(len, 1);
+        size_t malloc_size = safe_add_size_t(certLen, 1);
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
         if (malloc_size == SIZE_MAX)
         {
@@ -1578,7 +1578,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
     else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
     {
         certLen = strlen((const char*)value);
-        size_t malloc_size = safe_add_size_t(len, 1);
+        size_t malloc_size = safe_add_size_t(certLen, 1);
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
         if (malloc_size == SIZE_MAX)
         {
