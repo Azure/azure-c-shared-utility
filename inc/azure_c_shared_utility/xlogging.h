@@ -136,9 +136,11 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
             }                                                                                                                                                           \
             else                                                                                                                                                        \
             {                                                                                                                                                           \
+                char* formatWithStack;                                                                                                                                  \
                 size_t formatSize = strlen(format);                                                                                                                     \
-                char* formatWithStack = (char*)logging_malloc(formatSize + sizeof("STACK_PRINT_FORMAT"));                                                               \
-                if (formatWithStack == NULL)                                                                                                                            \
+                size_t mallocSize = formatSize + sizeof("STACK_PRINT_FORMAT");                                                                                          \
+                if (mallocSize < formatSize ||   /* int overflow check */                                                                                               \
+                    (formatWithStack = (char*)logging_malloc(mallocSize)) == NULL)                                                                                      \
                 {                                                                                                                                                       \
                     l(log_category, __FILE__, FUNC_NAME, __LINE__, log_options, format, __VA_ARGS__);                                                                   \
                 }                                                                                                                                                       \

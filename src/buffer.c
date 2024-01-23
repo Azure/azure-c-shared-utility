@@ -228,8 +228,14 @@ int BUFFER_append_build(BUFFER_HANDLE handle, const unsigned char* source, size_
         else
         {
             /* Codes_SRS_BUFFER_07_032: [ if handle->buffer is not NULL BUFFER_append_build shall realloc the buffer to be the handle->size + size ] */
-            unsigned char* temp = (unsigned char*)realloc(handle->buffer, handle->size + size);
-            if (temp == NULL)
+            unsigned char* temp;
+            size_t malloc_size = safe_add_size_t(handle->size, size);
+            if (malloc_size == SIZE_MAX)
+            {
+                LogError("Invalid realloc size");
+                result = MU_FAILURE;
+            }
+            if ((temp = (unsigned char*)realloc(handle->buffer, malloc_size)) == NULL)
             {
                 /* Codes_SRS_BUFFER_07_035: [ If any error is encountered BUFFER_append_build shall return a non-null value. ] */
                 LogError("Failure reallocating temporary buffer");
@@ -357,9 +363,15 @@ int BUFFER_enlarge(BUFFER_HANDLE handle, size_t enlargeSize)
     }
     else
     {
+        unsigned char* temp;
         BUFFER* b = (BUFFER*)handle;
-        unsigned char* temp = (unsigned char*)realloc(b->buffer, b->size + enlargeSize);
-        if (temp == NULL)
+        size_t malloc_size = safe_add_size_t(b->size, enlargeSize);
+        if (malloc_size == SIZE_MAX)
+        {
+            LogError("Failure: invalid realloc size.");
+            result = MU_FAILURE;
+        }
+        else if ((temp = (unsigned char*)realloc(b->buffer, malloc_size)) == NULL)
         {
             /* Codes_SRS_BUFFER_07_018: [BUFFER_enlarge shall return a nonzero result if any error is encountered.] */
             LogError("Failure: allocating temp buffer.");
@@ -494,8 +506,14 @@ int BUFFER_append(BUFFER_HANDLE handle1, BUFFER_HANDLE handle2)
             else
             {
                 // b2->size != 0, whatever b1->size is
-                unsigned char* temp = (unsigned char*)realloc(b1->buffer, b1->size + b2->size);
-                if (temp == NULL)
+                unsigned char* temp;
+                size_t malloc_size = safe_add_size_t(b1->size, b2->size);
+                if (malloc_size == SIZE_MAX)
+                {
+                    LogError("Failure: invalid realloc size.");
+                    result = MU_FAILURE;
+                }
+                else if ((temp = (unsigned char*)realloc(b1->buffer, malloc_size)) == NULL)
                 {
                     /* Codes_SRS_BUFFER_07_023: [BUFFER_append shall return a nonzero upon any error that is encountered.] */
                     LogError("Failure: allocating temp buffer.");

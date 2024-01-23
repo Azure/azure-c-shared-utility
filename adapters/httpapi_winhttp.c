@@ -16,6 +16,7 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "azure_c_shared_utility/shared_util_options.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 MU_DEFINE_ENUM_STRINGS(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES)
 
@@ -51,8 +52,19 @@ static size_t nUsersOfHTTPAPI = 0; /*used for reference counting (a weak one)*/
 
 static char* ConcatHttpHeaders(HTTP_HEADERS_HANDLE httpHeadersHandle, size_t toAlloc, size_t headersCount)
 {
-    char *result = (char*)malloc(toAlloc * sizeof(char) + 1);
     size_t i;
+    char* result;
+
+    size_t malloc_size = safe_multiply_size_t(toAlloc, sizeof(char));
+    malloc_size = safe_add_size_t(malloc_size, 1);
+    if (malloc_size == SIZE_MAX)
+    {
+        result = NULL;
+    }
+    else
+    {
+        result = (char*)malloc(malloc_size);
+    }
     
     if (result == NULL)
     {
@@ -143,7 +155,8 @@ static HTTPAPI_RESULT ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHand
                 result = HTTPAPI_STRING_PROCESSING_ERROR;
                 LogError("MultiByteToWideChar failed, GetLastError=0x%08x (result = %" PRI_MU_ENUM ")", GetLastError(), MU_ENUM_VALUE(HTTPAPI_RESULT, result));
             }
-            else if ((*httpHeaders = (wchar_t*)malloc((requiredCharactersForHeaders + 1) * sizeof(wchar_t))) == NULL)
+            else if ((requiredCharactersForHeaders + 1) == 0 ||
+                (*httpHeaders = (wchar_t*)malloc((requiredCharactersForHeaders + 1) * sizeof(wchar_t))) == NULL)
             {
                 result = HTTPAPI_ALLOC_FAILED;
                 LogError("Cannot allocate memory (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
@@ -332,7 +345,16 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
             }
             else
             {
-                hostNameTemp = (wchar_t*)malloc(sizeof(wchar_t) * hostNameTemp_size);
+                size_t malloc_size = safe_multiply_size_t(sizeof(wchar_t), hostNameTemp_size);
+                if (malloc_size == SIZE_MAX)
+                {
+                    hostNameTemp = NULL;
+                }
+                else
+                {
+                    hostNameTemp = (wchar_t*)malloc(malloc_size);
+                }
+
                 if (hostNameTemp == NULL)
                 {
                     LogError("malloc failed");
@@ -454,7 +476,8 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     const wchar_t* requestTypeString;
     size_t requiredCharactersForRelativePath;
     wchar_t* relativePathTemp = NULL;
-    
+    size_t malloc_size;
+
     if ((requestTypeString = GetHttpRequestString(requestType)) == NULL)
     {
         result = HTTPAPI_INVALID_ARG;
@@ -465,7 +488,12 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
         result = HTTPAPI_STRING_PROCESSING_ERROR;
         LogError("MultiByteToWideChar failed, GetLastError=0x%08x", GetLastError());
     }
-    else if ((relativePathTemp = (wchar_t*)malloc((requiredCharactersForRelativePath + 1) * sizeof(wchar_t))) == NULL)
+    else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(requiredCharactersForRelativePath, 1), sizeof(wchar_t))) == SIZE_MAX)
+    {
+        result = HTTPAPI_ALLOC_FAILED;
+        LogError("malloc invalid size");
+    }
+    else if ((relativePathTemp = (wchar_t*)malloc(malloc_size)) == NULL)
     {
         result = HTTPAPI_ALLOC_FAILED;
         LogError("malloc failed (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
@@ -780,7 +808,17 @@ static HTTPAPI_RESULT ReceiveResponseHeaders(HINTERNET requestHandle, HTTP_HEADE
         &responseHeadersTempLength,
         WINHTTP_NO_HEADER_INDEX);
 
-    if ((responseHeadersTemp = (wchar_t*)malloc((size_t)responseHeadersTempLength + 2)) == NULL)
+    size_t malloc_size = safe_add_size_t((size_t)responseHeadersTempLength, 2);
+    if (malloc_size == SIZE_MAX)
+    {
+        responseHeadersTemp = NULL;
+    }
+    else
+    {
+        responseHeadersTemp = (wchar_t*)malloc(malloc_size);
+    }
+
+    if (responseHeadersTemp == NULL)
     {
         result = HTTPAPI_ALLOC_FAILED;
         LogError("malloc failed: (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
@@ -816,7 +854,13 @@ static HTTPAPI_RESULT ReceiveResponseHeaders(HINTERNET requestHandle, HTTP_HEADE
                 LogError("WideCharToMultiByte failed");
                 break;
             }
-            else if ((tokenTemp = (char*)malloc(sizeof(char) * tokenTemp_size)) == NULL)
+            else if ((malloc_size = safe_multiply_size_t(sizeof(char), tokenTemp_size)) == SIZE_MAX)
+            {
+                result = HTTPAPI_ALLOC_FAILED;
+                LogError("malloc invalid size");
+                break;
+            }
+            else if ((tokenTemp = (char*)malloc(malloc_size)) == NULL)
             {
                 result = HTTPAPI_ALLOC_FAILED;
                 LogError("malloc failed");

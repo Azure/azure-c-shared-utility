@@ -27,6 +27,7 @@
 #include "mbedtls/ssl.h"
 #endif
 #include "azure_c_shared_utility/shared_util_options.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 #define TEMP_BUFFER_SIZE 1024
 
@@ -118,8 +119,17 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
         httpHandleData = (HTTP_HANDLE_DATA*)malloc(sizeof(HTTP_HANDLE_DATA));
         if (httpHandleData != NULL)
         {
-            size_t hostURL_size = strlen("https://") + strlen(hostName) + 1;
-            httpHandleData->hostURL = malloc(hostURL_size);
+            size_t hostURL_size = safe_add_size_t(strlen("https://"), strlen(hostName));
+            hostURL_size = safe_add_size_t(hostURL_size), 1);
+
+            if (malloc_size == SIZE_MAX)
+            {
+                httpHandleData->hostURL = NULL;
+            }
+            else
+            {
+                httpHandleData->hostURL = malloc(hostURL_size);
+            }
 
             if (httpHandleData->hostURL == NULL)
             {
@@ -282,7 +292,18 @@ static size_t ContentWriteFunction(void *ptr, size_t size, size_t nmemb, void *u
         (ptr != NULL) &&
         (size * nmemb > 0))
     {
-        void* newBuffer = realloc(responseContentBuffer->buffer, responseContentBuffer->bufferSize + (size * nmemb));
+        size_t malloc_size = safe_add_size_t(responseContentBuffer->bufferSize, (size * nmemb));
+
+        void* newBuffer;
+        if (malloc_size == SIZE_MAX)
+        {
+            newBuffer = NULL;
+        }
+        else
+        {
+            newBuffer = realloc(responseContentBuffer->buffer, malloc_size);
+        }
+
         if (newBuffer != NULL)
         {
             responseContentBuffer->buffer = newBuffer;
@@ -452,8 +473,17 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     else
     {
         char* tempHostURL;
-        size_t tempHostURL_size = strlen(httpHandleData->hostURL) + strlen(relativePath) + 1;
-        tempHostURL = malloc(tempHostURL_size);
+        size_t tempHostURL_size = safe_add_size_t(strlen(httpHandleData->hostURL) + strlen(relativePath));
+        tempHostURL_size = safe_add_size_t(tempHostURL_size, 1);
+        if (malloc_size == SIZE_MAX)
+        {
+            tempHostURL = NULL;
+        }
+        else
+        {
+            tempHostURL = malloc(tempHostURL_size);
+        }
+
         if (tempHostURL == NULL)
         {
             result = HTTPAPI_ERROR;
@@ -963,8 +993,17 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 {
                     if (proxy_data->username != NULL && proxy_data->password != NULL)
                     {
-                        size_t authLen = strlen(proxy_data->username)+strlen(proxy_data->password)+1;
-                        proxy_auth = malloc(authLen+1);
+                        size_t authLen = safe_add_size_t(strlen(proxy_data->username), strlen(proxy_data->password));
+                        size_t authLen = safe_add_size_t(authLen, 2);
+                        if (malloc_size == SIZE_MAX)
+                        {
+                            proxy_auth = NULL;
+                        }
+                        else
+                        {
+                            proxy_auth = malloc(authLen);
+                        }
+
                         if (proxy_auth == NULL)
                         {
                             LogError("failure allocating proxy authentication");

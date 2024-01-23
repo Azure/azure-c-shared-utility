@@ -21,6 +21,7 @@
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 #define TLSIO_STATE_VALUES                        \
     TLSIO_STATE_NOT_OPEN,                         \
@@ -506,6 +507,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
         }
         else
         {
+            unsigned char* out_buffer;
             SecPkgContext_StreamSizes  sizes;
             SECURITY_STATUS status = QueryContextAttributes(&tls_io_instance->security_context, SECPKG_ATTR_STREAM_SIZES, &sizes);
             if (status != SEC_E_OK)
@@ -517,9 +519,14 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
             {
                 SecBuffer security_buffers[4];
                 SecBufferDesc security_buffers_desc;
-                size_t needed_buffer = sizes.cbHeader + size + sizes.cbTrailer;
-                unsigned char* out_buffer = (unsigned char*)malloc(needed_buffer);
-                if (out_buffer == NULL)
+                size_t needed_buffer = safe_add_size_t(sizes.cbHeader, size);
+                needed_buffer = safe_add_size_t(needed_buffer, sizes.cbTrailer);
+                if (needed_buffer == SIZE_MAX)
+                {
+                    LogError("invalid malloc size");
+                    result = MU_FAILURE;
+                }
+                else if ((out_buffer = (unsigned char*)malloc(needed_buffer)) == NULL)
                 {
                     LogError("malloc failed");
                     result = MU_FAILURE;
@@ -1089,8 +1096,15 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
         {
             (void)memset(result, 0, sizeof(TLS_IO_INSTANCE));
 
-            result->host_name = (SEC_TCHAR*)malloc(sizeof(SEC_TCHAR) * (1 + strlen(tls_io_config->hostname)));
-            if (result->host_name == NULL)
+            size_t malloc_size = safe_add_size_t(strlen(tls_io_config->hostname), 1);
+            malloc_size = safe_multiply_size_t(malloc_size, sizeof(SEC_TCHAR));
+            if (malloc_size == SIZE_MAX)
+            {
+                LogError("invalid malloc size");
+                free(result);
+                result = NULL;
+            }
+            else if ((result->host_name = (SEC_TCHAR*)malloc(malloc_size)) == NULL)
             {
                 LogError("malloc failed");
                 free(result);

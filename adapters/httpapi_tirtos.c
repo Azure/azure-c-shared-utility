@@ -10,6 +10,7 @@
 #include "azure_c_shared_utility/httpapi.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 #define CONTENT_BUF_LEN     128
 
@@ -198,7 +199,16 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
         }
 
         if (cnt < offset + ret) {
-            hname = (char *)realloc(hname, offset + ret);
+            size_t malloc_size = safe_add_size_t(offset, ret);
+            if (malloc_size == SIZE_MAX)
+            {
+                hname = NULL;
+            }
+            else
+            {
+                hname = (char*)realloc(hname, offset + ret);
+            }
+
             if (hname == NULL) {
                 LogError("Failed reallocating memory");
                 ret = HTTPAPI_ALLOC_FAILED;
