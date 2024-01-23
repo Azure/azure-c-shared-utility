@@ -326,7 +326,7 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
     {
         LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
     }
-    else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(strlen(ifr->ifr_name, 1), sizeof(char)))) == SIZE_MAX)
+    else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(strlen(ifr->ifr_name), 1), sizeof(char))) == SIZE_MAX)
     {
         LogError("invalid malloc size");
         destroy_network_interface_descriptions(result);
