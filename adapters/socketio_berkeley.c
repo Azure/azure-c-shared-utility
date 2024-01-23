@@ -527,7 +527,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     {
         if(!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
         {
-            LogError("DNS did not resolve IP address");
+            LogError("DNS did not resolve hostname IP address. Hostname:%s", socket_io_instance->hostname);
             result = MU_FAILURE;
         }
         else
@@ -536,7 +536,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
 
             if (addr == NULL)
             {
-                LogError("DNS resolution failed");
+                LogError("DNS resolution failed. Hostname:%s", socket_io_instance->hostname);
                 result = MU_FAILURE;
             } 
             else 
