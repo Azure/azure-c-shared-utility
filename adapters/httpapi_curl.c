@@ -120,9 +120,9 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
         if (httpHandleData != NULL)
         {
             size_t hostURL_size = safe_add_size_t(strlen("https://"), strlen(hostName));
-            hostURL_size = safe_add_size_t(hostURL_size), 1);
+            hostURL_size = safe_add_size_t(hostURL_size, 1);
 
-            if (malloc_size == SIZE_MAX)
+            if (hostURL_size == SIZE_MAX)
             {
                 httpHandleData->hostURL = NULL;
             }
@@ -473,9 +473,9 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
     else
     {
         char* tempHostURL;
-        size_t tempHostURL_size = safe_add_size_t(strlen(httpHandleData->hostURL) + strlen(relativePath));
+        size_t tempHostURL_size = safe_add_size_t(strlen(httpHandleData->hostURL), strlen(relativePath));
         tempHostURL_size = safe_add_size_t(tempHostURL_size, 1);
-        if (malloc_size == SIZE_MAX)
+        if (tempHostURL_size == SIZE_MAX)
         {
             tempHostURL = NULL;
         }
@@ -994,8 +994,8 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                     if (proxy_data->username != NULL && proxy_data->password != NULL)
                     {
                         size_t authLen = safe_add_size_t(strlen(proxy_data->username), strlen(proxy_data->password));
-                        size_t authLen = safe_add_size_t(authLen, 2);
-                        if (malloc_size == SIZE_MAX)
+                        authLen = safe_add_size_t(authLen, 2);
+                        if (authLen == SIZE_MAX)
                         {
                             proxy_auth = NULL;
                         }
