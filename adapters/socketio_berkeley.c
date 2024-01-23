@@ -326,7 +326,7 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
     {
         LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
     }
-    else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(strlen(ifr->ifr_name, 1)), sizeof(char))) == SIZE_MAX)
+    else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(strlen(ifr->ifr_name, 1), sizeof(char)))) == SIZE_MAX)
     {
         LogError("invalid malloc size");
         destroy_network_interface_descriptions(result);
@@ -1244,7 +1244,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
                 LogError("invalid malloc size");
                 result = MU_FAILURE;
             }
-            else if ((socket_io_instance->target_mac_address = (char*)malloc(malloc_size) == NULL)
+            else if ((socket_io_instance->target_mac_address = (char*)malloc(malloc_size)) == NULL)
             {
                 LogError("failed setting net_interface_mac_address option (malloc failed)");
                 result = MU_FAILURE;
