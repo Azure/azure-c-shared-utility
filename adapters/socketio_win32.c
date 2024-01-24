@@ -340,6 +340,7 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                     size_t malloc_size = safe_add_size_t(strlen(socket_io_config->hostname), 1);
                     if (malloc_size == SIZE_MAX)
                     {
+                        LogError("Invalid malloc size");
                         result->hostname = NULL;
                     }
                     else

@@ -29,8 +29,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, char*, vsprintf_char, const char*, format, va_list
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
         if (malloc_size == SIZE_MAX)
         {
-            result = NULL;
             LogError("invalid malloc size");
+            result = NULL;
             /*return as is*/
         }
         else if ((result = (char*)malloc(malloc_size)) == NULL)
@@ -62,12 +62,12 @@ IMPLEMENT_MOCKABLE_FUNCTION(, wchar_t*, vsprintf_wchar, const wchar_t*, format, 
     }
     else
     {
-        size_t malloc_size = safe_add_size_t((unsigned long long)neededSize, 1);
+        size_t malloc_size = safe_add_size_t(size_tneededSize, 1);
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(wchar_t));
         if (malloc_size == SIZE_MAX)
         {
-            result = NULL;
             LogError("invalid malloc size");
+            result = NULL;
             /*return as is*/
         }
         else if ((result = (wchar_t*)malloc(malloc_size)) == NULL)
@@ -188,8 +188,8 @@ IMPLEMENT_MOCKABLE_FUNCTION(, wchar_t*, mbs_to_wcs, const char*, source)
             malloc_size = safe_multiply_size_t(malloc_size, sizeof(wchar_t));
             if (malloc_size == SIZE_MAX)
             {
-                result = NULL;
                 LogError("invalid malloc size");
+                result = NULL;
                 /*return as is*/
             }
             else if ((result = (wchar_t*)malloc(malloc_size)) == NULL)

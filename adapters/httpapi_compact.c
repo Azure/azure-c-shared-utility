@@ -435,6 +435,7 @@ static void on_bytes_received(void* context, const unsigned char* buffer, size_t
             size_t malloc_size = http_instance->received_bytes_count + size;
             if (malloc_size < size)
             {
+                // check for int overflow
                 new_received_bytes = NULL;
                 LogError("Invalid size parameter");
             }
@@ -1312,18 +1313,18 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
         result = HTTPAPI_OK;
         http_instance->certificate = (char*)value;
 #else
-        int len;
 
         if (http_instance->certificate)
         {
             free(http_instance->certificate);
         }
 
-        len = (int)strlen((char*)value);
+        size_t len = strlen((char*)value);
         size_t malloc_size = safe_add_size_t(len, 1);
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
         if (malloc_size == SIZE_MAX)
         {
+            LogError("Invalid malloc size");
             http_instance->certificate = NULL;
         }
         else
@@ -1347,17 +1348,17 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
     }
     else if (strcmp(SU_OPTION_X509_CERT, optionName) == 0 || strcmp(OPTION_X509_ECC_CERT, optionName) == 0)
     {
-        int len;
         if (http_instance->x509ClientCertificate)
         {
             free(http_instance->x509ClientCertificate);
         }
 
-        len = (int)strlen((char*)value);
+        size_t len = strlen((char*)value);
         size_t malloc_size = safe_add_size_t(len, 1);
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
         if (malloc_size == SIZE_MAX)
         {
+            LogError("Invalid malloc size");
             http_instance->x509ClientCertificate = NULL;
         }
         else
@@ -1380,17 +1381,17 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
     }
     else if (strcmp(SU_OPTION_X509_PRIVATE_KEY, optionName) == 0 || strcmp(OPTION_X509_ECC_KEY, optionName) == 0)
     {
-        int len;
         if (http_instance->x509ClientPrivateKey)
         {
             free(http_instance->x509ClientPrivateKey);
         }
 
-        len = (int)strlen((char*)value);
+        size_t len = strlen((char*)value);
         size_t malloc_size = safe_add_size_t(len, 1);
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
         if (malloc_size == SIZE_MAX)
         {
+            LogError("Invalid malloc size");
             http_instance->x509ClientPrivateKey = NULL;
         }
         else
@@ -1555,6 +1556,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
         if (malloc_size == SIZE_MAX)
         {
+            LogError("Invalid malloc size");
             tempCert = NULL;
         }
         else
@@ -1582,6 +1584,7 @@ HTTPAPI_RESULT HTTPAPI_CloneOption(const char* optionName, const void* value, co
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
         if (malloc_size == SIZE_MAX)
         {
+            LogError("Invalid malloc size");
             tempCert = NULL;
         }
         else

@@ -202,11 +202,12 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle,
             size_t malloc_size = safe_add_size_t(offset, ret);
             if (malloc_size == SIZE_MAX)
             {
+                LogError("invalid realloc size");
                 hname = NULL;
             }
             else
             {
-                hname = (char*)realloc(hname, offset + ret);
+                hname = (char*)realloc(hname, malloc_size);
             }
 
             if (hname == NULL) {

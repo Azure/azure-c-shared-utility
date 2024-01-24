@@ -521,14 +521,10 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
                 SecBufferDesc security_buffers_desc;
                 size_t needed_buffer = safe_add_size_t(sizes.cbHeader, size);
                 needed_buffer = safe_add_size_t(needed_buffer, sizes.cbTrailer);
-                if (needed_buffer == SIZE_MAX)
+                if (needed_buffer == SIZE_MAX ||
+                    (out_buffer = (unsigned char*)malloc(needed_buffer)) == NULL)
                 {
-                    LogError("invalid malloc size");
-                    result = MU_FAILURE;
-                }
-                else if ((out_buffer = (unsigned char*)malloc(needed_buffer)) == NULL)
-                {
-                    LogError("malloc failed");
+                    LogError("malloc failed, size:%zu", needed_buffer);
                     result = MU_FAILURE;
                 }
                 else
@@ -1098,15 +1094,10 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
 
             size_t malloc_size = safe_add_size_t(strlen(tls_io_config->hostname), 1);
             malloc_size = safe_multiply_size_t(malloc_size, sizeof(SEC_TCHAR));
-            if (malloc_size == SIZE_MAX)
+            if (malloc_size == SIZE_MAX ||
+                (result->host_name = (SEC_TCHAR*)malloc(malloc_size)) == NULL)
             {
-                LogError("invalid malloc size");
-                free(result);
-                result = NULL;
-            }
-            else if ((result->host_name = (SEC_TCHAR*)malloc(malloc_size)) == NULL)
-            {
-                LogError("malloc failed");
+                LogError("malloc failed, size:%zu", malloc_size);
                 free(result);
                 result = NULL;
             }

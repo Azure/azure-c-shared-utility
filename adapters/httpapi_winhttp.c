@@ -59,6 +59,7 @@ static char* ConcatHttpHeaders(HTTP_HEADERS_HANDLE httpHeadersHandle, size_t toA
     malloc_size = safe_add_size_t(malloc_size, 1);
     if (malloc_size == SIZE_MAX)
     {
+        LogError("Invalid malloc size");
         result = NULL;
     }
     else
@@ -155,7 +156,7 @@ static HTTPAPI_RESULT ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHand
                 result = HTTPAPI_STRING_PROCESSING_ERROR;
                 LogError("MultiByteToWideChar failed, GetLastError=0x%08x (result = %" PRI_MU_ENUM ")", GetLastError(), MU_ENUM_VALUE(HTTPAPI_RESULT, result));
             }
-            else if ((requiredCharactersForHeaders + 1) == 0 ||
+            else if ((requiredCharactersForHeaders + 1) == 0 ||  // int overflow check
                 (*httpHeaders = (wchar_t*)malloc((requiredCharactersForHeaders + 1) * sizeof(wchar_t))) == NULL)
             {
                 result = HTTPAPI_ALLOC_FAILED;
@@ -348,6 +349,7 @@ HTTP_HANDLE HTTPAPI_CreateConnection(const char* hostName)
                 size_t malloc_size = safe_multiply_size_t(sizeof(wchar_t), hostNameTemp_size);
                 if (malloc_size == SIZE_MAX)
                 {
+                    LogError("Invalid malloc size");
                     hostNameTemp = NULL;
                 }
                 else
@@ -490,8 +492,8 @@ static HTTPAPI_RESULT InitiateWinhttpRequest(HTTP_HANDLE_DATA* handleData, HTTPA
     }
     else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(requiredCharactersForRelativePath, 1), sizeof(wchar_t))) == SIZE_MAX)
     {
-        result = HTTPAPI_ALLOC_FAILED;
         LogError("malloc invalid size");
+        result = HTTPAPI_ALLOC_FAILED;
     }
     else if ((relativePathTemp = (wchar_t*)malloc(malloc_size)) == NULL)
     {
@@ -811,6 +813,7 @@ static HTTPAPI_RESULT ReceiveResponseHeaders(HINTERNET requestHandle, HTTP_HEADE
     size_t malloc_size = safe_add_size_t((size_t)responseHeadersTempLength, 2);
     if (malloc_size == SIZE_MAX)
     {
+        LogError("Invalid malloc size");
         responseHeadersTemp = NULL;
     }
     else
@@ -856,8 +859,8 @@ static HTTPAPI_RESULT ReceiveResponseHeaders(HINTERNET requestHandle, HTTP_HEADE
             }
             else if ((malloc_size = safe_multiply_size_t(sizeof(char), tokenTemp_size)) == SIZE_MAX)
             {
+                LogError("invalid malloc size");
                 result = HTTPAPI_ALLOC_FAILED;
-                LogError("malloc invalid size");
                 break;
             }
             else if ((tokenTemp = (char*)malloc(malloc_size)) == NULL)

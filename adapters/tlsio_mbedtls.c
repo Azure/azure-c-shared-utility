@@ -213,11 +213,13 @@ static void on_underlying_io_bytes_received(void *context, const unsigned char *
         size_t malloc_size = safe_add_size_t(tls_io_instance->socket_io_read_byte_count, size);
         if (malloc_size == SIZE_MAX)
         {
+            LogError("Invalid realloc size");
             tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
             indicate_error(tls_io_instance);
         }
         else if ((new_socket_io_read_bytes = (unsigned char*)realloc(tls_io_instance->socket_io_read_bytes, malloc_size)) == NULL)
         {
+            LogError("realloc failed");
             tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
             indicate_error(tls_io_instance);
         }

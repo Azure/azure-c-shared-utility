@@ -346,15 +346,10 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
         unsigned char* mac = (unsigned char*)ifr->ifr_hwaddr.sa_data;
         size_t malloc_size = safe_multiply_size_t(sizeof(char), MAC_ADDRESS_STRING_LENGTH);
 
-        if (malloc_size == SIZE_MAX)
+        if (malloc_size == SIZE_MAX ||
+                (result->mac_address = (char*)malloc(malloc_size)) == NULL)
         {
-            LogError("invalid malloc size");
-            destroy_network_interface_descriptions(result);
-            result = NULL;
-        }
-        else if ((result->mac_address = (char*)malloc(malloc_size)) == NULL)
-        {
-            LogError("failed formatting mac address (malloc failed)");
+            LogError("failed formatting mac address (malloc failed) size:%d", malloc_size);
             destroy_network_interface_descriptions(result);
             result = NULL;
         }
@@ -770,10 +765,18 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
                 if (socket_io_config->hostname != NULL)
                 {
                     size_t malloc_size = safe_add_size_t(strlen(socket_io_config->hostname), 1);
-                    result->hostname = (char*)malloc(malloc_size);
-                    if (result->hostname != NULL)
+                    if (malloc_size == SIZE_MAX)
                     {
-                        (void)strcpy(result->hostname, socket_io_config->hostname);
+                        LogError("invalid malloc size");
+                        result->hostname = NULL;
+                    }
+                    else
+                    {
+                        result->hostname = (char*)malloc(malloc_size);
+                        if (result->hostname != NULL)
+                        {
+                            (void)strcpy(result->hostname, socket_io_config->hostname);
+                        }
                     }
 
                     result->socket = INVALID_SOCKET;
