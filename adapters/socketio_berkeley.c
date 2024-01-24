@@ -349,7 +349,7 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
         if (malloc_size == SIZE_MAX ||
                 (result->mac_address = (char*)malloc(malloc_size)) == NULL)
         {
-            LogError("failed formatting mac address (malloc failed) size:%d", malloc_size);
+            LogError("failed formatting mac address (malloc failed) size:%zu", malloc_size);
             destroy_network_interface_descriptions(result);
             result = NULL;
         }
