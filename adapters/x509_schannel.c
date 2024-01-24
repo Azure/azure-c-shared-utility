@@ -165,7 +165,7 @@ static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
     BYTE* pubKeyBuf = pPubKeyBlob->pbData + 1;
     BYTE* privKeyBuf = pPrivKeyInfo->PrivateKey.pbData;
 
-    if ((keyBlobSize == SIZE_MAX ||
+    if (keyBlobSize == SIZE_MAX ||
         (pKeyBlob = (BCRYPT_ECCKEY_BLOB*)malloc(keyBlobSize)) == NULL)
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
