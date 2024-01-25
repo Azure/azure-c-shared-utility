@@ -62,7 +62,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, wchar_t*, vsprintf_wchar, const wchar_t*, format, 
     }
     else
     {
-        size_t malloc_size = safe_add_size_t((size_t)neededSize, 1);
+        size_t malloc_size = safe_add_size_t((unsigned long long)neededSize, 1);
         malloc_size = safe_multiply_size_t(malloc_size, sizeof(wchar_t));
         if (malloc_size == SIZE_MAX)
         {
