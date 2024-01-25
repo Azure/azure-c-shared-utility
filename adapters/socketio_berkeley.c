@@ -1246,6 +1246,7 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
             {
                 LogError("invalid malloc size");
                 result = MU_FAILURE;
+                socket_io_instance->target_mac_address = NULL;
             }
             else if ((socket_io_instance->target_mac_address = (char*)malloc(malloc_size)) == NULL)
             {
