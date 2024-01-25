@@ -145,6 +145,7 @@ static HTTPAPI_RESULT ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHand
         {
             char *httpHeadersA;
             size_t requiredCharactersForHeaders;
+            size_t malloc_size;
 
             if ((httpHeadersA = ConcatHttpHeaders(httpHeadersHandle, toAlloc, headersCount)) == NULL)
             {
@@ -156,8 +157,8 @@ static HTTPAPI_RESULT ConstructHeadersString(HTTP_HEADERS_HANDLE httpHeadersHand
                 result = HTTPAPI_STRING_PROCESSING_ERROR;
                 LogError("MultiByteToWideChar failed, GetLastError=0x%08x (result = %" PRI_MU_ENUM ")", GetLastError(), MU_ENUM_VALUE(HTTPAPI_RESULT, result));
             }
-            else if ((requiredCharactersForHeaders + 1) == 0 ||  // int overflow check
-                (*httpHeaders = (wchar_t*)malloc((requiredCharactersForHeaders + 1) * sizeof(wchar_t))) == NULL)
+            else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(requiredCharactersForHeaders, 1), sizeof(wchar_t))) == SIZE_MAX ||
+                (*httpHeaders = (wchar_t*)malloc(malloc_size)) == NULL)
             {
                 result = HTTPAPI_ALLOC_FAILED;
                 LogError("Cannot allocate memory (result = %" PRI_MU_ENUM ")", MU_ENUM_VALUE(HTTPAPI_RESULT, result));
@@ -859,8 +860,8 @@ static HTTPAPI_RESULT ReceiveResponseHeaders(HINTERNET requestHandle, HTTP_HEADE
             }
             else if ((malloc_size = safe_multiply_size_t(sizeof(char), tokenTemp_size)) == SIZE_MAX)
             {
-                LogError("invalid malloc size");
                 result = HTTPAPI_ALLOC_FAILED;
+                LogError("invalid malloc size");
                 break;
             }
             else if ((tokenTemp = (char*)malloc(malloc_size)) == NULL)

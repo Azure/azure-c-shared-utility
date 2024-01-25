@@ -507,7 +507,6 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
         }
         else
         {
-            unsigned char* out_buffer;
             SecPkgContext_StreamSizes  sizes;
             SECURITY_STATUS status = QueryContextAttributes(&tls_io_instance->security_context, SECPKG_ATTR_STREAM_SIZES, &sizes);
             if (status != SEC_E_OK)
@@ -517,6 +516,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
             }
             else
             {
+                unsigned char* out_buffer;
                 SecBuffer security_buffers[4];
                 SecBufferDesc security_buffers_desc;
                 size_t needed_buffer = safe_add_size_t(sizes.cbHeader, size);
