@@ -47,6 +47,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/const_defines.h"
 #include "azure_c_shared_utility/dns_resolver.h"
+#include "azure_c_shared_utility/safe_math.h"
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -126,7 +127,13 @@ static void* socketio_CloneOption(const char* name, const void* value)
             }
             else
             {
-                if ((result = malloc(sizeof(char) * (strlen((char*)value) + 1))) == NULL)
+                size_t malloc_size = safe_add_size_t(strlen((char*)value), 1);
+                malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
+                if (malloc_size == SIZE_MAX)
+                {
+                    LogError("Invalid malloc size");
+                }
+                else if ((result = malloc(malloc_size)) == NULL)
                 {
                     LogError("Failed cloning option %s (malloc failed)", name);
                 }
@@ -313,12 +320,19 @@ static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION
 static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struct ifreq *ifr, NETWORK_INTERFACE_DESCRIPTION* previous_nid)
 {
     NETWORK_INTERFACE_DESCRIPTION* result;
+    size_t malloc_size;
 
     if ((result = (NETWORK_INTERFACE_DESCRIPTION*)malloc(sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
     {
         LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
     }
-    else if ((result->name = (char*)malloc(sizeof(char) * (strlen(ifr->ifr_name) + 1))) == NULL)
+    else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(strlen(ifr->ifr_name), 1), sizeof(char))) == SIZE_MAX)
+    {
+        LogError("invalid malloc size");
+        destroy_network_interface_descriptions(result);
+        result = NULL;
+    }
+    else if ((result->name = (char*)malloc(malloc_size)) == NULL)
     {
         LogError("failed setting interface description name (malloc failed)");
         destroy_network_interface_descriptions(result);
@@ -330,10 +344,12 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
 
         char* ip_address;
         unsigned char* mac = (unsigned char*)ifr->ifr_hwaddr.sa_data;
+        size_t malloc_size = safe_multiply_size_t(sizeof(char), MAC_ADDRESS_STRING_LENGTH);
 
-        if ((result->mac_address = (char*)malloc(sizeof(char) * MAC_ADDRESS_STRING_LENGTH)) == NULL)
+        if (malloc_size == SIZE_MAX ||
+                (result->mac_address = (char*)malloc(malloc_size)) == NULL)
         {
-            LogError("failed formatting mac address (malloc failed)");
+            LogError("failed formatting mac address (malloc failed) size:%zu", malloc_size);
             destroy_network_interface_descriptions(result);
             result = NULL;
         }
@@ -349,7 +365,13 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
             destroy_network_interface_descriptions(result);
             result = NULL;
         }
-        else if ((result->ip_address = (char*)malloc(sizeof(char) * (strlen(ip_address) + 1))) == NULL)
+        else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(strlen(ip_address), 1), sizeof(char))) == SIZE_MAX)
+        {
+            LogError("invalid malloc size");
+            destroy_network_interface_descriptions(result);
+            result = NULL;
+        }
+        else if ((result->ip_address = (char*)malloc(malloc_size)) == NULL)
         {
             LogError("failed setting the ip address (malloc failed)");
             destroy_network_interface_descriptions(result);
@@ -742,10 +764,19 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
             {
                 if (socket_io_config->hostname != NULL)
                 {
-                    result->hostname = (char*)malloc(strlen(socket_io_config->hostname) + 1);
-                    if (result->hostname != NULL)
+                    size_t malloc_size = safe_add_size_t(strlen(socket_io_config->hostname), 1);
+                    if (malloc_size == SIZE_MAX)
                     {
-                        (void)strcpy(result->hostname, socket_io_config->hostname);
+                        LogError("invalid malloc size");
+                        result->hostname = NULL;
+                    }
+                    else
+                    {
+                        result->hostname = (char*)malloc(malloc_size);
+                        if (result->hostname != NULL)
+                        {
+                            (void)strcpy(result->hostname, socket_io_config->hostname);
+                        }
                     }
 
                     result->socket = INVALID_SOCKET;
@@ -1205,12 +1236,19 @@ int socketio_setoption(CONCRETE_IO_HANDLE socket_io, const char* optionName, con
             LogError("option not supported.");
             result = MU_FAILURE;
 #else
+            size_t malloc_size;
             if (strlen(value) == 0)
             {
                 LogError("option value must be a valid mac address");
                 result = MU_FAILURE;
             }
-            else if ((socket_io_instance->target_mac_address = (char*)malloc(sizeof(char) * (strlen(value) + 1))) == NULL)
+            else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(strlen(value), 1), sizeof(char))) == SIZE_MAX)
+            {
+                LogError("invalid malloc size");
+                result = MU_FAILURE;
+                socket_io_instance->target_mac_address = NULL;
+            }
+            else if ((socket_io_instance->target_mac_address = (char*)malloc(malloc_size)) == NULL)
             {
                 LogError("failed setting net_interface_mac_address option (malloc failed)");
                 result = MU_FAILURE;

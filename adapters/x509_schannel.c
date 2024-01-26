@@ -6,6 +6,8 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/safe_math.h"
+
 #if _MSC_VER > 1500
 #include <ncrypt.h>
 #endif
@@ -153,19 +155,21 @@ static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
 {
     int result;
 #if _MSC_VER > 1500
+    BCRYPT_ECCKEY_BLOB* pKeyBlob;
     SECURITY_STATUS status;
     CRYPT_BIT_BLOB* pPubKeyBlob = &x509_handle->x509certificate_context->pCertInfo->SubjectPublicKeyInfo.PublicKey;
     CRYPT_ECC_PRIVATE_KEY_INFO* pPrivKeyInfo = (CRYPT_ECC_PRIVATE_KEY_INFO*)x509privatekeyBlob;
     DWORD pubSize = pPubKeyBlob->cbData - 1;
     DWORD privSize = pPrivKeyInfo->PrivateKey.cbData;
-    DWORD keyBlobSize = sizeof(BCRYPT_ECCKEY_BLOB) + pubSize + privSize;
+    size_t keyBlobSize = safe_add_size_t(safe_add_size_t(sizeof(BCRYPT_ECCKEY_BLOB), pubSize), privSize);
     BYTE* pubKeyBuf = pPubKeyBlob->pbData + 1;
     BYTE* privKeyBuf = pPrivKeyInfo->PrivateKey.pbData;
-    BCRYPT_ECCKEY_BLOB* pKeyBlob = (BCRYPT_ECCKEY_BLOB*)malloc(keyBlobSize);
-    if (pKeyBlob == NULL)
+
+    if (keyBlobSize == SIZE_MAX ||
+        (pKeyBlob = (BCRYPT_ECCKEY_BLOB*)malloc(keyBlobSize)) == NULL)
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-        LogError("Failed to malloc NCrypt private key blob");
+        LogError("Failed to malloc NCrypt private key blob, size:%zu", keyBlobSize);
         result = MU_FAILURE;
     }
     else
@@ -200,7 +204,7 @@ static int set_ecc_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
 
             /*Codes_SRS_X509_SCHANNEL_02_006: [ x509_schannel_create shall import the private key by calling CryptImportKey. ] */
             /*NOTE: As no WinCrypt key storage provider supports ECC keys, NCrypt is used instead*/
-            status = NCryptImportKey(x509_handle->hProv, 0, BCRYPT_ECCPRIVATE_BLOB, &ncBufDesc, &x509_handle->x509hcryptkey, (BYTE*)pKeyBlob, keyBlobSize, NCRYPT_OVERWRITE_KEY_FLAG);
+            status = NCryptImportKey(x509_handle->hProv, 0, BCRYPT_ECCPRIVATE_BLOB, &ncBufDesc, &x509_handle->x509hcryptkey, (BYTE*)pKeyBlob, (DWORD)keyBlobSize, NCRYPT_OVERWRITE_KEY_FLAG);
             if (status == ERROR_SUCCESS)
             {
                 status2 = NCryptFreeObject(x509_handle->x509hcryptkey);

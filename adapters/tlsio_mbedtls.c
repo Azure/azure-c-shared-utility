@@ -24,6 +24,7 @@
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/threadapi.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 static const char *const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
 
@@ -206,12 +207,19 @@ static void on_underlying_io_bytes_received(void *context, const unsigned char *
 {
     if (context != NULL)
     {
+        unsigned char* new_socket_io_read_bytes;
         TLS_IO_INSTANCE *tls_io_instance = (TLS_IO_INSTANCE *)context;
 
-        unsigned char *new_socket_io_read_bytes = (unsigned char *)realloc(tls_io_instance->socket_io_read_bytes, tls_io_instance->socket_io_read_byte_count + size);
-
-        if (new_socket_io_read_bytes == NULL)
+        size_t realloc_size = safe_add_size_t(tls_io_instance->socket_io_read_byte_count, size);
+        if (realloc_size == SIZE_MAX)
         {
+            LogError("Invalid realloc size");
+            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
+            indicate_error(tls_io_instance);
+        }
+        else if ((new_socket_io_read_bytes = (unsigned char*)realloc(tls_io_instance->socket_io_read_bytes, realloc_size)) == NULL)
+        {
+            LogError("realloc failed");
             tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
             indicate_error(tls_io_instance);
         }

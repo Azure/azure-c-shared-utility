@@ -33,7 +33,18 @@ static CONSTBUFFER_HANDLE CONSTBUFFER_Create_Internal(const unsigned char* sourc
     CONSTBUFFER_HANDLE result;
     /*Codes_SRS_CONSTBUFFER_02_005: [The non-NULL handle returned by CONSTBUFFER_Create shall have its ref count set to "1".]*/
     /*Codes_SRS_CONSTBUFFER_02_010: [The non-NULL handle returned by CONSTBUFFER_CreateFromBuffer shall have its ref count set to "1".]*/
-    result = (CONSTBUFFER_HANDLE)calloc(1, (sizeof(CONSTBUFFER_HANDLE_DATA) + size));
+    size_t malloc_size = sizeof(CONSTBUFFER_HANDLE_DATA) + size;
+    if (malloc_size < size)
+    {
+        result = NULL;
+        LogError("invalid size parameter");
+        /*return as is*/
+    }
+    else
+    {
+        result = (CONSTBUFFER_HANDLE)calloc(1, malloc_size);
+    }
+
     if (result == NULL)
     {
         /*Codes_SRS_CONSTBUFFER_02_003: [If creating the copy fails then CONSTBUFFER_Create shall return NULL.]*/

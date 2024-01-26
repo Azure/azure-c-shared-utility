@@ -21,6 +21,7 @@
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/const_defines.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 typedef enum TLSIO_STATE_TAG
 {
@@ -607,10 +608,11 @@ static int openssl_static_locks_install(void)
     }
     else
     {
-        openssl_locks = malloc(CRYPTO_num_locks() * sizeof(LOCK_HANDLE));
-        if (openssl_locks == NULL)
+        size_t malloc_size = safe_multiply_size_t(CRYPTO_num_locks(), sizeof(LOCK_HANDLE));
+        if (malloc_size == SIZE_MAX ||
+            (openssl_locks = malloc(malloc_size)) == NULL)
         {
-            LogError("Failed to allocate locks");
+            LogError("Failed to allocate locks, size:%zu", malloc_size);
             result = MU_FAILURE;
         }
         else
@@ -1654,9 +1656,11 @@ int tlsio_openssl_setoption(CONCRETE_IO_HANDLE tls_io, const char* optionName, c
 
             // Store the certificate
             len = strlen(cert);
-            tls_io_instance->certificate = malloc(len + 1);
-            if (tls_io_instance->certificate == NULL)
+            size_t malloc_size = safe_add_size_t(len, 1);
+            if (malloc_size == SIZE_MAX ||
+                (tls_io_instance->certificate = malloc(malloc_size)) == NULL)
             {
+                LogError("malloc failure, size:%zu", malloc_size);
                 result = MU_FAILURE;
             }
             else

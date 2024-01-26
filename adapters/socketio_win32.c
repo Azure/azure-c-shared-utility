@@ -18,6 +18,7 @@
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/dns_resolver.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 typedef enum IO_STATE_TAG
 {
@@ -336,10 +337,19 @@ CONCRETE_IO_HANDLE socketio_create(void* io_create_parameters)
             {
                 if (socket_io_config->hostname != NULL)
                 {
-                    result->hostname = (char*)malloc(strlen(socket_io_config->hostname) + 1);
-                    if (result->hostname != NULL)
+                    size_t malloc_size = safe_add_size_t(strlen(socket_io_config->hostname), 1);
+                    if (malloc_size == SIZE_MAX)
                     {
-                        (void)strcpy(result->hostname, socket_io_config->hostname);
+                        LogError("Invalid malloc size");
+                        result->hostname = NULL;
+                    }
+                    else
+                    {
+                        result->hostname = (char*)malloc(malloc_size);
+                        if (result->hostname != NULL)
+                        {
+                            (void)strcpy(result->hostname, socket_io_config->hostname);
+                        }
                     }
 
                     result->socket = INVALID_SOCKET;

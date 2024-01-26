@@ -18,6 +18,7 @@
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/shared_util_options.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 typedef enum TLSIO_STATE_ENUM_TAG
 {
@@ -303,11 +304,13 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
     if (context != NULL)
     {
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)context;
+        unsigned char* new_socket_io_read_bytes;
 
-        unsigned char* new_socket_io_read_bytes = (unsigned char*)realloc(tls_io_instance->socket_io_read_bytes, tls_io_instance->socket_io_read_byte_count + size);
-        if (new_socket_io_read_bytes == NULL)
+        size_t realloc_size = safe_add_size_t(tls_io_instance->socket_io_read_byte_count, size);
+        if (realloc_size == SIZE_MAX ||
+            (new_socket_io_read_bytes = (unsigned char*)realloc(tls_io_instance->socket_io_read_bytes, realloc_size)) == NULL)
         {
-            LogError("Failed allocating memory for received bytes");
+            LogError("Failed allocating memory for received bytes, size:%zu", realloc_size);
             tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
             indicate_error(tls_io_instance);
         }
