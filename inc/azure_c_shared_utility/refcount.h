@@ -58,7 +58,7 @@ MU_C2(REFCOUNT_, type)
 static type* REFCOUNT_TYPE_DECLARE_CREATE_WITH_EXTRA_SIZE(type)(size_t size) \
 { \
     REFCOUNT_TYPE(type)* ref_counted; \
-    size_t malloc_size = safe_add_size_t(sizeof(REFCOUNT_TYPE(type)), size); \
+    size_t malloc_size = sizeof(REFCOUNT_TYPE(type)) + size; \
     if (malloc_size < size) \
     { \
         ref_counted = NULL; \
