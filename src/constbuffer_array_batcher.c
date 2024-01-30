@@ -46,8 +46,8 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_003: [ Otherwise constbuffer_array_batcher_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
 
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_004: [ constbuffer_array_batcher_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
-            size_t malloc_size = safe_add_size_t((size_t)count, 1));
-            malloc_size = safe_multiply_size_t(mallog_size, sizeof(uint32_t));
+            size_t malloc_size = safe_add_size_t((size_t)count, 1);
+            malloc_size = safe_multiply_size_t(malloc_size, sizeof(uint32_t));
             if (malloc_size == SIZE_MAX ||
                 (header_memory = malloc(malloc_size)) == NULL)
             {
@@ -230,7 +230,7 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_unbatch(CONSTBUFFER_ARRAY_HA
                 {
                     /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_017: [ constbuffer_array_batcher_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
                     size_t malloc_size = safe_multiply_size_t(sizeof(CONSTBUFFER_ARRAY_HANDLE), batch_payload_count);
-                    if (malloc_size == MAX_SIZE ||
+                    if (malloc_size == SIZE_MAX ||
                         (result = malloc(malloc_size)) == NULL)
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_022: [ If any error occurs, constbuffer_array_batcher_unbatch shall fail and return NULL. ]*/

@@ -58,16 +58,18 @@ STRING_HANDLE STRING_clone(STRING_HANDLE handle)
         {
             STRING* source = (STRING*)handle;
             /*Codes_SRS_STRING_02_003: [If STRING_clone fails for any reason, it shall return NULL.] */
-            size_t sourceLen = strlen(source->s);
-            if ((result->s = (char*)malloc(sourceLen + 1)) == NULL)
+            size_t sourceLen = safe_add_size_t(strlen(source->s), 1);
+
+            if (sourceLen == SIZE_MAX ||
+                (result->s = (char*)malloc(sourceLen)) == NULL)
             {
-                LogError("Failure allocating clone value.");
+                LogError("Failure allocating clone value. size=%zu", sourceLen);
                 free(result);
                 result = NULL;
             }
             else
             {
-                (void)memcpy(result->s, source->s, sourceLen + 1);
+                (void)memcpy(result->s, source->s, sourceLen);
             }
         }
         else
