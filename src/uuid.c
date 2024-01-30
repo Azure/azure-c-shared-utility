@@ -112,12 +112,16 @@ char* UUID_to_string(const UUID_T* uuid)
         LogError("Invalid argument (uuid is NULL)");
         result = NULL;
     }
+    else if ((malloc_size = safe_multiply_size_t(sizeof(char), UUID_STRING_SIZE)) == SIZE_MAX)
+    {
+        LogError("Invalid malloc size");
+        result = NULL;
+    }
     // Codes_SRS_UUID_09_012: [ UUID_to_string shall allocate a valid UUID string (uuid_string) as per RFC 4122 ]
-    else if ((malloc_size = safe_multiply_size_t(sizeof(char), UUID_STRING_SIZE)) == SIZE_MAX ||
-        (result = (char*)malloc(malloc_size)) == NULL)
+    else if ((result = (char*)malloc(malloc_size)) == NULL)
     {
         // Codes_SRS_UUID_09_013: [ If uuid_string fails to be allocated, UUID_to_string shall return NULL ]
-        LogError("Failed allocating UUID string, size=%zu", malloc_size);
+        LogError("Failed allocating UUID string");
     }
     else
     {
