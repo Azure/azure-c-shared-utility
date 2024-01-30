@@ -264,7 +264,7 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_unbatch(CONSTBUFFER_ARRAY_HA
                                 else
                                 {
                                     CONSTBUFFER_HANDLE* payload_buffers;
-                                    size_t malloc_size = safe_multiply_size_t(sizeof(CONSTBUFFER_HANDLE), buffer_count);
+                                    malloc_size = safe_multiply_size_t(sizeof(CONSTBUFFER_HANDLE), buffer_count);
                                     if (malloc_size == SIZE_MAX || 
                                         (payload_buffers = malloc(malloc_size)) == NULL)
                                     {

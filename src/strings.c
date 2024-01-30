@@ -776,7 +776,7 @@ STRING_HANDLE STRING_construct_n(const char* psz, size_t n)
                 /* Codes_SRS_STRING_02_010: [In all other error cases, STRING_construct_n shall return NULL.]  */
                 else
                 {
-                    LogError("Failure allocating value. size=%zu", realloc_size);
+                    LogError("Failure allocating value. size=%zu", malloc_size);
                     free(str);
                     result = NULL;
                 }
@@ -842,7 +842,7 @@ STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
         else
         {
             /*Codes_SRS_STRING_02_023: [ Otherwise, STRING_from_BUFFER shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. ]*/
-            size_t malloc_size = safe_add_size_t(len, 1);
+            size_t malloc_size = safe_add_size_t(size, 1);
             if (malloc_size == SIZE_MAX || 
                 (result->s = (char*)malloc(malloc_size)) == NULL)
             {

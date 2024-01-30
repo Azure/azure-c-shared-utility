@@ -801,7 +801,7 @@ static size_t get_trusted_anchors(const char *certificates, size_t len, br_x509_
     }
     else
     {
-        size_t malloc_size = safe_multiply_size_t(sizeof(br_x509_trust_anchor), numb);
+        size_t malloc_size = safe_multiply_size_t(sizeof(br_x509_trust_anchor), num);
         if (malloc_size == SIZE_MAX)
         {
             LogError("Invalid buffer size for trustedanchors");
