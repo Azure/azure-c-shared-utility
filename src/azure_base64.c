@@ -243,7 +243,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     neededSize = safe_add_size_t(neededSize, (size == 0) ? (0) : ((((size - 1) / 3) + 1) * 4));
     neededSize = safe_add_size_t(neededSize, 1);
 
-    if (neededSize == 0 || neededSize == SIZSE_MAX)
+    if (neededSize == 0 || neededSize == SIZE_MAX)
     {
         result = NULL;
         LogError("Azure_Base64_Encode:: Invalid size parameter, neededSize:%zu.", neededSize);
