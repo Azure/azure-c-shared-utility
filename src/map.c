@@ -191,7 +191,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
             else
             {
                 char** undoneKeys;
-                size_t realloc_size = safe_multiply_size_t((handleData->count), sizeof(char*));
+                realloc_size = safe_multiply_size_t((handleData->count), sizeof(char*));
                 if (realloc_size == SIZE_MAX ||
                     (undoneKeys = (char**)realloc(handleData->keys, realloc_size)) == NULL)
                 {
