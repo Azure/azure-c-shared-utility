@@ -156,7 +156,7 @@ int UUID_generate(UUID_T* uuid)
     else
     {
         char* uuid_string;
-
+        size_t malloc_size;
         if ((malloc_size = safe_multiply_size_t(sizeof(char), UUID_STRING_SIZE)) == SIZE_MAX || 
             (uuid_string = (char*)malloc(malloc_size)) == NULL)
         {

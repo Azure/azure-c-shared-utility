@@ -293,7 +293,7 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                 else
                                 {
                                     size_t malloc_size = safe_multiply_size_t(sizeof(WS_INSTANCE_PROTOCOL), protocol_count);
-                                    if (malloc_size == SZIE_MAX ||
+                                    if (malloc_size == SIZE_MAX ||
                                         (result->protocols = (WS_INSTANCE_PROTOCOL*)malloc(malloc_size)) == NULL)
                                     {
                                         /* Codes_SRS_UWS_CLIENT_01_414: [ If allocating memory for the copied protocol information fails then uws_client_create shall fail and return NULL. ]*/
