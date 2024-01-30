@@ -22,7 +22,7 @@ static char* vprintf_alloc(const char* format, va_list va)
 {
     char* result;
     int neededSize = vsnprintf(NULL, 0, format, va);
-    if (neededSize < 0)
+    if (neededSize < 0 || (neededSize + 1) < 0)
     {
         result = NULL;
     }

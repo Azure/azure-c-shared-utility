@@ -14,6 +14,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 // VS 2008 does not have INFINITY and all the nice goodies...
 #if defined (TIZENRT)
@@ -712,11 +713,13 @@ int mallocAndStrcpy_s(char** destination, const char* source)
     }
     else
     {
+        char* temp;
         size_t l = strlen(source);
-        char* temp = (char*)malloc(l + 1);
+        size_t malloc_size = safe_add_size_t(l, 1);
 
         /*Codes_SRS_CRT_ABSTRACTIONS_99_037: [Upon failure to allocate memory for the destination, the function will return ENOMEM.]*/
-        if (temp == NULL)
+        if (malloc_size == SIZE_MAX ||
+            (temp = (char*)malloc(malloc_size)) == NULL)
         {
             result = ENOMEM;
         }

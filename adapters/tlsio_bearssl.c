@@ -41,6 +41,7 @@
 #include "azure_c_shared_utility/vector.h"
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/tlsio_bearssl.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 static const char *const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
 
@@ -800,7 +801,16 @@ static size_t get_trusted_anchors(const char *certificates, size_t len, br_x509_
     }
     else
     {
-        anchArray = (br_x509_trust_anchor *)malloc(sizeof(br_x509_trust_anchor) * num);
+        size_t malloc_size = safe_multiply_size_t(sizeof(br_x509_trust_anchor), numb);
+        if (malloc_size == SIZE_MAX)
+        {
+            LogError("Invalid buffer size for trustedanchors");
+            anchArray = NULL;
+        }
+        else
+        {
+            anchArray = (br_x509_trust_anchor*)malloc(malloc_size);
+        }
 
         if (anchArray == NULL)
         {

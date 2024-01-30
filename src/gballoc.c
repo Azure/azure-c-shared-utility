@@ -6,6 +6,7 @@
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 #ifndef GB_USE_CUSTOM_HEAP
 
@@ -117,7 +118,7 @@ void* gballoc_malloc(size_t size)
                 head = allocation;
 
                 g_allocations++;
-                totalSize += size;
+                totalSize = safe_add_size_t(totalSize, size);
                 /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
                 if (maxSize < totalSize)
                 {
@@ -168,12 +169,12 @@ void* gballoc_calloc(size_t nmemb, size_t size)
             {
                 /* Codes_SRS_GBALLOC_01_021: [If the underlying calloc call is successful, gballoc_calloc shall increment the total memory used with nmemb*size.] */
                 allocation->ptr = result;
-                allocation->size = nmemb * size;
+                allocation->size = safe_multiply_size_t(nmemb, size);
                 allocation->next = head;
                 head = allocation;
                 g_allocations++;
 
-                totalSize += allocation->size;
+                totalSize = safe_add_size_t(totalSize, allocation->size);
                 /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
                 if (maxSize < totalSize)
                 {
@@ -266,7 +267,7 @@ void* gballoc_realloc(void* ptr, size_t size)
                 }
 
                 /* Codes_SRS_GBALLOC_01_007: [If realloc is successful, gballoc_realloc shall also increment the total memory used value tracked by this module.] */
-                totalSize += size;
+                totalSize = safe_add_size_t(totalSize, size);
                 g_allocations++;
 
                 /* Codes_SRS_GBALLOC_01_011: [The maximum total memory used shall be the maximum of the total memory used at any point.] */
@@ -308,7 +309,7 @@ void gballoc_free(void* ptr)
             {
                 /* Codes_SRS_GBALLOC_01_008: [gballoc_free shall call the C99 free function.] */
                 free(ptr);
-                totalSize -= curr->size;
+                totalSize = safe_subtract_size_t(totalSize, curr->size);
                 if (prev != NULL)
                 {
                     prev->next = curr->next;

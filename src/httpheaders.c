@@ -9,6 +9,7 @@
 #include "azure_c_shared_utility/httpheaders.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 MU_DEFINE_ENUM_STRINGS(HTTP_HEADERS_RESULT, HTTP_HEADERS_RESULT_VALUES);
 
@@ -111,14 +112,19 @@ static HTTP_HEADERS_RESULT headers_ReplaceHeaderNameValuePair(HTTP_HEADERS_HANDL
 
             if (!replace && (existingValue != NULL))
             {
+                char* newValue;
                 size_t existingValueLen = strlen(existingValue);
                 size_t valueLen = strlen(value);
-                char* newValue = (char*)malloc(sizeof(char) * (existingValueLen + /*COMMA_AND_SPACE_LENGTH*/ 2 + valueLen + /*EOL*/ 1));
-                if (newValue == NULL)
+                size_t malloc_size = safe_add_size_t(existingValueLen, /*COMMA_AND_SPACE_LENGTH*/ 2);
+                malloc_size = safe_add_size_t(malloc_size, valueLen);
+                malloc_size = safe_add_size_t(malloc_size, /*EOL*/ 1);
+                malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
+                if (malloc_size == SIZE_MAX ||
+                    (newValue = (char*)malloc(malloc_size)) == NULL)
                 {
                     /*Codes_SRS_HTTP_HEADERS_99_015:[ The function shall return HTTP_HEADERS_ALLOC_FAILED when an internal request to allocate memory fails.]*/
                     result = HTTP_HEADERS_ALLOC_FAILED;
-                    LogError("failed to malloc , result= %" PRI_MU_ENUM "", MU_ENUM_VALUE(HTTP_HEADERS_RESULT, result));
+                    LogError("failed to malloc, size= %zu, result= %" PRI_MU_ENUM "", malloc_size, MU_ENUM_VALUE(HTTP_HEADERS_RESULT, result));
                 }
                 else
                 {
@@ -273,12 +279,17 @@ HTTP_HEADERS_RESULT HTTPHeaders_GetHeader(HTTP_HEADERS_HANDLE handle, size_t ind
             {
                 size_t keyLen = strlen(keys[index]);
                 size_t valueLen = strlen(values[index]);
-                *destination = (char*)malloc(sizeof(char) * (keyLen + /*COLON_AND_SPACE_LENGTH*/ 2 + valueLen + /*EOL*/ 1));
-                if (*destination == NULL)
+                size_t malloc_size = safe_add_size_t(keyLen, /*COLON_AND_SPACE_LENGTH*/ 2);
+                malloc_size = safe_add_size_t(malloc_size, valueLen);
+                malloc_size = safe_add_size_t(malloc_size, /*EOL*/ 1);
+                malloc_size = safe_multiply_size_t(malloc_size, sizeof(char));
+                if (malloc_size == SIZE_MAX ||
+                    (*destination = (char*)malloc(malloc_size)) == NULL)
                 {
                     /*Codes_SRS_HTTP_HEADERS_99_034:[ The function shall return HTTP_HEADERS_ERROR when an internal error occurs]*/
                     result = HTTP_HEADERS_ERROR;
-                    LogError("unable to malloc, result= %" PRI_MU_ENUM "", MU_ENUM_VALUE(HTTP_HEADERS_RESULT, result));
+                    *destination = NULL;
+                    LogError("unable to malloc, size=%zu, result= %" PRI_MU_ENUM "", malloc_size, MU_ENUM_VALUE(HTTP_HEADERS_RESULT, result));
                 }
                 else
                 {

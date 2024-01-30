@@ -8,6 +8,7 @@
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 MU_DEFINE_ENUM_STRINGS(MAP_RESULT, MAP_RESULT_VALUES);
 
@@ -162,10 +163,13 @@ MAP_HANDLE Map_Clone(MAP_HANDLE handle)
 static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
 {
     int result;
-    char** newKeys = (char**)realloc(handleData->keys, (handleData->count + 1) * sizeof(char*));
-    if (newKeys == NULL)
+    char** newKeys;
+    size_t realloc_size = safe_add_size_t(handleData->count, 1);
+    realloc_size = safe_multiply_size_t(realloc_size, sizeof(char*));
+    if (realloc_size == SIZE_MAX ||
+        (newKeys = (char**)realloc(handleData->keys, realloc_size)) == NULL)
     {
-        LogError("realloc error");
+        LogError("realloc error, size:%zu", realloc_size);
         result = MU_FAILURE;
     }
     else
@@ -173,10 +177,12 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
         char** newValues;
         handleData->keys = newKeys;
         handleData->keys[handleData->count] = NULL;
-        newValues = (char**)realloc(handleData->values, (handleData->count + 1) * sizeof(char*));
-        if (newValues == NULL)
+        size_t realloc_size = safe_add_size_t(handleData->count, 1);
+        realloc_size = safe_multiply_size_t(realloc_size, sizeof(char*));
+        if (realloc_size == SIZE_MAX ||
+            (newValues = (char**)realloc(handleData->values, realloc_size)) == NULL)
         {
-            LogError("realloc error");
+            LogError("realloc error, size:%zu", realloc_size);
             if (handleData->count == 0) /*avoiding an implementation defined behavior */
             {
                 free(handleData->keys);
@@ -184,10 +190,12 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
             }
             else
             {
-                char** undoneKeys = (char**)realloc(handleData->keys, (handleData->count) * sizeof(char*));
-                if (undoneKeys == NULL)
+                char** undoneKeys;
+                size_t realloc_size = safe_multiply_size_t((handleData->count), sizeof(char*));
+                if (realloc_size == SIZE_MAX ||
+                    (undoneKeys = (char**)realloc(handleData->keys, realloc_size)) == NULL)
                 {
-                    LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
+                    LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size, size:%zu", realloc_size);
                 }
                 else
                 {
@@ -222,20 +230,24 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
     {
         /*certainly > 1...*/
         char** undoneValues;
-        char** undoneKeys = (char**)realloc(handleData->keys, sizeof(char*)* (handleData->count - 1));
-        if (undoneKeys == NULL)
+        char** undoneKeys;
+        size_t realloc_size = safe_subtract_size_t(handleData->count, 1);
+        realloc_size = safe_multiply_size_t(realloc_size, sizeof(char*));
+
+        if (realloc_size == SIZE_MAX ||
+            (undoneKeys = (char**)realloc(realloc_size)) == NULL)
         {
-            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
+            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size, size:%zu", realloc_size);
         }
         else
         {
             handleData->keys = undoneKeys;
         }
 
-        undoneValues = (char**)realloc(handleData->values, sizeof(char*)* (handleData->count - 1));
-        if (undoneValues == NULL)
+        if (realloc_size == SIZE_MAX || 
+            (undoneValues = (char**)realloc(handleData->values, realloc_size)) == NULL)
         {
-            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size");
+            LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size, size:%zu", realloc_size);
         }
         else
         {
@@ -418,18 +430,21 @@ MAP_RESULT Map_AddOrUpdate(MAP_HANDLE handle, const char* key, const char* value
             else
             {
                 /*Codes_SRS_MAP_02_016: [If the key already exists, then Map_AddOrUpdate shall overwrite the value of the existing key with parameter value.]*/
+                char* newValue;
                 size_t index = whereIsIt - handleData->keys;
                 size_t valueLength = strlen(value);
                 /*try to realloc value of this key*/
-                char* newValue = (char*)realloc(handleData->values[index],valueLength  + 1);
-                if (newValue == NULL)
+                size_t realloc_size = safe_add_size_t(valueLength, 1);
+                if (realloc_size == SIZE_MAX || 
+                    (newValue = (char*)realloc(handleData->values[index], realloc_size)) == NULL)
                 {
+                    LogError("CATASTROPHIC error, unable to realloc, size:%zu", realloc_size);
                     result = MAP_ERROR;
                     LOG_MAP_ERROR;
                 }
                 else
                 {
-                    (void)memcpy(newValue, value, valueLength + 1);
+                    (void)memcpy(newValue, value, realloc_size);
                     handleData->values[index] = newValue;
                     /*Codes_SRS_MAP_02_019: [Otherwise, Map_AddOrUpdate shall return MAP_OK.] */
                     result = MAP_OK;

@@ -15,6 +15,7 @@
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/tlsio_options.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 
 #include <CoreFoundation/CoreFoundation.h>
@@ -694,15 +695,16 @@ static int tlsio_appleios_send_async(CONCRETE_IO_HANDLE tls_io, const void* buff
                     if (strncmp((const char*)buffer, WEBSOCKET_HEADER_START, WEBSOCKET_HEADER_START_SIZE) == 0)
                     {
                         add_no_cert_url_parameter = true;
-                        size += WEBSOCKET_HEADER_NO_CERT_PARAM_SIZE;
+                        size = safe_add_size_t(size, WEBSOCKET_HEADER_NO_CERT_PARAM_SIZE);
                     }
                 }
 
                 /* Codes_SRS_TLSIO_30_063: [ The tlsio_appleios_compact_send shall enqueue for transmission the on_send_complete, the callback_context, the size, and the contents of buffer. ]*/
-                if ((pending_transmission->bytes = (unsigned char*)malloc(size)) == NULL)
+                if (size == SIZE_MAX ||
+                    (pending_transmission->bytes = (unsigned char*)malloc(size)) == NULL)
                 {
                     /* Codes_SRS_TLSIO_30_064: [ If the supplied message cannot be enqueued for transmission, tlsio_appleios_compact_send shall log an error and return FAILURE. ]*/
-                    LogError("malloc failed");
+                    LogError("malloc failed, size:%zu", size);
                     free(pending_transmission);
                     result = MU_FAILURE;
                 }

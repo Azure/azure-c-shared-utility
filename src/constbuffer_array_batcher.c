@@ -46,11 +46,13 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_003: [ Otherwise constbuffer_array_batcher_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
 
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_004: [ constbuffer_array_batcher_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
-            header_memory = malloc(sizeof(uint32_t) * ((size_t)count + 1));
-            if (header_memory == NULL)
+            size_t malloc_size = safe_add_size_t((size_t)count, 1));
+            malloc_size = safe_multiply_size_t(mallog_size, sizeof(uint32_t));
+            if (malloc_size == SIZE_MAX ||
+                (header_memory = malloc(malloc_size)) == NULL)
             {
                 /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_010: [ If any error occurrs, constbuffer_array_batcher_batch shall fail and return NULL. ]*/
-                LogError("malloc failed");
+                LogError("malloc failed, size:%zu", malloc_size);
             }
             else
             {
@@ -73,7 +75,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                 }
 
                 /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_007: [ constbuffer_array_batcher_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
-                size_t all_buffers_array_size = (size_t)total_buffer_count + 1;
+                size_t all_buffers_array_size = safe_add_size_t((size_t)total_buffer_count, 1);
                 size_t malloc_size = safe_multiply_size_t(sizeof(CONSTBUFFER_HANDLE), (all_buffers_array_size));
 
                 if (malloc_size == SIZE_MAX)
@@ -227,11 +229,12 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_unbatch(CONSTBUFFER_ARRAY_HA
                 else
                 {
                     /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_017: [ constbuffer_array_batcher_unbatch shall allocate enough memory to hold the handles for buffer arrays that will be unbatched. ]*/
-                    result = malloc(sizeof(CONSTBUFFER_ARRAY_HANDLE) * batch_payload_count);
-                    if (result == NULL)
+                    size_t malloc_size = safe_multiply_size_t(sizeof(CONSTBUFFER_ARRAY_HANDLE), batch_payload_count);
+                    if (malloc_size == MAX_SIZE ||
+                        (result = malloc(malloc_size)) == NULL)
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_022: [ If any error occurs, constbuffer_array_batcher_unbatch shall fail and return NULL. ]*/
-                        LogError("malloc failed");
+                        LogError("malloc failed, size:%zu", malloc_size);
                     }
                     else
                     {
@@ -260,11 +263,13 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_unbatch(CONSTBUFFER_ARRAY_HA
                                 }
                                 else
                                 {
-                                    CONSTBUFFER_HANDLE* payload_buffers = malloc(sizeof(CONSTBUFFER_HANDLE) * buffer_count);
-                                    if (payload_buffers == NULL)
+                                    CONSTBUFFER_HANDLE* payload_buffers;
+                                    size_t malloc_size = safe_multiply_size_t(sizeof(CONSTBUFFER_HANDLE), buffer_count);
+                                    if (malloc_size == SIZE_MAX || 
+                                        (payload_buffers = malloc(malloc_size)) == NULL)
                                     {
                                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_022: [ If any error occurs, constbuffer_array_batcher_unbatch shall fail and return NULL. ]*/
-                                        LogError("malloc failed");
+                                        LogError("malloc failed, size:%zu", malloc_size);
                                         break;
                                     }
 
