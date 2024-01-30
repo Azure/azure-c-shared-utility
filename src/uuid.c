@@ -8,6 +8,7 @@
 #include "azure_c_shared_utility/uniqueid.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 #define UUID_STRING_LENGTH          36
 #define UUID_STRING_SIZE            (UUID_STRING_LENGTH + 1)
@@ -103,6 +104,7 @@ int UUID_from_string(const char* uuid_string, UUID_T* uuid)
 char* UUID_to_string(const UUID_T* uuid)
 {
     char* result;
+    size_t malloc_size;
 
     // Codes_SRS_UUID_09_011: [ If uuid is NULL, UUID_to_string shall return a non-zero value ]
     if (uuid == NULL)
@@ -111,10 +113,11 @@ char* UUID_to_string(const UUID_T* uuid)
         result = NULL;
     }
     // Codes_SRS_UUID_09_012: [ UUID_to_string shall allocate a valid UUID string (uuid_string) as per RFC 4122 ]
-    else if ((result = (char*)malloc(sizeof(char) * UUID_STRING_SIZE)) == NULL)
+    else if ((malloc_size = safe_multiply_size_t(sizeof(char), UUID_STRING_SIZE)) == SIZE_MAX ||
+        (result = (char*)malloc(malloc_size)) == NULL)
     {
         // Codes_SRS_UUID_09_013: [ If uuid_string fails to be allocated, UUID_to_string shall return NULL ]
-        LogError("Failed allocating UUID string");
+        LogError("Failed allocating UUID string, size=%zu", malloc_size);
     }
     else
     {
@@ -154,10 +157,11 @@ int UUID_generate(UUID_T* uuid)
     {
         char* uuid_string;
 
-        if ((uuid_string = (char*)malloc(sizeof(char) * UUID_STRING_SIZE)) == NULL)
+        if ((malloc_size = safe_multiply_size_t(sizeof(char), UUID_STRING_SIZE)) == SIZE_MAX || 
+            (uuid_string = (char*)malloc(malloc_size)) == NULL)
         {
             // Codes_SRS_UUID_09_003: [ If the UUID string fails to be obtained, UUID_generate shall fail and return a non-zero value ]
-            LogError("Failed allocating UUID string");
+            LogError("Failed allocating UUID string, size=%zu", malloc_size);
             result = MU_FAILURE;
         }
         else

@@ -8,6 +8,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 #define NIBBLE_TO_STRING(c) (char)((c) < 10 ? (c) + '0' : (c) - 10 + 'a')
 #define NIBBLE_FROM_STRING(c) (char)(ISDIGIT(c) ? (c) - '0' : TOUPPER(c) + 10 - 'A')
@@ -136,7 +137,7 @@ static size_t calculateDecodedStringSize(const char* encodedString, size_t len)
                 }
                 else
                 {
-                    decodedSize++;
+                    decodedSize = safe_add_size_t(decodedSize, 1);
                     next_step = 3;
                 }
             }
@@ -148,7 +149,7 @@ static size_t calculateDecodedStringSize(const char* encodedString, size_t len)
             //safe character
             else
             {
-                decodedSize++;
+                decodedSize = safe_add_size_t(decodedSize, 1);
                 next_step = 1;
             }
 
@@ -162,7 +163,8 @@ static size_t calculateDecodedStringSize(const char* encodedString, size_t len)
         }
         else
         {
-            decodedSize++; //add space for the null terminator
+            //add space for the null terminator
+            decodedSize = safe_add_size_t(decodedSize, 1);
         }
     }
     return decodedSize;
@@ -229,14 +231,15 @@ static STRING_HANDLE encode_url_data(const char* text)
     do
     {
         currentUnsignedChar = (unsigned char)(*iterator++);
-        lengthOfResult += URL_PrintableCharSize(currentUnsignedChar);
+        lengthOfResult = safe_add_size_t(lengthOfResult, URL_PrintableCharSize(currentUnsignedChar));
     } while (currentUnsignedChar != 0);
 
-    if ((encodedURL = (char*)malloc(lengthOfResult)) == NULL)
+    if (lengthOfResult == SIZE_MAX ||
+        (encodedURL = (char*)malloc(lengthOfResult)) == NULL)
     {
         /*Codes_SRS_URL_ENCODE_06_002: [If an error occurs during the encoding of input then URL_Encode will return NULL.]*/
         result = NULL;
-        LogError("URL_Encode:: MALLOC failure on encode.");
+        LogError("URL_Encode:: MALLOC failure on encode. size=%zu", lengthOfResult);
     }
     else
     {
