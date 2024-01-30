@@ -20,7 +20,7 @@
 #include "azure_c_shared_utility/uws_frame_encoder.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/utf8_checker.h"
-#include "azure_c_shared_utility/gb_rand.h"
+#include "azure_c_shared_utility/random.h"
 #include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/optionhandler.h"
 #include "azure_c_shared_utility/map.h"
@@ -780,7 +780,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                 /* Codes_SRS_UWS_CLIENT_01_090: [ The nonce MUST be selected randomly for each connection. ]*/
                 for (i = 0; i < sizeof(nonce); i++)
                 {
-                    nonce[i] = (unsigned char)gb_rand();
+                    nonce[i] = (unsigned char)RANDOM_generate();
                 }
 
                 /* Codes_SRS_UWS_CLIENT_01_497: [ The nonce needed for the upgrade request shall be Base64 encoded with Azure_Base64_Encode_Bytes. ]*/
