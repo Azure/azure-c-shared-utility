@@ -25,7 +25,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
     else
     {
         uint32_t i;
-        uint32_t total_buffer_count = 0;
+        size_t total_buffer_count = 0;
         uint32_t* header_memory;
 
         for (i = 0; i < count; i++)
@@ -46,7 +46,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_003: [ Otherwise constbuffer_array_batcher_batch shall obtain the number of buffers used by each CONSTBUFFER_ARRAY. ]*/
 
             /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_004: [ constbuffer_array_batcher_batch shall allocate memory for the header buffer (enough to hold the entire batch header namingly (count + 1) uint32_t values). ]*/
-            size_t malloc_size = safe_add_size_t((size_t)count, 1);
+            size_t malloc_size = safe_add_size_t(((size_t)count), 1);
             malloc_size = safe_multiply_size_t(malloc_size, sizeof(uint32_t));
             if (malloc_size == SIZE_MAX ||
                 (header_memory = malloc(malloc_size)) == NULL)
@@ -75,7 +75,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                 }
 
                 /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_007: [ constbuffer_array_batcher_batch shall allocate enough memory for all the buffer handles in all the arrays + one extra header buffer handle. ]*/
-                size_t all_buffers_array_size = safe_add_size_t((size_t)total_buffer_count, 1);
+                size_t all_buffers_array_size = safe_add_size_t(total_buffer_count, 1);
                 malloc_size = safe_multiply_size_t(sizeof(CONSTBUFFER_HANDLE), (all_buffers_array_size));
 
                 if (malloc_size == SIZE_MAX)
@@ -185,7 +185,7 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_unbatch(CONSTBUFFER_ARRAY_HA
     else
     {
         uint32_t batch_buffer_count;
-        uint32_t batch_payload_count;
+        size_t batch_payload_count;
         const CONSTBUFFER* header_buffer_content;
         uint32_t* header_buffer_memory;
 

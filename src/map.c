@@ -177,7 +177,7 @@ static int Map_IncreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
         char** newValues;
         handleData->keys = newKeys;
         handleData->keys[handleData->count] = NULL;
-        size_t realloc_size = safe_add_size_t(handleData->count, 1);
+        realloc_size = safe_add_size_t(handleData->count, 1);
         realloc_size = safe_multiply_size_t(realloc_size, sizeof(char*));
         if (realloc_size == SIZE_MAX ||
             (newValues = (char**)realloc(handleData->values, realloc_size)) == NULL)
