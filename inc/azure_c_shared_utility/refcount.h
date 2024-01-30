@@ -66,7 +66,7 @@ static type* REFCOUNT_TYPE_DECLARE_CREATE_WITH_EXTRA_SIZE(type)(size_t size) \
     else \
     { \
         ref_counted = (REFCOUNT_TYPE(type)*)malloc(malloc_size); \
-    }
+    } \
     type* result; \
     if (ref_counted == NULL) \
     { \
