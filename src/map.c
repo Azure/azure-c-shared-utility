@@ -235,7 +235,7 @@ static void Map_DecreaseStorageKeysValues(MAP_HANDLE_DATA* handleData)
         realloc_size = safe_multiply_size_t(realloc_size, sizeof(char*));
 
         if (realloc_size == SIZE_MAX ||
-            (undoneKeys = (char**)realloc(realloc_size)) == NULL)
+            (undoneKeys = (char**)realloc(handleData->keys, realloc_size)) == NULL)
         {
             LogError("CATASTROPHIC error, unable to undo through realloc to a smaller size, size:%zu", realloc_size);
         }
