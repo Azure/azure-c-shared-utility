@@ -756,8 +756,10 @@ function(set_platform_files c_shared_dir)
             set(DNS_C_FILE ${c_shared_dir}/src/dns_resolver_sync.c PARENT_SCOPE)
         endif()
 
-        if(UNIX)
+        if(UNIX AND NOT MACOSX)
           set(RANDOM_C_FILE ${c_shared_dir}/adapters/random_posix.c PARENT_SCOPE)
+        else()
+          set(RANDOM_C_FILE ${c_shared_dir}/adapters/random_stub.c PARENT_SCOPE)
         endif()
     endif()
     
