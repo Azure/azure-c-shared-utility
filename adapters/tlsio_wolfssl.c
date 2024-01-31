@@ -409,7 +409,8 @@ static int on_io_recv(WOLFSSL *ssl, char *buf, int sz, void *context)
         {
             size_t read_byte_count = safe_subtract_size_t(tls_io_instance->socket_io_read_byte_count, (size_t)result);
             (void)memcpy(buf, tls_io_instance->socket_io_read_bytes, result);
-            (void)memmove(tls_io_instance->socket_io_read_bytes, tls_io_instance->socket_io_read_bytes + result, read_byte_count);
+            size_t memmove_src = safe_add_size_t(tls_io_instance->socket_io_read_bytes, result);
+            (void)memmove(tls_io_instance->socket_io_read_bytes, memmove_src, read_byte_count);
             tls_io_instance->socket_io_read_byte_count = read_byte_count;
             if (tls_io_instance->socket_io_read_byte_count > 0)
             {
