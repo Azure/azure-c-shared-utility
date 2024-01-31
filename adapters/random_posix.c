@@ -14,7 +14,7 @@ void RANDOM_seed(unsigned int seed)
   srandom(seed);
 }
 
-int RANDOM_generate()
+int RANDOM_generate(void)
 {
   return random();
 }
