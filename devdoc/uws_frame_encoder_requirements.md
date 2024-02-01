@@ -64,7 +64,7 @@ extern int uws_frame_encoder_encode(BUFFER_HANDLE encode_buffer, WS_FRAME_TYPE o
 
 **SRS_UWS_FRAME_ENCODER_01_052: [** If `reserved` has any bits set except the lowest 3 then `uws_frame_encoder_encode` shall fail and return NULL. **]**
 
-**SRS_UWS_FRAME_ENCODER_01_053: [** In order to obtain a 32 bit value for masking, `gb_rand` shall be used 4 times (for each byte). **]**
+**SRS_UWS_FRAME_ENCODER_01_053: [** In order to obtain a 32 bit value for masking, `RANDOM_generate` shall be used 4 times (for each byte). **]**
 
 ###  RFC6455 relevant parts
 

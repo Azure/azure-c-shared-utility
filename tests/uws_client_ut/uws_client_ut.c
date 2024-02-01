@@ -59,7 +59,7 @@ Tests_SRS_UWS_CLIENT_01_211: [ One implication of this is that in absence of ext
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/tlsio.h"
 #include "azure_c_shared_utility/uws_frame_encoder.h"
-#include "azure_c_shared_utility/gb_rand.h"
+#include "azure_c_shared_utility/random.h"
 #include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/map.h"
 
@@ -2872,7 +2872,7 @@ TEST_FUNCTION(on_underlying_io_open_complete_with_OK_prepares_and_sends_the_WebS
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
+        EXPECTED_CALL(RANDOM_generate()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -2918,7 +2918,7 @@ TEST_FUNCTION(when_base64_encode_fails_on_underlying_io_open_complete_triggers_t
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
+        EXPECTED_CALL(RANDOM_generate()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -2956,7 +2956,7 @@ TEST_FUNCTION(when_allocating_memory_for_the_websocket_upgrade_request_fails_the
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
+        EXPECTED_CALL(RANDOM_generate()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -3004,7 +3004,7 @@ TEST_FUNCTION(uws_client_open_async_after_WS_OPEN_ERROR_NOT_ENOUGH_MEMORY_succee
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
+        EXPECTED_CALL(RANDOM_generate()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -3055,7 +3055,7 @@ TEST_FUNCTION(when_sending_the_upgrade_request_fails_the_error_WS_OPEN_ERROR_CAN
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
+        EXPECTED_CALL(RANDOM_generate()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
@@ -3107,7 +3107,7 @@ TEST_FUNCTION(uws_client_open_async_after_WS_OPEN_ERROR_CANNOT_SEND_UPGRADE_REQU
     /* get the random 16 bytes */
     for (i = 0; i < 16; i++)
     {
-        EXPECTED_CALL(gb_rand()).SetReturn((int)i);
+        EXPECTED_CALL(RANDOM_generate()).SetReturn((int)i);
         expected_nonce[i] = (unsigned char)i;
     }
 
