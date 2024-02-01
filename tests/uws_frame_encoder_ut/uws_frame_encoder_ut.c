@@ -29,7 +29,7 @@ void real_free(void* ptr)
 #define ENABLE_MOCKS
 
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/gb_rand.h"
+#include "azure_c_shared_utility/random.h"
 #include "azure_c_shared_utility/buffer_.h"
 
 #undef ENABLE_MOCKS
@@ -880,7 +880,7 @@ TEST_FUNCTION(uws_frame_encoder_encodes_a_reserved_control_frame_F)
 }
 
 /* Tests_SRS_UWS_FRAME_ENCODER_01_015: [ Defines whether the "Payload data" is masked. ]*/
-/* Tests_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, gb_rand shall be used 4 times (for each byte). ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, RANDOM_generate shall be used 4 times (for each byte). ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_016: [ If set to 1, a masking key is present in masking-key, and this is used to unmask the "Payload data" as per Section 5.3. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_026: [ This field is present if the mask bit is set to 1 and is absent if the mask bit is set to 0. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_042: [ The payload length, indicated in the framing as frame-payload-length, does NOT include the length of the masking key. ]*/
@@ -897,13 +897,13 @@ TEST_FUNCTION(uws_frame_encoder_encode_encodes_a_masked_zero_length_binary_frame
         .ValidateArgumentValue_handle(&newly_created_buffer);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&newly_created_buffer);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
 
     // act
@@ -921,7 +921,7 @@ TEST_FUNCTION(uws_frame_encoder_encode_encodes_a_masked_zero_length_binary_frame
 }
 
 /* Tests_SRS_UWS_FRAME_ENCODER_01_015: [ Defines whether the "Payload data" is masked. ]*/
-/* Tests_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, gb_rand shall be used 4 times (for each byte). ]*/
+/* Tests_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, RANDOM_generate shall be used 4 times (for each byte). ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_016: [ If set to 1, a masking key is present in masking-key, and this is used to unmask the "Payload data" as per Section 5.3. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_026: [ This field is present if the mask bit is set to 1 and is absent if the mask bit is set to 0. ]*/
 /* Tests_SRS_UWS_FRAME_ENCODER_01_042: [ The payload length, indicated in the framing as frame-payload-length, does NOT include the length of the masking key. ]*/
@@ -938,13 +938,13 @@ TEST_FUNCTION(uws_frame_encoder_encode_encodes_a_masked_zero_length_binary_frame
         .ValidateArgumentValue_handle(&newly_created_buffer);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&newly_created_buffer);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x42);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x43);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x44);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x45);
 
     // act
@@ -1209,13 +1209,13 @@ TEST_FUNCTION(uws_frame_encoder_encode_masks_a_1_byte_frame_with_0_as_mask)
         .ValidateArgumentValue_handle(&newly_created_buffer);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&newly_created_buffer);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x00);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x00);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x00);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x00);
 
     // act
@@ -1255,13 +1255,13 @@ TEST_FUNCTION(uws_frame_encoder_encode_masks_a_1_byte_frame_with_0xFF_as_mask)
         .ValidateArgumentValue_handle(&newly_created_buffer);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&newly_created_buffer);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x00);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x00);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x00);
 
     // act
@@ -1301,13 +1301,13 @@ TEST_FUNCTION(uws_frame_encoder_encode_masks_a_4_byte_frame_with_0xFF_as_mask)
         .ValidateArgumentValue_handle(&newly_created_buffer);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&newly_created_buffer);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
 
     // act
@@ -1347,13 +1347,13 @@ TEST_FUNCTION(uws_frame_encoder_encode_masks_a_5_byte_frame_with_0xFF_as_mask)
         .ValidateArgumentValue_handle(&newly_created_buffer);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&newly_created_buffer);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
 
     // act
@@ -1393,13 +1393,13 @@ TEST_FUNCTION(uws_frame_encoder_encode_masks_a_8_byte_frame_with_different_mask_
         .ValidateArgumentValue_handle(&newly_created_buffer);
     STRICT_EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG))
         .ValidateArgumentValue_handle(&newly_created_buffer);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x00);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xFF);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0xAA);
-    STRICT_EXPECTED_CALL(gb_rand())
+    STRICT_EXPECTED_CALL(RANDOM_generate())
         .SetReturn(0x42);
 
     // act

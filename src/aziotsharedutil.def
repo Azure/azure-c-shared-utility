@@ -129,6 +129,8 @@ EXPORTS
     STRING_quote
     STRING_sprintf
     STRING_replace
+    RANDOM_seed
+    RANDOM_generate
     THREADAPI_RESULTStringStorage
     THREADAPI_RESULTStrings
     THREADAPI_RESULT_FromString
@@ -174,7 +176,6 @@ EXPORTS
     connectionstringparser_splitHostName_from_char
     consolelogger_log
     consolelogger_log_with_GetLastError
-    gb_rand
     gballoc_calloc
     gballoc_deinit
     gballoc_free

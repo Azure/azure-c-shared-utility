@@ -7,10 +7,14 @@
 #include <stdlib.h>
 #endif
 
-#include "azure_c_shared_utility/gb_rand.h"
+#include "azure_c_shared_utility/random.h"
 
-/*this is rand*/
-int gb_rand(void)
+void RANDOM_seed(unsigned int seed)
 {
-    return rand();
+  srand(seed);
+}
+
+int RANDOM_generate(void)
+{
+  return rand();
 }

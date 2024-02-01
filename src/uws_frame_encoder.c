@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/gb_rand.h"
+#include "azure_c_shared_utility/random.h"
 #include "azure_c_shared_utility/uws_frame_encoder.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/buffer_.h"
@@ -148,17 +148,17 @@ BUFFER_HANDLE uws_frame_encoder_encode(WS_FRAME_TYPE opcode, const unsigned char
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_033: [ A masked frame MUST have the field frame-masked set to 1, as defined in Section 5.2. ]*/
                         buffer[1] |= 0x80;
 
-                        /* Codes_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, gb_rand shall be used 4 times (for each byte). ]*/
+                        /* Codes_SRS_UWS_FRAME_ENCODER_01_053: [ In order to obtain a 32 bit value for masking, RANDOM_generate shall be used 4 times (for each byte). ]*/
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_016: [ If set to 1, a masking key is present in masking-key, and this is used to unmask the "Payload data" as per Section 5.3. ]*/
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_026: [ This field is present if the mask bit is set to 1 and is absent if the mask bit is set to 0. ]*/
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_034: [ The masking key is contained completely within the frame, as defined in Section 5.2 as frame-masking-key. ]*/
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_036: [ The masking key is a 32-bit value chosen at random by the client. ]*/
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_037: [ When preparing a masked frame, the client MUST pick a fresh masking key from the set of allowed 32-bit values. ]*/
                         /* Codes_SRS_UWS_FRAME_ENCODER_01_038: [ The masking key needs to be unpredictable; thus, the masking key MUST be derived from a strong source of entropy, and the masking key for a given frame MUST NOT make it simple for a server/proxy to predict the masking key for a subsequent frame. ]*/
-                        buffer[header_bytes - 4] = (unsigned char)gb_rand();
-                        buffer[header_bytes - 3] = (unsigned char)gb_rand();
-                        buffer[header_bytes - 2] = (unsigned char)gb_rand();
-                        buffer[header_bytes - 1] = (unsigned char)gb_rand();
+                        buffer[header_bytes - 4] = (unsigned char)RANDOM_generate();
+                        buffer[header_bytes - 3] = (unsigned char)RANDOM_generate();
+                        buffer[header_bytes - 2] = (unsigned char)RANDOM_generate();
+                        buffer[header_bytes - 1] = (unsigned char)RANDOM_generate();
                     }
 
                     if (length > 0)

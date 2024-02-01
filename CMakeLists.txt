@@ -232,7 +232,6 @@ set(source_c_files
     ./src/gbnetwork.c
     ./src/gb_stdio.c
     ./src/gb_time.c
-    ./src/gb_rand.c
     ./src/hmac.c
     ./src/hmacsha256.c
     ./src/xio.c
@@ -257,6 +256,7 @@ set(source_c_files
     ${LOCK_C_FILE}
     ${SRW_LOCK_C_FILE}
     ${TIMER_C_FILE}
+    ${RANDOM_C_FILE}
     ${STRING_UTILS_C_FILE}
     ${PLATFORM_C_FILE}
     ${SOCKETIO_C_FILE}
@@ -356,7 +356,6 @@ set(source_h_files
     ./inc/azure_c_shared_utility/gbnetwork.h
     ./inc/azure_c_shared_utility/gb_stdio.h
     ./inc/azure_c_shared_utility/gb_time.h
-    ./inc/azure_c_shared_utility/gb_rand.h
     ./inc/azure_c_shared_utility/hmac.h
     ./inc/azure_c_shared_utility/hmacsha256.h
     ./inc/azure_c_shared_utility/http_proxy_io.h
