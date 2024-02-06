@@ -119,7 +119,7 @@ STRING_HANDLE STRING_construct(const char* psz)
 }
 
 #if defined(__GNUC__)
-__attribute__ ((format (printf, 1, 2)))
+__attribute__((format(printf, 1, 2)))
 #endif
 STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
 {
@@ -450,11 +450,12 @@ int STRING_concat_with_STRING(STRING_HANDLE s1, STRING_HANDLE s2)
         size_t s1Length = strlen(dest->s);
         size_t s2Length = strlen(src->s);
         size_t realloc_size = safe_add_size_t(safe_add_size_t(s1Length, s2Length), 1);
-        char* temp = (char*)realloc(dest->s, realloc_size);
-        if (temp == NULL)
+        char* temp;
+        if (realloc_size == SIZE_MAX ||
+            (temp = (char*)realloc(dest->s, realloc_size)) == NULL)
         {
             /* Codes_SRS_STRING_07_035: [String_Concat_with_STRING shall return a nonzero number if an error is encountered.] */
-            LogError("Failure reallocating value");
+            LogError("Failure reallocating value, size:%zu", realloc_size);
             result = MU_FAILURE;
         }
         else
@@ -489,7 +490,7 @@ int STRING_copy(STRING_HANDLE handle, const char* s2)
             size_t s2Length = strlen(s2);
             size_t realloc_size = safe_add_size_t(s2Length, 1);
             char* temp;
-            if (realloc_size == SIZE_MAX || 
+            if (realloc_size == SIZE_MAX ||
                 (temp = (char*)realloc(s1->s, realloc_size)) == NULL)
             {
                 LogError("Failure reallocating value. size=%zu", realloc_size);
@@ -535,7 +536,7 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
         }
 
         size_t realloc_size = safe_add_size_t(s2Length, 1);
-        if (realloc_size == SIZE_MAX || 
+        if (realloc_size == SIZE_MAX ||
             (temp = (char*)realloc(s1->s, realloc_size)) == NULL)
         {
             LogError("Failure reallocating value. size=%zu", realloc_size);
@@ -555,7 +556,7 @@ int STRING_copy_n(STRING_HANDLE handle, const char* s2, size_t n)
 }
 
 #if defined(__GNUC__)
-__attribute__ ((format (printf, 2, 3)))
+__attribute__((format(printf, 2, 3)))
 #endif
 int STRING_sprintf(STRING_HANDLE handle, const char* format, ...)
 {
@@ -843,7 +844,7 @@ STRING_HANDLE STRING_from_byte_array(const unsigned char* source, size_t size)
         {
             /*Codes_SRS_STRING_02_023: [ Otherwise, STRING_from_BUFFER shall build a string that has the same content (byte-by-byte) as source and return a non-NULL handle. ]*/
             size_t malloc_size = safe_add_size_t(size, 1);
-            if (malloc_size == SIZE_MAX || 
+            if (malloc_size == SIZE_MAX ||
                 (result->s = (char*)malloc(malloc_size)) == NULL)
             {
                 /*Codes_SRS_STRING_02_024: [ If building the string fails, then STRING_from_BUFFER shall fail and return NULL. ]*/
