@@ -237,6 +237,7 @@ CONSTBUFFER_ARRAY_HANDLE* constbuffer_array_batcher_unbatch(CONSTBUFFER_ARRAY_HA
                     {
                         /* Codes_SRS_CONSTBUFFER_ARRAY_BATCHER_01_022: [ If any error occurs, constbuffer_array_batcher_unbatch shall fail and return NULL. ]*/
                         LogError("malloc failed, size:%zu", malloc_size);
+                        result = NULL;
                     }
                     else
                     {

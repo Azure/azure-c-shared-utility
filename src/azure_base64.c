@@ -240,7 +240,7 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     bool isBufferOverflow = false;
     char* encoded;
     size_t currentPosition = 0;
-    neededSize = safe_add_size_t(neededSize, (size == 0) ? (0) : ((((size - 1) / 3) + 1) * 4));
+    neededSize = safe_add_size_t(neededSize, (size == 0) ? (0) : safe_multiply_size_t(safe_add_size_t(((safe_subtract_size_t(size, 1)) / 3), 1), 4));
     neededSize = safe_add_size_t(neededSize, 1);  /*+1 because \0 at the end of the string*/
 
     if (neededSize == 0 || neededSize == SIZE_MAX)
