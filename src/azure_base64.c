@@ -6,6 +6,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/azure_base64.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 
 #define splitInt(intVal, bytePos)   (char)((intVal >> (bytePos << 3)) & 0xFF)
@@ -239,13 +240,13 @@ static STRING_HANDLE Base64_Encode_Internal(const unsigned char* source, size_t 
     bool isBufferOverflow = false;
     char* encoded;
     size_t currentPosition = 0;
-    neededSize += (size == 0) ? (0) : ((((size - 1) / 3) + 1) * 4);
-    neededSize += 1; /*+1 because \0 at the end of the string*/
+    neededSize = safe_add_size_t(neededSize, (size == 0) ? (0) : safe_multiply_size_t(safe_add_size_t(((safe_subtract_size_t(size, 1)) / 3), 1), 4));
+    neededSize = safe_add_size_t(neededSize, 1);  /*+1 because \0 at the end of the string*/
 
-    if (neededSize == 0)
+    if (neededSize == 0 || neededSize == SIZE_MAX)
     {
         result = NULL;
-        LogError("Azure_Base64_Encode:: Invalid size parameter.");
+        LogError("Azure_Base64_Encode:: Invalid size parameter, neededSize:%zu.", neededSize);
     }
     /*Codes_SRS_BASE64_06_006: [If when allocating memory to produce the encoding a failure occurs then Azure_Base64_Encode shall return NULL.]*/
     else if ((encoded = (char*)malloc(neededSize)) == NULL)

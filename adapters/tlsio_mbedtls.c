@@ -342,21 +342,31 @@ static int on_io_recv(void *context, unsigned char *buf, size_t sz)
 
         if (result > 0)
         {
-            (void)memcpy((void *)buf, tls_io_instance->socket_io_read_bytes, result);
-            (void)memmove(tls_io_instance->socket_io_read_bytes, tls_io_instance->socket_io_read_bytes + result, tls_io_instance->socket_io_read_byte_count - result);
-            tls_io_instance->socket_io_read_byte_count -= result;
-            if (tls_io_instance->socket_io_read_byte_count > 0)
+            size_t read_byte_count = safe_subtract_size_t(tls_io_instance->socket_io_read_byte_count, (size_t)result);
+            if (read_byte_count != SIZE_MAX)
             {
-                new_socket_io_read_bytes = (unsigned char *)realloc(tls_io_instance->socket_io_read_bytes, tls_io_instance->socket_io_read_byte_count);
-                if (new_socket_io_read_bytes != NULL)
+                (void)memcpy((void*)buf, tls_io_instance->socket_io_read_bytes, result);
+                (void)memmove(tls_io_instance->socket_io_read_bytes, tls_io_instance->socket_io_read_bytes + result, read_byte_count);
+
+                tls_io_instance->socket_io_read_byte_count = read_byte_count;
+                if (tls_io_instance->socket_io_read_byte_count > 0)
                 {
-                    tls_io_instance->socket_io_read_bytes = new_socket_io_read_bytes;
+                    new_socket_io_read_bytes = (unsigned char*)realloc(tls_io_instance->socket_io_read_bytes, tls_io_instance->socket_io_read_byte_count);
+                    if (new_socket_io_read_bytes != NULL)
+                    {
+                        tls_io_instance->socket_io_read_bytes = new_socket_io_read_bytes;
+                    }
+                }
+                else
+                {
+                    free(tls_io_instance->socket_io_read_bytes);
+                    tls_io_instance->socket_io_read_bytes = NULL;
                 }
             }
             else
             {
-                free(tls_io_instance->socket_io_read_bytes);
-                tls_io_instance->socket_io_read_bytes = NULL;
+                LogError("Tlsio_Failure: memmove invalid size.");
+                return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
             }
         }
 

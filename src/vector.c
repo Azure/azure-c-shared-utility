@@ -6,6 +6,7 @@
 #include "azure_c_shared_utility/vector.h"
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 #include "azure_c_shared_utility/vector_types_internal.h"
 
@@ -102,11 +103,13 @@ IMPLEMENT_MOCKABLE_FUNCTION(, int, VECTOR_push_back, VECTOR_HANDLE, handle, cons
         size_t curSize = handle->elementSize * handle->count;
         size_t appendSize = handle->elementSize * numElements;
 
-        void* temp = realloc(handle->storage, curSize + appendSize);
-        if (temp == NULL)
+        void* temp;
+        size_t realloc_size = safe_add_size_t(curSize, appendSize);
+        if (realloc_size == SIZE_MAX ||
+            (temp = realloc(handle->storage, realloc_size)) == NULL)
         {
            /* Codes_SRS_VECTOR_10_012: [VECTOR_push_back shall fail and return non-zero if memory allocation fails.] */
-            LogError("realloc failed.");
+            LogError("realloc failed. size=%zu", realloc_size);
             result = MU_FAILURE;
         }
         else
@@ -170,10 +173,11 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, VECTOR_erase, VECTOR_HANDLE, handle, void*, 
                     {
                         void* tmp;
                         (void)memmove(elements, src, srcEnd - src);
-                        tmp = realloc(handle->storage, (handle->elementSize * handle->count));
-                        if (tmp == NULL)
+                        size_t realloc_size = safe_multiply_size_t(handle->elementSize, handle->count);
+                        if (realloc_size == SIZE_MAX ||
+                            (tmp = realloc(handle->storage, realloc_size)) == NULL)
                         {
-                            LogInfo("realloc failed. Keeping original internal storage pointer.");
+                            LogInfo("realloc failed. Keeping original internal storage pointer. size=%zu", realloc_size);
                         }
                         else
                         {

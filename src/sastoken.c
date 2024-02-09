@@ -14,6 +14,7 @@
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 static double getExpiryValue(const char* expiryASCII)
 {
@@ -152,10 +153,14 @@ bool SASToken_Validate(STRING_HANDLE sasToken)
             }
             else
             {
-                char* expiryASCII = (char*)malloc((size_t)seStop - (size_t)seStart + 1);
+                char* expiryASCII;
+                size_t malloc_size = safe_subtract_size_t((size_t)seStop, (size_t)seStart);
+                malloc_size = safe_add_size_t(malloc_size, 1);
                 /*Codes_SRS_SASTOKEN_25_031: [**If malloc fails during validation then SASToken_Validate shall return false.**]***/
-                if (expiryASCII == NULL)
+                if (malloc_size == SIZE_MAX ||
+                    (expiryASCII = (char*)malloc(malloc_size)) == NULL)
                 {
+                    LogError("malloc error, size:%zu", malloc_size);
                     result = false;
                 }
                 else

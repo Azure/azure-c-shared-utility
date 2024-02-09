@@ -339,10 +339,12 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
                     // Codes_SRS_STRING_TOKENIZER_09_025: [ The tokens shall be stored in tokens, and their count stored in token_count ]
                     *token_count = (*token_count) + 1;
 
-                    if ((temp_token = (char**)realloc(*tokens, sizeof(char*) * (*token_count))) == NULL)
+                    size_t realloc_size = safe_multiply_size_t(sizeof(char*), (*token_count));
+                    if (realloc_size == SIZE_MAX ||
+                        (temp_token = (char**)realloc(*tokens, realloc_size)) == NULL)
                     {
                         // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
-                        LogError("Failed re-allocating the token array");
+                        LogError("Failed re-allocating the token array, size=%zu", realloc_size);
                         (*token_count)--;
                         result = MU_FAILURE;
                         break;
@@ -350,14 +352,16 @@ int StringToken_Split(const char* source, size_t length, const char** delimiters
                     else
                     {
                         *tokens = temp_token;
+                        size_t malloc_size;
                         if (tokenLength == 0)
                         {
                             (*tokens)[(*token_count) - 1] = NULL;
                         }
-                        else if (((*tokens)[(*token_count) - 1] = (char*)malloc(sizeof(char) * (tokenLength + 1))) == NULL)
+                        else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(tokenLength, 1), sizeof(char))) == SIZE_MAX ||
+                            ((*tokens)[(*token_count) - 1] = (char*)malloc(malloc_size)) == NULL)
                         {
                             // Codes_SRS_STRING_TOKENIZER_09_026: [ If any failures splitting or storing the tokens occur the function shall return a non-zero value ]
-                            LogError("Failed copying token into array");
+                            LogError("Failed copying token into array, size=%zu", malloc_size);
                             *token_count = (*token_count) - 1;
                             result = MU_FAILURE;
                             break;

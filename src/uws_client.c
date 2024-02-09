@@ -292,11 +292,12 @@ UWS_CLIENT_HANDLE uws_client_create(const char* hostname, unsigned int port, con
                                 }
                                 else
                                 {
-                                    result->protocols = (WS_INSTANCE_PROTOCOL*)malloc(sizeof(WS_INSTANCE_PROTOCOL) * protocol_count);
-                                    if (result->protocols == NULL)
+                                    size_t malloc_size = safe_multiply_size_t(sizeof(WS_INSTANCE_PROTOCOL), protocol_count);
+                                    if (malloc_size == SIZE_MAX ||
+                                        (result->protocols = (WS_INSTANCE_PROTOCOL*)malloc(malloc_size)) == NULL)
                                     {
                                         /* Codes_SRS_UWS_CLIENT_01_414: [ If allocating memory for the copied protocol information fails then uws_client_create shall fail and return NULL. ]*/
-                                        LogError("Cannot allocate memory for the protocols array.");
+                                        LogError("Cannot allocate memory for the protocols array. size=%zu", malloc_size);
                                         xio_destroy(result->underlying_io);
                                         singlylinkedlist_destroy(result->pending_sends);
                                         Map_Destroy(result->request_headers);
@@ -475,11 +476,12 @@ UWS_CLIENT_HANDLE uws_client_create_with_io(const IO_INTERFACE_DESCRIPTION* io_i
                                 }
                                 else
                                 {
-                                    result->protocols = (WS_INSTANCE_PROTOCOL*)malloc(sizeof(WS_INSTANCE_PROTOCOL) * protocol_count);
-                                    if (result->protocols == NULL)
+                                    size_t malloc_size = safe_multiply_size_t(sizeof(WS_INSTANCE_PROTOCOL), protocol_count);
+                                    if (malloc_size == SIZE_MAX ||
+                                        (result->protocols = (WS_INSTANCE_PROTOCOL*)malloc(malloc_size)) == NULL)
                                     {
                                         /* Codes_SRS_UWS_CLIENT_01_414: [ If allocating memory for the copied protocol information fails then uws_client_create shall fail and return NULL. ]*/
-                                        LogError("Cannot allocate memory for the protocols array.");
+                                        LogError("Cannot allocate memory for the protocols array. size=%zu", malloc_size);
                                         xio_destroy(result->underlying_io);
                                         singlylinkedlist_destroy(result->pending_sends);
                                         Map_Destroy(result->request_headers);
@@ -704,9 +706,11 @@ static char* get_request_headers(MAP_HANDLE headers)
             length += strlen(keys[i]) + strlen(values[i]) + 4;
         }
 
-        if ((result = (char*)malloc(sizeof(char) * (length + 1))) == NULL)
+        size_t malloc_size = safe_multiply_size_t(safe_add_size_t(length, 1), sizeof(char));
+        if (malloc_size == SIZE_MAX ||
+            (result = (char*)malloc(malloc_size)) == NULL)
         {
-            LogError("Failed allocating string for request headers");
+            LogError("Failed allocating string for request headers, size=%zu", malloc_size);
             result = NULL;
         }
         else
@@ -833,8 +837,9 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                     }
                     else
                     {
-                        upgrade_request = (char*)malloc((size_t)upgrade_request_length + 1);
-                        if (upgrade_request == NULL)
+                        size_t malloc_size = safe_add_size_t((size_t)upgrade_request_length, 1);
+                        if (malloc_size == SIZE_MAX ||
+                            (upgrade_request = (char*)malloc(malloc_size)) == NULL)
                         {
                             /* Codes_SRS_UWS_CLIENT_01_406: [ If not enough memory can be allocated to construct the WebSocket upgrade request, uws shall report that the open failed by calling the on_ws_open_complete callback passed to uws_client_open_async with WS_OPEN_ERROR_NOT_ENOUGH_MEMORY. ]*/
                             LogError("Cannot allocate memory for the WebSocket upgrade request");
@@ -1045,8 +1050,10 @@ static int ParseHttpResponse(const char* src, int* dst)
 static int process_frame_fragment(UWS_CLIENT_INSTANCE *uws_client, size_t length, size_t needed_bytes)
 {
     int result;
-    unsigned char *new_fragment_bytes = (unsigned char *)realloc(uws_client->fragment_buffer, uws_client->fragment_buffer_count + length);
-    if (new_fragment_bytes == NULL)
+    unsigned char* new_fragment_bytes;
+    size_t realloc_size = safe_add_size_t(uws_client->fragment_buffer_count, length);
+    if (realloc_size == SIZE_MAX ||
+        (new_fragment_bytes = (unsigned char*)realloc(uws_client->fragment_buffer, realloc_size)) == NULL)
     {
         /* Codes_SRS_UWS_CLIENT_01_379: [ If allocating memory for accumulating the bytes fails, uws shall report that the open failed by calling the on_ws_open_complete callback passed to uws_client_open_async with WS_OPEN_ERROR_NOT_ENOUGH_MEMORY. ]*/
         LogError("Cannot allocate memory for received data");
