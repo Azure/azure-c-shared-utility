@@ -43,7 +43,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, char*, vsprintf_char, const char*, format, va_list
             int out_len = vsnprintf(result, len, format, va);
             if (out_len != neededSize)
             {
-                LogError("inconsistent vsnprintf behavior, len=%d, out_len=%d", len, out_len);
+                LogError("inconsistent vsnprintf behavior, len=%zu, out_len=%d", len, out_len);
                 free(result);
                 result = NULL;
             }
