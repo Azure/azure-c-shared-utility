@@ -33,6 +33,7 @@ MOCKABLE_FUNCTION(, int, STRING_quote, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, int, STRING_copy, STRING_HANDLE, s1, const char*, s2);
 MOCKABLE_FUNCTION(, int, STRING_copy_n, STRING_HANDLE, s1, const char*, s2, size_t, n);
 MOCKABLE_FUNCTION(, const char*, STRING_c_str, STRING_HANDLE, handle);
+MOCKABLE_FUNCTION(, const char*, STRING_c_str_null_string, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, int, STRING_empty, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, size_t, STRING_length, STRING_HANDLE, handle);
 MOCKABLE_FUNCTION(, int, STRING_compare, STRING_HANDLE, s1, STRING_HANDLE, s2);
