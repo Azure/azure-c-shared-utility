@@ -338,7 +338,7 @@ VECTOR_HANDLE decode_pem(const void *src, size_t len)
 					po.data = BUFFER_u_char(bv);
 					po.data_len = BUFFER_length(bv);
 					free(bv);
-                    bv = NULL;
+					bv = NULL;
 					VECTOR_push_back(pem_list, &po, 1);
 					po.name = NULL;
 					po.data = NULL;
@@ -380,9 +380,9 @@ VECTOR_HANDLE decode_pem(const void *src, size_t len)
 
 			VECTOR_clear(pem_list);
 			free(po.name);
-            po.name = NULL;
+			po.name = NULL;
 			BUFFER_delete(bv);
-            bv = NULL;
+			bv = NULL;
 			pem_list = NULL;
 		}
 	}
@@ -686,12 +686,12 @@ void free_ta_contents(br_x509_trust_anchor *ta)
 	case BR_KEYTYPE_RSA:
 		free(ta->pkey.key.rsa.n);
 		free(ta->pkey.key.rsa.e);
-        ta->pkey.key.rsa.n = NULL;
-        ta->pkey.key.rsa.e = NULL;
+		ta->pkey.key.rsa.n = NULL;
+		ta->pkey.key.rsa.e = NULL;
 		break;
 	case BR_KEYTYPE_EC:
 		free(ta->pkey.key.ec.q);
-        ta->pkey.key.ec.q = NULL;
+		ta->pkey.key.ec.q = NULL;
 		break;
 	}
 }
@@ -702,7 +702,7 @@ void free_certificates(br_x509_certificate *certs, size_t num)
 
 	for (u = 0; u < num; u ++) {
 		free(certs[u].data);
-        certs[u].data = NULL;
+		certs[u].data = NULL;
 	}
 }
 
