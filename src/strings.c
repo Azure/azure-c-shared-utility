@@ -729,24 +729,6 @@ const char* STRING_c_str(STRING_HANDLE handle)
     return result;
 }
 
-const char* STRING_c_str_null_string(STRING_HANDLE handle)
-{
-    const char* result;
-    if (handle != NULL)
-    {
-        result = ((STRING*)handle)->s;
-        if (result == NULL)
-        {
-            result = "<NULL VALUE>";
-        }
-    }
-    else
-    {
-        result = "<NULL HANDLE>";
-    }
-    return result;
-}
-
 /* Codes_SRS_STRING_07_024: [STRING_length shall return the length of the underlying char* for the given handle] */
 size_t STRING_length(STRING_HANDLE handle)
 {
