@@ -124,6 +124,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
         {
             LogError("Allocation Failure: Unable to allocate pending list.");
             free(pending_socket_io);
+            pending_socket_io = NULL;
             result = MU_FAILURE;
         }
         else
@@ -139,6 +140,7 @@ static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned
                 LogError("Failure: Unable to add socket to pending list.");
                 free(pending_socket_io->bytes);
                 free(pending_socket_io);
+                pending_socket_io = NULL;
                 result = MU_FAILURE;
             }
             else
@@ -644,6 +646,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                     {
                         free(pending_socket_io->bytes);
                         free(pending_socket_io);
+                        pending_socket_io = NULL;
                         (void)singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io);
                     }
                     else
@@ -660,6 +663,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
                     free(pending_socket_io->bytes);
                     free(pending_socket_io);
+                    pending_socket_io = NULL;
                     if (singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
                     {
                         LogError("Failure: removing socket from list");

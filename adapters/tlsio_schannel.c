@@ -1187,30 +1187,38 @@ void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
         if (tls_io_instance->received_bytes != NULL)
         {
             free(tls_io_instance->received_bytes);
+            tls_io_instance->received_bytes = NULL;
         }
 
         if (tls_io_instance->trustedCertificate != NULL)
         {
             free(tls_io_instance->trustedCertificate);
+            tls_io_instance->trustedCertificate = NULL;
         }
 
         if (tls_io_instance->x509_schannel_handle != NULL)
         {
             x509_schannel_destroy(tls_io_instance->x509_schannel_handle);
+            tls_io_instance->x509_schannel_handle = NULL;
         }
 
         if (tls_io_instance->x509certificate != NULL)
         {
             free(tls_io_instance->x509certificate);
+            tls_io_instance->x509certificate = NULL;
         }
 
         if (tls_io_instance->x509privatekey != NULL)
         {
             free(tls_io_instance->x509privatekey);
+            tls_io_instance->x509privatekey = NULL;
         }
 
         xio_destroy(tls_io_instance->socket_io);
+        tls_io_instance->socket_io = NULL;
+
         free(tls_io_instance->host_name);
+        tls_io_instance->host_name = NULL;
 
         first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_io_list);
         while (first_pending_io != NULL)

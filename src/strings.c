@@ -742,7 +742,6 @@ const char* STRING_c_str_null_string(STRING_HANDLE handle)
     }
     else
     {
-        /* Codes_SRS_STRING_07_021: [STRING_c_str shall return NULL if the STRING_HANDLE is NULL.] */
         result = "<NULL HANDLE>";
     }
     return result;

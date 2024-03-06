@@ -147,7 +147,7 @@ CONSTBUFFER_ARRAY_HANDLE constbuffer_array_batcher_batch(CONSTBUFFER_ARRAY_HANDL
                         else
                         {
                             free(all_buffers);
-
+                            all_buffers = NULL;
                             goto all_ok;
                         }
                     }

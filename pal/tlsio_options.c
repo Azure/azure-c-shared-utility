@@ -61,6 +61,9 @@ void tlsio_options_release_resources(TLSIO_OPTIONS* options)
         free((void*)options->trusted_certs);
         free((void*)options->x509_cert);
         free((void*)options->x509_key);
+        options->trusted_certs = NULL;
+        options->x509_cert = NULL;
+        options->x509_key = NULL;
     }
     else
     {
