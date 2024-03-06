@@ -1392,7 +1392,9 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
             tls_io_instance->cipher_list = NULL;
         }
         free((void*)tls_io_instance->x509_certificate);
+        tls_io_instance->x509_certificate = NULL;
         free((void*)tls_io_instance->x509_private_key);
+        tls_io_instance->x509_private_key = NULL;
         close_openssl_instance(tls_io_instance);
         if (tls_io_instance->underlying_io != NULL)
         {
@@ -1400,6 +1402,7 @@ void tlsio_openssl_destroy(CONCRETE_IO_HANDLE tls_io)
             tls_io_instance->underlying_io = NULL;
         }
         free(tls_io_instance->hostname);
+        tls_io_instance->hostname = NULL;
         if (tls_io_instance->engine_id != NULL)
         {
             free(tls_io_instance->engine_id);

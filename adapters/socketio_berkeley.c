@@ -1055,6 +1055,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                         {
                             free(pending_socket_io->bytes);
                             free(pending_socket_io);
+                            pending_socket_io = NULL;
                             (void)singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io);
 
                             LogError("Failure: sending Socket information. errno=%d (%s).", errno, strerror(errno));
@@ -1078,6 +1079,7 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
 
                     free(pending_socket_io->bytes);
                     free(pending_socket_io);
+                    pending_socket_io = NULL;
                     if (singlylinkedlist_remove(socket_io_instance->pending_io_list, first_pending_io) != 0)
                     {
                         indicate_error(socket_io_instance);

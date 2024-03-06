@@ -300,6 +300,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                 if (*isOriginalRequestHttpHeadersHandle == false)
                 {
                     HTTPHeaders_Free(*toBeUsedRequestHttpHeadersHandle);
+                    *toBeUsedRequestHttpHeadersHandle = NULL;
                 }
                 LogError("unable to build response content");
                 result = MU_FAILURE;
@@ -314,14 +315,17 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
                     if (*isOriginalRequestContent == false)
                     {
                         BUFFER_delete(*toBeUsedRequestContent);
+                        *toBeUsedRequestContent = NULL;
                     }
                     if (*isOriginalRequestHttpHeadersHandle == false)
                     {
                         HTTPHeaders_Free(*toBeUsedRequestHttpHeadersHandle);
+                        *toBeUsedRequestHttpHeadersHandle = NULL;
                     }
                     if (*isOriginalResponseHttpHeadersHandle == false)
                     {
                         HTTPHeaders_Free(*toBeUsedResponseHttpHeadersHandle);
+                        *toBeUsedResponseHttpHeadersHandle = NULL;
                     }
                     LogError("unable to build response content");
                     result = MU_FAILURE;
@@ -550,18 +554,22 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                 if (isOriginalRequestContent == false)
                 {
                     BUFFER_delete(toBeUsedRequestContent);
+                    toBeUsedRequestContent = NULL;
                 }
                 if (isOriginalRequestHttpHeadersHandle == false)
                 {
                     HTTPHeaders_Free(toBeUsedRequestHttpHeadersHandle);
+                    toBeUsedRequestHttpHeadersHandle = NULL;
                 }
                 if (isOriginalResponseContent == false)
                 {
                     BUFFER_delete(toBeUsedResponseContent);
+                    toBeUsedResponseContent = NULL;
                 }
                 if (isOriginalResponseHttpHeadersHandle == false)
                 {
                     HTTPHeaders_Free(toBeUsedResponseHttpHeadersHandle);
+                    toBeUsedResponseHttpHeadersHandle = NULL;
                 }
             }
         }
@@ -596,6 +604,8 @@ void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle)
             HTTPAPIEX_SAVED_OPTION* savedOption = (HTTPAPIEX_SAVED_OPTION*)VECTOR_element(handleData->savedOptions, i);
             free((void*)savedOption->optionName);
             free((void*)savedOption->value);
+            savedOption->optionName = NULL;
+            savedOption->value = NULL;
         }
         VECTOR_destroy(handleData->savedOptions);
 

@@ -151,6 +151,7 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
             {
                 LogError("dns addrinfo ai_addr: allocation failed");
                 free(dns->addrInfo);
+                dns->addrInfo = NULL;
                 dns->is_failed = true;
                 dns->is_complete = true;
                 dns->in_progress = false;
@@ -186,6 +187,7 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
             {
                 LogError("dns addrinfo ai_addr: allocation failed");
                 free(dns->addrInfo);
+                dns->addrInfo = NULL;
                 dns->is_failed = true;
                 dns->is_complete = true;
                 dns->in_progress = false;

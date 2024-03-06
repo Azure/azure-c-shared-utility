@@ -233,6 +233,7 @@ void HTTPAPI_CloseConnection(HTTP_HANDLE handle)
     if (httpHandleData != NULL)
     {
         free(httpHandleData->hostURL);
+        httpHandleData->hostURL = NULL;
         curl_easy_cleanup(httpHandleData->curl);
 #ifdef USE_OPENSSL
 #ifndef OPENSSL_NO_ENGINE
@@ -320,6 +321,7 @@ static size_t ContentWriteFunction(void *ptr, size_t size, size_t nmemb, void *u
             if (responseContentBuffer->buffer != NULL)
             {
                 free(responseContentBuffer->buffer);
+                responseContentBuffer->buffer = NULL;
             }
         }
     }
@@ -370,6 +372,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             result = CURLE_SSL_CERTPROBLEM;
 #ifndef OPENSSL_NO_ENGINE
             ENGINE_free(httpHandleData->engine);
+            httpHandleData->engine = NULL;
 #endif // OPENSSL_NO_ENGINE
         }
         /*trying to set CA certificates*/
@@ -382,6 +385,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             result = CURLE_SSL_CERTPROBLEM;
 #ifndef OPENSSL_NO_ENGINE
             ENGINE_free(httpHandleData->engine);
+            httpHandleData->engine = NULL;
 #endif // OPENSSL_NO_ENGINE
         }
 #elif USE_WOLFSSL
@@ -824,6 +828,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                         if (responseContentBuffer.buffer != NULL)
                                         {
                                             free(responseContentBuffer.buffer);
+                                            responseContentBuffer.buffer = NULL;
                                         }
                                     }
                                 }
@@ -1035,6 +1040,7 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                                 }
                             }
                             free(proxy_auth);
+                            proxy_auth = NULL;
                         }
                     }
                     else

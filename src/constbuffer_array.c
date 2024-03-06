@@ -448,6 +448,7 @@ IMPLEMENT_MOCKABLE_FUNCTION(, void, constbuffer_array_dec_ref, CONSTBUFFER_ARRAY
             if (constbuffer_array_handle->created_with_moved_memory)
             {
                 free(constbuffer_array_handle->buffers);
+                constbuffer_array_handle->buffers = NULL;
             }
 
             REFCOUNT_TYPE_DESTROY(CONSTBUFFER_ARRAY_HANDLE_DATA, constbuffer_array_handle);

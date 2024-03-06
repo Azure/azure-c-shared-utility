@@ -549,6 +549,8 @@ void uws_client_destroy(UWS_CLIENT_HANDLE uws_client)
     {
         free(uws_client->stream_buffer);
         free(uws_client->fragment_buffer);
+        uws_client->stream_buffer = NULL;
+        uws_client->fragment_buffer = NULL;
 
         /* Codes_SRS_UWS_CLIENT_01_021: [ uws_client_destroy shall perform a close action if the uws instance has already been open. ]*/
         switch (uws_client->uws_state)
@@ -872,6 +874,7 @@ static void on_underlying_io_open_complete(void* context, IO_OPEN_RESULT open_re
                             }
 
                             free(upgrade_request);
+                            upgrade_request = NULL;
                         }
                     }
 
