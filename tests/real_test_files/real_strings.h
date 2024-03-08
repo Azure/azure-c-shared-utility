@@ -33,7 +33,7 @@
     REGISTER_GLOBAL_MOCK_HOOK(STRING_copy_n, real_STRING_copy_n); \
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(STRING_copy_n, __LINE__); \
     REGISTER_GLOBAL_MOCK_HOOK(STRING_c_str, real_STRING_c_str); \
-    REGISTER_GLOBAL_MOCK_HOOK(STRING_c_str, real_STRING_c_str_null_string); \
+    REGISTER_GLOBAL_MOCK_HOOK(STRING_c_str_null_string, real_STRING_c_str_null_string); \
     REGISTER_GLOBAL_MOCK_HOOK(STRING_empty, real_STRING_empty); \
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(STRING_empty, __LINE__); \
     REGISTER_GLOBAL_MOCK_HOOK(STRING_length, real_STRING_length); \
