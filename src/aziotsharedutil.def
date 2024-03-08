@@ -109,6 +109,7 @@ EXPORTS
     STRING_TOKENIZER_destroy
     STRING_TOKENIZER_get_next_token
     STRING_c_str
+    STRING_c_str_null_string
     STRING_clone
     STRING_compare
     STRING_concat
