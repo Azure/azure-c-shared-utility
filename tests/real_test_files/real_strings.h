@@ -83,7 +83,7 @@
 #undef STRING_copy
 #undef STRING_copy_n
 #undef STRING_c_str
-#undef real_STRING_c_str_null_string
+#undef STRING_c_str_null_string
 #undef STRING_empty
 #undef STRING_length
 #undef STRING_compare
