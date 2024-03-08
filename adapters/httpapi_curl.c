@@ -814,6 +814,7 @@ HTTPAPI_RESULT HTTPAPI_ExecuteRequest(HTTP_HANDLE handle, HTTPAPI_REQUEST_TYPE r
                                                     if (httpCode >= 300)
                                                     {
                                                         LogError("Failure in HTTP communication: server reply code is %ld", httpCode);
+                                                        LogInfo("HostURL: %s", tempHostURL);
                                                         LogInfo("HTTP Response:%*.*s", (int)responseContentBuffer.bufferSize,
                                                             (int)responseContentBuffer.bufferSize, responseContentBuffer.buffer);
                                                     }
