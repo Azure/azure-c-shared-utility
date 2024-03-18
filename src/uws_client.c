@@ -1274,7 +1274,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 }
                                 else
                                 {
-                                    needed_bytes += (size_t)length;
+                                    needed_bytes = safe_add_size_t(needed_bytes, length);
                                 }
                             }
                         }
@@ -1300,7 +1300,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 else
                                 {
                                     /* Codes_SRS_UWS_CLIENT_01_167: [ Multibyte length quantities are expressed in network byte order. ]*/
-                                    length = (size_t)(((uint64_t)(uws_client->stream_buffer[2]) << 56) +
+                                    uint64_t length_uint64 = (((uint64_t)(uws_client->stream_buffer[2]) << 56) +
                                         (((uint64_t)uws_client->stream_buffer[3]) << 48) +
                                         (((uint64_t)uws_client->stream_buffer[4]) << 40) +
                                         (((uint64_t)uws_client->stream_buffer[5]) << 32) +
@@ -1309,7 +1309,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                         (((uint64_t)uws_client->stream_buffer[8]) << 8) +
                                         (uint64_t)(uws_client->stream_buffer[9]));
 
-                                    if (length < 65536)
+                                    length = (size_t)(length_uint64);
+                                    needed_bytes = safe_add_size_t(needed_bytes, length);
+
+                                    if (length < 65536 ||
+                                        length_uint64 >= (SIZE_MAX/2) ||   // limit max pack size to 1/2 process memory
+                                        needed_bytes == SIZE_MAX)
                                     {
                                         /* Codes_SRS_UWS_CLIENT_01_168: [ Note that in all cases, the minimal number of bytes MUST be used to encode the length, for example, the length of a 124-byte-long string can't be encoded as the sequence 126, 0, 124. ]*/
                                         LogError("Bad frame: received a %u length on the 64 bit length", (unsigned int)length);
@@ -1318,16 +1323,12 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                         indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
                                         has_error = 1;
                                     }
-                                    else
-                                    {
-                                        needed_bytes += length;
-                                    }
                                 }
                             }
                         }
                         else
                         {
-                            needed_bytes += length;
+                            needed_bytes = safe_add_size_t(needed_bytes, length);
                         }
 
                         if ((has_error == 0) &&
@@ -1422,7 +1423,19 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                 /* Codes_SRS_UWS_CLIENT_01_282: [ If the frame comprises an unfragmented message (Section 5.4), it is said that _A WebSocket Message Has Been Received_ with type /type/ and data /data/. ]*/
                                 if (is_final)
                                 {
-                                    uws_client->on_ws_frame_received(uws_client->on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, uws_client->stream_buffer + needed_bytes - length, length);
+                                    size_t stream_buffer_idx = safe_add_size_t(uws_client->stream_buffer, needed_bytes);
+                                    stream_buffer_idx = safe_subtract_size_t(stream_buffer_idx, length);
+                                    if (stream_buffer_idx != SIZE_MAX)
+                                    {
+                                        uws_client->on_ws_frame_received(uws_client->on_ws_frame_received_context, WS_FRAME_TYPE_BINARY, (const unsigned char*)stream_buffer_idx, length);
+                                    }
+                                    else
+                                    {
+                                        LogError("Invalid packet length, stream_buffer_idx=%zu", stream_buffer_idx);
+                                        indicate_ws_error(uws_client, WS_ERROR_BAD_FRAME_RECEIVED);
+                                        decode_stream = 1;
+                                        break;
+                                    }
                                 }
                                 else
                                 {
