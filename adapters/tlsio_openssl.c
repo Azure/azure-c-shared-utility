@@ -23,6 +23,132 @@
 #include "azure_c_shared_utility/const_defines.h"
 #include "azure_c_shared_utility/safe_math.h"
 
+/* SSL protocol logging. */
+
+static const char *
+ssl_alert_level_to_string(uint8_t type)
+{
+    switch (type) {
+    case 1: return "warning";
+    case 2: return "fatal";
+    default: return "<unknown>";
+    }
+}
+
+static const char *
+ssl_alert_description_to_string(uint8_t type)
+{
+    switch (type) {
+    case 0: return "close_notify";
+    case 10: return "unexpected_message";
+    case 20: return "bad_record_mac";
+    case 21: return "decryption_failed";
+    case 22: return "record_overflow";
+    case 30: return "decompression_failure";
+    case 40: return "handshake_failure";
+    case 42: return "bad_certificate";
+    case 43: return "unsupported_certificate";
+    case 44: return "certificate_revoked";
+    case 45: return "certificate_expired";
+    case 46: return "certificate_unknown";
+    case 47: return "illegal_parameter";
+    case 48: return "unknown_ca";
+    case 49: return "access_denied";
+    case 50: return "decode_error";
+    case 51: return "decrypt_error";
+    case 60: return "export_restriction";
+    case 70: return "protocol_version";
+    case 71: return "insufficient_security";
+    case 80: return "internal_error";
+    case 90: return "user_canceled";
+    case 100: return "no_renegotiation";
+    default: return "<unknown>";
+    }
+}
+
+static const char *
+ssl_handshake_type_to_string(uint8_t type)
+{
+    switch (type) {
+    case 0: return "hello_request";
+    case 1: return "client_hello";
+    case 2: return "server_hello";
+    case 11: return "certificate";
+    case 12: return "server_key_exchange";
+    case 13: return "certificate_request";
+    case 14: return "server_hello_done";
+    case 15: return "certificate_verify";
+    case 16: return "client_key_exchange";
+    case 20: return "finished";
+    default: return "<unknown>";
+    }
+}
+
+#define SSL_PROTOCOL_MESSAGE_RECEIVED 0
+#define SSL_PROTOCOL_MESSAGE_SENT 1
+#define _ssl_get_protocol_message_direction(_write_p) \
+    (_write_p == SSL_PROTOCOL_MESSAGE_RECEIVED ? "<" : ">")
+
+void ssl_protocol_trace(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
+{
+    const char* tag = (const char*)arg;
+    const uint8_t *buffer = buf;
+
+    if (content_type == SSL3_RT_CHANGE_CIPHER_SPEC)
+    {
+        log_info("[SSL][%s] %s change_cipher_spec",
+            tag,
+            _ssl_get_protocol_message_direction(write_p));
+    }
+    else if (content_type == SSL3_RT_ALERT)
+    {
+        log_info("[SSL][%s] %s alert: %s, %s",
+            tag,
+            _ssl_get_protocol_message_direction(write_p),
+            ssl_alert_level_to_string(buffer[0]),
+            ssl_alert_description_to_string(buffer[1]));
+    }
+    else if (content_type == SSL3_RT_HANDSHAKE)
+    {
+        log_info("[SSL][%s] %s handshake: %s",
+            tag,
+            _ssl_get_protocol_message_direction(write_p),
+            ssl_handshake_type_to_string(buffer[0]));
+    }
+    else if (content_type == SSL3_RT_HEADER)
+    {
+        log_info("[SSL][%s] %s SSL3_RT_HEADER %.*s",
+            tag,
+            _ssl_get_protocol_message_direction(write_p),
+            (int)len, (char*)buf);
+    }
+    else if (content_type == SSL3_RT_INNER_CONTENT_TYPE)
+    {
+        log_info("[SSL][%s] %s SSL3_RT_INNER_CONTENT_TYPE %.*s",
+            tag,
+            _ssl_get_protocol_message_direction(write_p),
+            (int)len, (char*)buf);
+    }
+    else
+    {
+        log_info("[SSL][%s] %s type %d",
+            tag,
+            _ssl_get_protocol_message_direction(write_p),
+            content_type);
+    }
+}
+
+static int _SSL_enable_logging(SSL* ssl, bool is_client)
+{
+    const char* client_tag = "client";
+    const char* server_tag = "server";
+    SSL_set_msg_callback(ssl, ssl_protocol_trace);
+    SSL_set_msg_callback_arg(ssl, (void*)(is_client ? client_tag : server_tag));
+
+    return OK;
+}
+
+
 typedef enum TLSIO_STATE_TAG
 {
     TLSIO_STATE_NOT_OPEN,
@@ -1138,6 +1264,8 @@ static int create_openssl_instance(TLS_IO_INSTANCE* tlsInstance)
     else
     {
         SSL_CTX_set_cert_verify_callback(tlsInstance->ssl_context, tlsInstance->tls_validation_callback, tlsInstance->tls_validation_callback_data);
+
+        (void)_SSL_enable_logging(tlsInstance->ssl_context, true);
 
         tlsInstance->in_bio = BIO_new(BIO_s_mem());
         if (tlsInstance->in_bio == NULL)
