@@ -94,6 +94,7 @@ ssl_handshake_type_to_string(uint8_t type)
 void ssl_protocol_trace(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
 {
     (void)version;
+    (void)ssl;
 
     const char* tag = (const char*)arg;
     const uint8_t *buffer = buf;
