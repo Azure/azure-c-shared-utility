@@ -93,6 +93,8 @@ ssl_handshake_type_to_string(uint8_t type)
 
 void ssl_protocol_trace(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
 {
+    (void)version;
+
     const char* tag = (const char*)arg;
     const uint8_t *buffer = buf;
 
@@ -144,8 +146,8 @@ static int _SSL_enable_logging(SSL* ssl, bool is_client)
 {
     const char* client_tag = "client";
     const char* server_tag = "server";
-    SSL_set_msg_callback(ssl, ssl_protocol_trace);
-    SSL_set_msg_callback_arg(ssl, (void*)(is_client ? client_tag : server_tag));
+    SSL_CTX_set_msg_callback(ssl, ssl_protocol_trace);
+    SSL_CTX_set_msg_callback_arg(ssl, (void*)(is_client ? client_tag : server_tag));
 
     return OK;
 }
