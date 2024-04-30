@@ -24,6 +24,8 @@
 #include "azure_c_shared_utility/safe_math.h"
 
 /* SSL protocol logging. */
+#define OK 0
+#define ERROR __LINE__
 
 static const char *
 ssl_alert_level_to_string(uint8_t type)
@@ -96,13 +98,13 @@ void ssl_protocol_trace(int write_p, int version, int content_type, const void *
 
     if (content_type == SSL3_RT_CHANGE_CIPHER_SPEC)
     {
-        log_info("[SSL][%s] %s change_cipher_spec",
+        printf("[SSL][%s] %s change_cipher_spec\n",
             tag,
             _ssl_get_protocol_message_direction(write_p));
     }
     else if (content_type == SSL3_RT_ALERT)
     {
-        log_info("[SSL][%s] %s alert: %s, %s",
+        printf("[SSL][%s] %s alert: %s, %s\n",
             tag,
             _ssl_get_protocol_message_direction(write_p),
             ssl_alert_level_to_string(buffer[0]),
@@ -110,28 +112,28 @@ void ssl_protocol_trace(int write_p, int version, int content_type, const void *
     }
     else if (content_type == SSL3_RT_HANDSHAKE)
     {
-        log_info("[SSL][%s] %s handshake: %s",
+        printf("[SSL][%s] %s handshake: %s\n",
             tag,
             _ssl_get_protocol_message_direction(write_p),
             ssl_handshake_type_to_string(buffer[0]));
     }
     else if (content_type == SSL3_RT_HEADER)
     {
-        log_info("[SSL][%s] %s SSL3_RT_HEADER %.*s",
+        printf("[SSL][%s] %s SSL3_RT_HEADER %.*s\n",
             tag,
             _ssl_get_protocol_message_direction(write_p),
             (int)len, (char*)buf);
     }
     else if (content_type == SSL3_RT_INNER_CONTENT_TYPE)
     {
-        log_info("[SSL][%s] %s SSL3_RT_INNER_CONTENT_TYPE %.*s",
+        printf("[SSL][%s] %s SSL3_RT_INNER_CONTENT_TYPE %.*s\n",
             tag,
             _ssl_get_protocol_message_direction(write_p),
             (int)len, (char*)buf);
     }
     else
     {
-        log_info("[SSL][%s] %s type %d",
+        printf("[SSL][%s] %s type %d\n",
             tag,
             _ssl_get_protocol_message_direction(write_p),
             content_type);
