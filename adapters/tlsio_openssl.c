@@ -142,7 +142,7 @@ void ssl_protocol_trace(int write_p, int version, int content_type, const void *
     }
 }
 
-static int _SSL_enable_logging(SSL* ssl, bool is_client)
+static int _SSL_enable_logging(SSL_CTX* ssl, bool is_client)
 {
     const char* client_tag = "client";
     const char* server_tag = "server";
