@@ -765,6 +765,8 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                                             indicate_error(tls_io_instance);
                                         }
                                     }
+
+                                    first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_io_list);
                                 }
                             }
                         }
