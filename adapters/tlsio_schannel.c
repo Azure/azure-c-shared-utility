@@ -1242,6 +1242,8 @@ void tlsio_schannel_destroy(CONCRETE_IO_HANDLE tls_io)
                 if (singlylinkedlist_remove(tls_io_instance->pending_io_list, first_pending_io) != 0)
                 {
                     LogError("Failure: removing pending IO from list");
+                    indicate_error(tls_io_instance);
+                    break;
                 }
 
                 first_pending_io = singlylinkedlist_get_head_item(tls_io_instance->pending_io_list);
