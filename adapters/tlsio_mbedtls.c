@@ -12,8 +12,10 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < 0x03000000
 #include "mbedtls/certs.h"
 #include "mbedtls/entropy_poll.h"
+#endif
 #include "mbedtls/pk.h"
 
 #include "azure_c_shared_utility/gballoc.h"
@@ -135,7 +137,11 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE *tls_io_instance)
 static bool is_fragmented_send_request(TLS_IO_INSTANCE *tls_io_instance, size_t send_size)
 {
 #if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= 0x03000000
+    size_t max_len = mbedtls_ssl_get_max_out_record_payload(&tls_io_instance->ssl);
+#else // MBEDTLS_VERSION_NUMBER
     size_t max_len = mbedtls_ssl_get_max_frag_len(&tls_io_instance->ssl);
+#endif // MBEDTLS_VERSION_NUMBER
 #else
     size_t max_len = MBEDTLS_SSL_MAX_CONTENT_LEN;
     (void)tls_io_instance;
@@ -423,7 +429,11 @@ static int on_io_send(void *context, const unsigned char *buf, size_t sz)
         context = NULL;
 
         // Only allow Application data type message to send on_send_complete callback.
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= 0x03000000
+        if (tls_io_instance->ssl.MBEDTLS_PRIVATE(out_msgtype) == MBEDTLS_SSL_MSG_APPLICATION_DATA)
+#else
         if (tls_io_instance->ssl.out_msgtype == MBEDTLS_SSL_MSG_APPLICATION_DATA)
+#endif
         {
             on_complete_callback = on_send_complete;
             context = tls_io_instance;
@@ -916,6 +926,44 @@ static void tlsio_mbedtls_DestroyOption(const char *name, const void *value)
     }
 }
 
+static int parse_key(char* key, mbedtls_pk_context* out_parsed_key)
+{
+    int result;
+
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= 0x03000000
+    const char *pers = "tlsio_mbedtls";
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+
+    if ((result = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                     (const unsigned char *) pers,
+                                     strlen(pers))) != 0) {
+        LogError("mbedtls_ctr_drbg_seed failed (%d)", result);
+    }
+    else if ((result = mbedtls_pk_parse_key(out_parsed_key,
+                                            (const unsigned char *)key, (int)(strlen(key) + 1),
+                                            NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg)) != 0)
+    {
+        LogError("mbedtls_pk_parse_key failed (%d)", result);
+    }
+
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+#else
+    if ((result = mbedtls_pk_parse_key(out_parsed_key,
+                                        (const unsigned char *)key, (int)(strlen(key) + 1),
+                                        NULL, 0)) != 0)
+    {
+        LogError("mbedtls_pk_parse_key failed (%d)", result);
+    }
+#endif
+
+    return result;
+}
+
 int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, const void *value)
 {
     int result = 0;
@@ -998,9 +1046,9 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 LogError("unable to mallocAndStrcpy_s on private key");
                 result = MU_FAILURE;
             }
-            else if (mbedtls_pk_parse_key(&tls_io_instance->pKey, (const unsigned char *)temp_key, (int)(strlen(temp_key) + 1), NULL, 0) != 0)
+            else if (parse_key(temp_key, &tls_io_instance->pKey) != 0)
             {
-                LogError("failure calling mbedtls_pk_parse_key");
+                LogError("failure calling parse_key");
                 free(temp_key);
                 result = MU_FAILURE;
             }
