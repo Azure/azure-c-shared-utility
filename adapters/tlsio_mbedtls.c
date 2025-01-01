@@ -7,15 +7,19 @@
 #include <stdbool.h>
 #include <string.h>
 
+#define TLSIO_MBEDTLS_VERSION_2_16_0   0x02160000
+#define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
+
+#include "mbedtls/version.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
-#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < 0x03000000
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_3_0_0
 #include "mbedtls/certs.h"
 #include "mbedtls/entropy_poll.h"
-#endif
+#endif // MBEDTLS_VERSION_NUMBER
 #include "mbedtls/pk.h"
 
 #include "azure_c_shared_utility/gballoc.h"
@@ -137,7 +141,7 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE *tls_io_instance)
 static bool is_fragmented_send_request(TLS_IO_INSTANCE *tls_io_instance, size_t send_size)
 {
 #if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= 0x03000000
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_2_16_0
     size_t max_len = mbedtls_ssl_get_max_out_record_payload(&tls_io_instance->ssl);
 #else // MBEDTLS_VERSION_NUMBER
     size_t max_len = mbedtls_ssl_get_max_frag_len(&tls_io_instance->ssl);
@@ -429,7 +433,7 @@ static int on_io_send(void *context, const unsigned char *buf, size_t sz)
         context = NULL;
 
         // Only allow Application data type message to send on_send_complete callback.
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= 0x03000000
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
         if (tls_io_instance->ssl.MBEDTLS_PRIVATE(out_msgtype) == MBEDTLS_SSL_MSG_APPLICATION_DATA)
 #else
         if (tls_io_instance->ssl.out_msgtype == MBEDTLS_SSL_MSG_APPLICATION_DATA)
@@ -930,7 +934,7 @@ static int parse_key(char* key, mbedtls_pk_context* out_parsed_key)
 {
     int result;
 
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= 0x03000000
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
     const char *pers = "tlsio_mbedtls";
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
