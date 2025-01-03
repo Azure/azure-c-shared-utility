@@ -25,6 +25,8 @@
 #elif USE_MBEDTLS
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
 #define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
 #endif
 #include "azure_c_shared_utility/shared_util_options.h"
@@ -331,7 +333,7 @@ static size_t ContentWriteFunction(void *ptr, size_t size, size_t nmemb, void *u
 }
 
 #ifdef USE_MBEDTLS
-static int parse_key(char* key, mbedtls_pk_context* out_parsed_key)
+static int parse_key(const char* key, mbedtls_pk_context* out_parsed_key)
 {
     int result;
 
