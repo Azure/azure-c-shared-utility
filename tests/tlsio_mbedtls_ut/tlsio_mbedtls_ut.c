@@ -58,6 +58,8 @@ static void my_gballoc_free(void* ptr)
 #include "mbedtls/certs.h"
 #include "mbedtls/entropy_poll.h"
 
+#define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
+
 /**
  * Include the mockable headers here.
  */
@@ -82,7 +84,12 @@ MOCKABLE_FUNCTION(, void, mbedtls_init, void*, instance, const char*, hostname);
 MOCKABLE_FUNCTION(, int, mbedtls_x509_crt_parse, mbedtls_x509_crt*, crt, const unsigned char*, buf, size_t, buflen);
 MOCKABLE_FUNCTION(, void, mbedtls_x509_crt_init, mbedtls_x509_crt*, crt);
 MOCKABLE_FUNCTION(, void, mbedtls_x509_crt_free, mbedtls_x509_crt*, crt);
+
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
+MOCKABLE_FUNCTION(, int, mbedtls_pk_parse_key, mbedtls_pk_context*, ctx, const unsigned char*, key, size_t, keylen, const unsigned char*, pwd, size_t, pwdlen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+#else
 MOCKABLE_FUNCTION(, int, mbedtls_pk_parse_key, mbedtls_pk_context*, ctx, const unsigned char*, key, size_t, keylen, const unsigned char*, pwd, size_t, pwdlen);
+#endif
 
 MOCKABLE_FUNCTION(, void, mbedtls_ctr_drbg_init, mbedtls_ctr_drbg_context*, ctx);
 MOCKABLE_FUNCTION(, void, mbedtls_ctr_drbg_free, mbedtls_ctr_drbg_context*, ctx)
@@ -1187,8 +1194,14 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_X509_KEY));
+
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
+        STRICT_EXPECTED_CALL(mbedtls_pk_parse_key(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, NULL, 0, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+            .CopyOutArgumentBuffer_ctx(&pk_info, sizeof(pk_info));
+#else
         STRICT_EXPECTED_CALL(mbedtls_pk_parse_key(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, NULL, 0))
             .CopyOutArgumentBuffer_ctx(&pk_info, sizeof(pk_info));
+#endif
 
         //act
         tlsio_mbedtls_setoption(handle, SU_OPTION_X509_PRIVATE_KEY, TEST_X509_KEY);
