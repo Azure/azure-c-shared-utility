@@ -25,6 +25,9 @@
 #elif USE_MBEDTLS
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
 #endif
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/safe_math.h"
@@ -329,6 +332,46 @@ static size_t ContentWriteFunction(void *ptr, size_t size, size_t nmemb, void *u
     return size * nmemb;
 }
 
+#ifdef USE_MBEDTLS
+static int parse_key(const char* key, mbedtls_pk_context* out_parsed_key)
+{
+    int result;
+
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
+    const char *pers = "httpapi_curl";
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+
+    if ((result = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                     (const unsigned char *) pers,
+                                     strlen(pers))) != 0) {
+        LogError("mbedtls_ctr_drbg_seed failed (%d)", result);
+    }
+    else if ((result = mbedtls_pk_parse_key(out_parsed_key,
+                                            (const unsigned char *)key, (int)(strlen(key) + 1),
+                                            NULL, 0, mbedtls_ctr_drbg_random, &ctr_drbg)) != 0)
+    {
+        LogError("mbedtls_pk_parse_key failed (%d)", result);
+    }
+
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+#else
+    if ((result = mbedtls_pk_parse_key(out_parsed_key,
+                                        (const unsigned char *)key, (int)(strlen(key) + 1),
+                                        NULL, 0)) != 0)
+    {
+        LogError("mbedtls_pk_parse_key failed (%d)", result);
+    }
+#endif
+
+    return result;
+}
+#endif // USE_MBEDTLS
+
 static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
 {
     CURLcode result;
@@ -415,7 +458,7 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
             !(
                 (mbedtls_x509_crt_parse(&httpHandleData->cert, (const unsigned char *)httpHandleData->x509certificate, (int)(strlen(httpHandleData->x509certificate) + 1)) == 0) &&
-                (mbedtls_pk_parse_key(&httpHandleData->key, (const unsigned char *)httpHandleData->x509privatekey, (int)(strlen(httpHandleData->x509privatekey) + 1), NULL, 0) == 0) &&
+                (parse_key(httpHandleData->x509privatekey, &httpHandleData->key) == 0) &&
                 (mbedtls_ssl_conf_own_cert(ssl_ctx, &httpHandleData->cert, &httpHandleData->key) == 0)
                 )
             )
