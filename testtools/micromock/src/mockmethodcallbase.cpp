@@ -31,7 +31,7 @@ CMockMethodCallBase::CMockMethodCallBase(std::tstring methodName, size_t argCoun
 {
     Init(methodName);
 
-    for (unsigned char i = 0; i < argCount; i++)
+    for (size_t i = 0; i < argCount; i++)
     {
         m_MockCallArguments.push_back(arguments[i]);
     }
