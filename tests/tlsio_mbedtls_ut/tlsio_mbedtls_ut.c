@@ -117,7 +117,10 @@ MOCKABLE_FUNCTION(, int, mbedtls_ssl_setup, mbedtls_ssl_context*, ssl, const mbe
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_set_session, mbedtls_ssl_context*, ssl, const mbedtls_ssl_session*, session)
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_read, mbedtls_ssl_context*, ssl, unsigned char*, buf, size_t, len)
 MOCKABLE_FUNCTION(, size_t, mbedtls_ssl_get_max_frag_len, const mbedtls_ssl_context*, ssl)
-MOCKABLE_FUNCTION(, size_t, mbedtls_ssl_get_max_out_record_payload, const mbedtls_ssl_context*, ssl)
+// Note: unlike mbedtls_ssl_get_max_frag_len which returns size_t,
+// mbedtls_ssl_get_max_out_record_payload returns int (it can return a
+// negative MBEDTLS_ERR_* value).
+MOCKABLE_FUNCTION(, int, mbedtls_ssl_get_max_out_record_payload, const mbedtls_ssl_context*, ssl)
 
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_authmode, mbedtls_ssl_config*, conf, int, authmode)
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_rng, mbedtls_ssl_config*, conf, f_rng, fr, void*, p_rng);
