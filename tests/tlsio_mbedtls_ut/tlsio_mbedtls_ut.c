@@ -50,6 +50,7 @@ static void my_gballoc_free(void* ptr)
 #include "azure_macro_utils/macro_utils.h"
 
 #include "mbedtls/config.h"
+#include "mbedtls/version.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"
