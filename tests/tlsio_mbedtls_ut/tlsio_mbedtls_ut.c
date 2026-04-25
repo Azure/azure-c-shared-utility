@@ -60,6 +60,17 @@ static void my_gballoc_free(void* ptr)
 
 #define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
 
+// adapters/tlsio_mbedtls.c switched from mbedtls_ssl_get_max_frag_len to
+// mbedtls_ssl_get_max_out_record_payload when MBEDTLS_VERSION_NUMBER >= 2.16.0.
+// Mock both names so the test source builds against the full 2.x range, and
+// route the test expectations to whichever symbol the production code is
+// actually calling for the mbedTLS in use.
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= 0x02160000
+#define MOCK_MBEDTLS_GET_MAX_FRAG_LEN  mbedtls_ssl_get_max_out_record_payload
+#else
+#define MOCK_MBEDTLS_GET_MAX_FRAG_LEN  mbedtls_ssl_get_max_frag_len
+#endif
+
 /**
  * Include the mockable headers here.
  */
@@ -106,6 +117,7 @@ MOCKABLE_FUNCTION(, int, mbedtls_ssl_setup, mbedtls_ssl_context*, ssl, const mbe
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_set_session, mbedtls_ssl_context*, ssl, const mbedtls_ssl_session*, session)
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_read, mbedtls_ssl_context*, ssl, unsigned char*, buf, size_t, len)
 MOCKABLE_FUNCTION(, size_t, mbedtls_ssl_get_max_frag_len, const mbedtls_ssl_context*, ssl)
+MOCKABLE_FUNCTION(, size_t, mbedtls_ssl_get_max_out_record_payload, const mbedtls_ssl_context*, ssl)
 
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_authmode, mbedtls_ssl_config*, conf, int, authmode)
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_rng, mbedtls_ssl_config*, conf, f_rng, fr, void*, p_rng);
@@ -835,7 +847,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
+        STRICT_EXPECTED_CALL(MOCK_MBEDTLS_GET_MAX_FRAG_LEN(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
         STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(TEST_DATA_SIZE);
 
         //act
@@ -863,7 +875,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
+        STRICT_EXPECTED_CALL(MOCK_MBEDTLS_GET_MAX_FRAG_LEN(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
         STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(-1);
 
         //act
@@ -903,7 +915,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             size_t data_left = total_data - index * MAX_FRAGMENT_SIZE;
             size_t data_processed = data_left > MAX_FRAGMENT_SIZE ? MAX_FRAGMENT_SIZE : data_left;
             const unsigned char* data_ptr = dummy_data + index * MAX_FRAGMENT_SIZE;
-            STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+            STRICT_EXPECTED_CALL(MOCK_MBEDTLS_GET_MAX_FRAG_LEN(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
             STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, data_ptr, data_left));
             STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         }
@@ -948,7 +960,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             size_t data_left = total_data - index * MAX_FRAGMENT_SIZE;
             size_t data_processed = data_left > MAX_FRAGMENT_SIZE ? MAX_FRAGMENT_SIZE : data_left;
             const unsigned char* data_ptr = dummy_data + index * MAX_FRAGMENT_SIZE;
-            STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+            STRICT_EXPECTED_CALL(MOCK_MBEDTLS_GET_MAX_FRAG_LEN(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
             STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, data_ptr, data_left));
             STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         }
