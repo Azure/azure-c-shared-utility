@@ -12,6 +12,8 @@ endif()
 project(azure_c_shared_utility)
 
 FILE(READ ${CMAKE_CURRENT_LIST_DIR}/version.txt C_SHARED_VERSION)
+string(REGEX MATCH "^([0-9]+)[\\.]([0-9]+)[\\.]([0-9]+)$" _ ${C_SHARED_VERSION})
+set(C_SHARED_VERSION_MAJOR ${CMAKE_MATCH_1})
 
 #bring in dependencies
 #do not add or build any tests of the dependencies
@@ -591,7 +593,11 @@ if(${build_as_dynamic})
         ${source_h_files}
         ${def_files}
     )
-    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil_dll")
+    set_target_properties(aziotsharedutil_dll PROPERTIES
+        OUTPUT_NAME "aziotsharedutil_dll"
+        VERSION ${C_SHARED_VERSION}
+        SOVERSION ${C_SHARED_VERSION_MAJOR}
+    )
 endif()
 
 set(aziotsharedutil_target_libs)
