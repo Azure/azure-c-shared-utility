@@ -382,8 +382,30 @@ if(${use_openssl})
     set(source_c_files ${source_c_files}
         ./adapters/tlsio_openssl.c
         ./adapters/x509_openssl.c
-        ./adapters/csr_gen_openssl.c
     )
+    
+    # Handle CSR generation based on OpenSSL version
+    # EVP_EC_gen() was added in OpenSSL 3.0; older toolchains may need the stub
+    include(CheckCSourceCompiles)
+    set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
+    check_c_source_compiles("
+        #include <openssl/opensslv.h>
+        #if OPENSSL_VERSION_NUMBER < 0x30000000L
+        #error old openssl
+        #endif
+        int main(void){return 0;}" HAS_OPENSSL3)
+    
+    if(HAS_OPENSSL3)
+        # OpenSSL 3.0+ has full support for EVP_EC_gen
+        set(source_c_files ${source_c_files}
+            ./adapters/csr_gen_openssl.c
+        )
+    else()
+        # OpenSSL < 3.0 lacks EVP_EC_gen; use no-op stub
+        set(source_c_files ${source_c_files}
+            ./adapters/csr_gen_openssl_stub.c
+        )
+    endif()
 endif()
 if(${use_applessl})
     set(source_c_files ${source_c_files}
