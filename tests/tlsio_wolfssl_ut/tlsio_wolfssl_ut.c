@@ -135,6 +135,10 @@ MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_get_error, WOLFSSL*, ssl, int,
 MOCK_FUNCTION_END(SSL_SUCCESS)
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_check_domain_name, WOLFSSL*, ssl, const char*, dn)
 MOCK_FUNCTION_END(SSL_SUCCESS)
+#ifdef HAVE_SNI
+MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_UseSNI, WOLFSSL*, ssl, unsigned char, type, const void*, data, unsigned short, size)
+MOCK_FUNCTION_END(WOLFSSL_SUCCESS)
+#endif
 
 #if defined(LIBWOLFSSL_VERSION_HEX) && LIBWOLFSSL_VERSION_HEX >= 0x04000000
 MOCK_FUNCTION_WITH_CODE(WOLFSSL_API, int, wolfSSL_Debugging_ON)
@@ -399,6 +403,9 @@ TEST_FUNCTION(tlsio_wolfssl_open_set_dev_id_succeeds)
 
     STRICT_EXPECTED_CALL(wolfSSL_SetDevId(TEST_WOLFSSL, 11));
     STRICT_EXPECTED_CALL(wolfSSL_check_domain_name(TEST_WOLFSSL, IGNORED_ARG));
+#ifdef HAVE_SNI
+    STRICT_EXPECTED_CALL(wolfSSL_UseSNI(TEST_WOLFSSL, WOLFSSL_SNI_HOST_NAME, IGNORED_ARG, IGNORED_ARG));
+#endif
     STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(wolfSSL_connect(TEST_WOLFSSL));
 
@@ -428,6 +435,9 @@ TEST_FUNCTION(tlsio_wolfssl_open_set_dev_id_2_succeeds)
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(wolfSSL_check_domain_name(TEST_WOLFSSL, IGNORED_ARG));
+#ifdef HAVE_SNI
+    STRICT_EXPECTED_CALL(wolfSSL_UseSNI(TEST_WOLFSSL, WOLFSSL_SNI_HOST_NAME, IGNORED_ARG, IGNORED_ARG));
+#endif
     STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(wolfSSL_connect(TEST_WOLFSSL));
     STRICT_EXPECTED_CALL(wolfSSL_SetDevId(TEST_WOLFSSL, 11));
@@ -1016,5 +1026,30 @@ TEST_FUNCTION(tlsio_wolfssl_on_io_recv_timeout_success)
     (void)tlsio_wolfssl_close(io_handle, on_close_complete, NULL);
     tlsio_wolfssl_destroy(io_handle);
 }
+
+#ifdef HAVE_SNI
+TEST_FUNCTION(tlsio_wolfssl_open_sni_failure_fails)
+{
+    //arrange
+    TLSIO_CONFIG tls_io_config;
+    memset(&tls_io_config, 0, sizeof(tls_io_config));
+    tls_io_config.hostname = TEST_HOSTNAME;
+    CONCRETE_IO_HANDLE io_handle = tlsio_wolfssl_create(&tls_io_config);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(wolfSSL_check_domain_name(TEST_WOLFSSL, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(wolfSSL_UseSNI(TEST_WOLFSSL, WOLFSSL_SNI_HOST_NAME, IGNORED_ARG, IGNORED_ARG))
+        .SetReturn(WOLFSSL_FAILURE);
+
+    //act
+    int test_result = tlsio_wolfssl_open(io_handle, on_io_open_complete, NULL, on_bytes_recv, NULL, on_error, NULL);
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, test_result);
+
+    //clean
+    tlsio_wolfssl_destroy(io_handle);
+}
+#endif
 
 END_TEST_SUITE(tlsio_wolfssl_ut)

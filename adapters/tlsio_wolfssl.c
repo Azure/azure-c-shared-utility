@@ -597,6 +597,32 @@ static int enable_domain_check(TLS_IO_INSTANCE* tls_io_instance)
     return result;
 }
 
+// SNI (Server Name Indication) sends the hostname in the TLS ClientHello so the
+// server can select the correct certificate.  This is separate from domain-name
+// validation performed by wolfSSL_check_domain_name(), which only checks the
+// server certificate CN/SAN after the handshake completes.
+static int enable_sni(TLS_IO_INSTANCE* tls_io_instance)
+{
+    int result = 0;
+
+#ifdef HAVE_SNI
+    if (tls_io_instance->hostname != NULL)
+    {
+        if (wolfSSL_UseSNI(tls_io_instance->ssl, WOLFSSL_SNI_HOST_NAME,
+                           tls_io_instance->hostname,
+                           (unsigned short)strlen(tls_io_instance->hostname)) != WOLFSSL_SUCCESS)
+        {
+            LogError("Failed to set SNI hostname to '%s'", tls_io_instance->hostname);
+            result = MU_FAILURE;
+        }
+    }
+#else
+    (void)tls_io_instance;
+#endif
+
+    return result;
+}
+
 static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
 {
     int result;
@@ -604,6 +630,11 @@ static int prepare_wolfssl_open(TLS_IO_INSTANCE* tls_io_instance)
     if (enable_domain_check(tls_io_instance))
     {
         LogError("Failed to configure domain name verification");
+        result = MU_FAILURE;
+    }
+    else if (enable_sni(tls_io_instance) != 0)
+    {
+        LogError("Failed to configure SNI");
         result = MU_FAILURE;
     }
     else if (add_certificate_to_store(tls_io_instance) != 0)
