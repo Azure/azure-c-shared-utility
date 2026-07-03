@@ -1043,6 +1043,12 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
                 }
                 else
                 {
+                    /* Negotiate (Kerberos/SPNEGO) proxy auth, falling back to Basic.
+                     * Curl picks whichever scheme the proxy advertises in 407 responses.
+                     * Ignore CURLE_NOT_BUILT_IN: if curl lacks GSSAPI, Basic still works. */
+                    (void)curl_easy_setopt(httpHandleData->curl, CURLOPT_PROXYAUTH,
+                                           CURLAUTH_NEGOTIATE | CURLAUTH_BASIC);
+
                     if (proxy_data->username != NULL && proxy_data->password != NULL)
                     {
                         size_t authLen = safe_add_size_t(strlen(proxy_data->username), strlen(proxy_data->password));

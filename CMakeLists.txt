@@ -84,6 +84,7 @@ option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in ht
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
+option(use_gssapi "set use_gssapi to ON to enable Kerberos/SPNEGO proxy authentication in http_proxy_io (default is OFF)" OFF)
 option(no_openssl_engine "Disables the use of ENGINEs in OpenSSL" OFF)
 option(enable_ipv6 "set enable_ipv6 to ON to enable dual-ip-stack (IPv4 and IPv6) support (default is OFF for IPv4 only)" OFF)
 
@@ -716,6 +717,11 @@ if(LINUX)
     if(${use_c_ares})
         set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} cares)
     endif()
+endif()
+
+if(${use_gssapi})
+    set(aziotsharedutil_target_libs ${aziotsharedutil_target_libs} gssapi_krb5)
+    add_definitions(-DAZURE_C_SHARED_UTILITY_USE_GSSAPI=1)
 endif()
 
 target_link_libraries(aziotsharedutil PUBLIC ${aziotsharedutil_target_libs} c_logging_v2)
