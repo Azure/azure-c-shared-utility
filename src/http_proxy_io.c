@@ -20,7 +20,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <gssapi/gssapi.h>
-#include <gssapi/gssapi_krb5.h>
 #endif
 
 static const char* const OPTION_UNDERLYING_IO_OPTIONS = "underlying_io_options";
@@ -265,6 +264,12 @@ static void http_proxy_io_destroy(CONCRETE_IO_HANDLE http_proxy_io)
 #ifdef AZURE_C_SHARED_UTILITY_USE_GSSAPI
 static void unchecked_on_send_complete(void* context, IO_SEND_RESULT send_result);
 
+/* Static OIDs instead of the libraries' exported constants: RFC 4559 requires
+ * SPNEGO (not raw krb5) tokens under the Negotiate scheme, and MIT/Heimdal
+ * export these under different symbol names. */
+static gss_OID_desc spnego_mech_oid = { 6, (void*)"\x2b\x06\x01\x05\x05\x02" };                         /* 1.3.6.1.5.5.2 */
+static gss_OID_desc hostbased_service_oid = { 10, (void*)"\x2a\x86\x48\x86\xf7\x12\x01\x02\x01\x04" };  /* 1.2.840.113554.1.2.1.4 */
+
 /* Case-insensitive ASCII prefix match. Used to find headers regardless of how
  * a particular proxy chose to capitalize them. */
 static int has_prefix_ci(const char* s, size_t s_len, const char* prefix, size_t prefix_len)
@@ -284,16 +289,42 @@ static int has_prefix_ci(const char* s, size_t s_len, const char* prefix, size_t
     return 1;
 }
 
+/* True if the comma-separated header value [value, value_end) contains the
+ * token "close" (case-insensitive, whole word). */
+static int value_has_close_token(const char* value, const char* value_end)
+{
+    const char* p = value;
+    while (p < value_end)
+    {
+        const char* token_start;
+        while ((p < value_end) && ((*p == ' ') || (*p == '\t') || (*p == ',')))
+        {
+            p++;
+        }
+        token_start = p;
+        while ((p < value_end) && (*p != ' ') && (*p != '\t') && (*p != ','))
+        {
+            p++;
+        }
+        if (((size_t)(p - token_start) == 5) && has_prefix_ci(token_start, 5, "close", 5))
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* Inspect the buffered 407 response and compute how many body bytes still need
  * to be discarded before the proxy's reply to the next CONNECT can be parsed.
- * On success returns 0 and writes the drain count to *drain (0 if the response
- * carried no body, or if everything is already in the buffer). Returns
- * non-zero if the body length cannot be determined unambiguously: chunked
- * transfer-encoding, missing Content-Length, or a malformed Content-Length
- * value — in any of those cases the only safe move is to abort the negotiate
- * retry, since reusing the connection would risk parsing body bytes as the
- * start of the next response. */
-static int compute_body_drain(const unsigned char* response, size_t response_size, size_t* drain)
+ * On success returns 0, writes the drain count to *drain (0 if the response
+ * carried no body, or if everything is already in the buffer) and sets
+ * *connection_close if the proxy announced it will close the connection.
+ * Returns non-zero if the body length cannot be determined unambiguously:
+ * chunked transfer-encoding, missing Content-Length, or a malformed
+ * Content-Length value — in any of those cases the only safe move is to abort
+ * the negotiate retry, since reusing the connection would risk parsing body
+ * bytes as the start of the next response. */
+static int compute_body_drain(const unsigned char* response, size_t response_size, size_t* drain, int* connection_close)
 {
     const char* p = (const char*)response;
     const char* headers_end;
@@ -303,6 +334,7 @@ static int compute_body_drain(const unsigned char* response, size_t response_siz
     const char* line;
 
     *drain = 0;
+    *connection_close = 0;
     headers_end = strstr(p, "\r\n\r\n");
     if (headers_end == NULL)
     {
@@ -345,6 +377,10 @@ static int compute_body_drain(const unsigned char* response, size_t response_siz
             }
             while ((value < next_line) && (*value >= '0') && (*value <= '9'))
             {
+                if (parsed > (SIZE_MAX - 9) / 10)
+                {
+                    return __LINE__;
+                }
                 parsed = (parsed * 10) + (size_t)(*value - '0');
                 found_digit = 1;
                 value++;
@@ -354,6 +390,17 @@ static int compute_body_drain(const unsigned char* response, size_t response_siz
                 return __LINE__;
             }
             content_length = parsed;
+        }
+        /* Codes_SRS_HTTP_PROXY_IO_01_102: [ If the 407 response indicates Connection: close (or Proxy-Connection: close), the negotiation shall be aborted and the on_open_complete callback triggered with IO_OPEN_ERROR. ]*/
+        if (has_prefix_ci(line, line_len, "Connection:", 11) &&
+            value_has_close_token(line + 11, next_line))
+        {
+            *connection_close = 1;
+        }
+        if (has_prefix_ci(line, line_len, "Proxy-Connection:", 17) &&
+            value_has_close_token(line + 17, next_line))
+        {
+            *connection_close = 1;
         }
         line = next_line + 2;
     }
@@ -372,11 +419,33 @@ static int compute_body_drain(const unsigned char* response, size_t response_siz
     return 0;
 }
 
-/* Walk the CONNECT response headers and locate a `Proxy-Authenticate: Negotiate
- * [<token>]` challenge. On success returns 0 and `*out_token` points to a
- * malloc'd null-terminated copy of the base64 token (empty string if the proxy
- * sent only the bare `Negotiate` keyword). Returns non-zero if no Negotiate
- * challenge is present. */
+/* True if [s, end) is a token68/base64 run: base64 alphabet with '=' accepted
+ * only as trailing padding. */
+static int is_base64_token(const char* s, const char* end)
+{
+    const char* p = s;
+    if (p == end)
+    {
+        return 0;
+    }
+    while ((p < end) &&
+           (((*p >= 'A') && (*p <= 'Z')) || ((*p >= 'a') && (*p <= 'z')) ||
+            ((*p >= '0') && (*p <= '9')) || (*p == '+') || (*p == '/')))
+    {
+        p++;
+    }
+    while ((p < end) && (*p == '='))
+    {
+        p++;
+    }
+    return (p == end) ? 1 : 0;
+}
+
+/* Walk the CONNECT response headers and locate a `Negotiate [<token>]`
+ * challenge in a `Proxy-Authenticate` header. On success returns 0 and
+ * `*out_token` points to a malloc'd null-terminated copy of the base64 token
+ * (empty string if the proxy sent only the bare `Negotiate` keyword). Returns
+ * non-zero if no Negotiate challenge is present. */
 static int extract_negotiate_challenge(const char* response, char** out_token)
 {
     static const char header_name[] = "Proxy-Authenticate:";
@@ -406,46 +475,75 @@ static int extract_negotiate_challenge(const char* response, char** out_token)
         line_len = (size_t)(next_line - line);
         if (has_prefix_ci(line, line_len, header_name, header_name_len))
         {
-            const char* value = line + header_name_len;
+            /* Codes_SRS_HTTP_PROXY_IO_01_097: [ The Negotiate challenge shall be recognized case-insensitively at any position within a comma-separated challenge list and across multiple Proxy-Authenticate header lines. ]*/
+            /* RFC 7235: the value is a comma-separated challenge list. A naive
+             * split would also cut a challenge's own auth-param list apart
+             * (e.g. `Digest realm="x", qop="auth"`), but that is harmless for
+             * locating a whole-word `Negotiate` member; commas inside quoted
+             * strings must not split, or `Basic realm="a,b"` would leak
+             * fragments that could false-match. */
+            const char* member = line + header_name_len;
             const char* line_end = next_line;
-            const char* scheme;
-            const char* token_start;
-            const char* token_end;
-            size_t scheme_len;
-            size_t token_len;
-            while ((value < line_end) && (*value == ' ' || *value == '\t'))
+            while (member < line_end)
             {
-                value++;
-            }
-            scheme = value;
-            scheme_len = (size_t)(line_end - scheme);
-            /* Match "Negotiate" case-insensitively as a whole word. */
-            if ((scheme_len >= 9) &&
-                has_prefix_ci(scheme, scheme_len, "Negotiate", 9) &&
-                ((scheme_len == 9) || (scheme[9] == ' ') || (scheme[9] == '\t')))
-            {
-                token_start = scheme + 9;
-                while ((token_start < line_end) && (*token_start == ' ' || *token_start == '\t'))
+                const char* member_end;
+                const char* trimmed;
+                size_t member_len;
+                int in_quotes = 0;
+                while ((member < line_end) && ((*member == ' ') || (*member == '\t') || (*member == ',')))
                 {
-                    token_start++;
+                    member++;
                 }
-                token_end = line_end;
-                while ((token_end > token_start) && ((*(token_end - 1) == ' ') || (*(token_end - 1) == '\t')))
+                member_end = member;
+                while ((member_end < line_end) && (in_quotes || (*member_end != ',')))
                 {
-                    token_end--;
+                    if (*member_end == '"')
+                    {
+                        in_quotes = !in_quotes;
+                    }
+                    else if (in_quotes && (*member_end == '\\') && ((member_end + 1) < line_end))
+                    {
+                        member_end++;
+                    }
+                    member_end++;
                 }
-                token_len = (size_t)(token_end - token_start);
-                *out_token = (char*)malloc(token_len + 1);
-                if (*out_token == NULL)
+                trimmed = member_end;
+                while ((trimmed > member) && ((*(trimmed - 1) == ' ') || (*(trimmed - 1) == '\t')))
                 {
-                    return __LINE__;
+                    trimmed--;
                 }
-                if (token_len > 0)
+                member_len = (size_t)(trimmed - member);
+                if ((member_len >= 9) &&
+                    has_prefix_ci(member, member_len, "Negotiate", 9) &&
+                    ((member_len == 9) || (member[9] == ' ') || (member[9] == '\t')))
                 {
-                    memcpy(*out_token, token_start, token_len);
+                    const char* token_start = member + 9;
+                    size_t token_len;
+                    while ((token_start < trimmed) && ((*token_start == ' ') || (*token_start == '\t')))
+                    {
+                        token_start++;
+                    }
+                    /* Anything after the keyword that is not a token68/base64
+                     * run is an auth-param list, which RFC 4559 does not
+                     * define for Negotiate — treat the challenge as bare. */
+                    if (!is_base64_token(token_start, trimmed))
+                    {
+                        token_start = trimmed;
+                    }
+                    token_len = (size_t)(trimmed - token_start);
+                    *out_token = (char*)malloc(token_len + 1);
+                    if (*out_token == NULL)
+                    {
+                        return __LINE__;
+                    }
+                    if (token_len > 0)
+                    {
+                        memcpy(*out_token, token_start, token_len);
+                    }
+                    (*out_token)[token_len] = '\0';
+                    return 0;
                 }
-                (*out_token)[token_len] = '\0';
-                return 0;
+                member = member_end + 1;
             }
         }
         line = next_line + 2;
@@ -475,7 +573,7 @@ static int ensure_gss_target_name(HTTP_PROXY_IO_INSTANCE* instance)
     (void)sprintf(name_str, "HTTP@%s", instance->proxy_hostname);
     name_buffer.value = name_str;
     name_buffer.length = name_len;
-    major = gss_import_name(&minor, &name_buffer, (gss_OID)GSS_C_NT_HOSTBASED_SERVICE, &instance->gss_target_name);
+    major = gss_import_name(&minor, &name_buffer, &hostbased_service_oid, &instance->gss_target_name);
     free(name_str);
     if (GSS_ERROR(major))
     {
@@ -506,6 +604,7 @@ static int gss_step_negotiate(HTTP_PROXY_IO_INSTANCE* instance, const char* serv
         return __LINE__;
     }
 
+    /* Codes_SRS_HTTP_PROXY_IO_01_098: [ If the challenge carries a base64 token, that token shall be base64-decoded and passed as the input token to gss_init_sec_context for the next handshake round; a bare Negotiate challenge shall start a round with no input token. ]*/
     if ((server_token_b64 != NULL) && (server_token_b64[0] != '\0'))
     {
         decoded_input = Azure_Base64_Decode(server_token_b64);
@@ -518,12 +617,15 @@ static int gss_step_negotiate(HTTP_PROXY_IO_INSTANCE* instance, const char* serv
         input_token.length = BUFFER_length(decoded_input);
     }
 
+    /* Codes_SRS_HTTP_PROXY_IO_01_099: [ gss_init_sec_context shall be invoked requesting the SPNEGO mechanism (OID 1.3.6.1.5.5.2). ]*/
+    /* No GSS_C_MUTUAL_FLAG: the server's final token (delivered in the 200
+     * response) is never processed, so mutual auth could not be verified. */
     major = gss_init_sec_context(&minor,
                                  GSS_C_NO_CREDENTIAL,
                                  &instance->gss_ctx,
                                  instance->gss_target_name,
-                                 (gss_OID)gss_mech_krb5,
-                                 GSS_C_MUTUAL_FLAG | GSS_C_SEQUENCE_FLAG,
+                                 &spnego_mech_oid,
+                                 GSS_C_SEQUENCE_FLAG,
                                  0,
                                  GSS_C_NO_CHANNEL_BINDINGS,
                                  (decoded_input != NULL) ? &input_token : GSS_C_NO_BUFFER,
@@ -537,6 +639,7 @@ static int gss_step_negotiate(HTTP_PROXY_IO_INSTANCE* instance, const char* serv
         BUFFER_delete(decoded_input);
     }
 
+    /* Codes_SRS_HTTP_PROXY_IO_01_103: [ If the proxy replies 407 again after GSSAPI has reported the security context complete, or if gss_init_sec_context fails or yields an empty output token, the on_open_complete callback shall be triggered with IO_OPEN_ERROR. ]*/
     if (GSS_ERROR(major))
     {
         LogError("gss_init_sec_context failed (major=0x%08x minor=0x%08x)", (unsigned int)major, (unsigned int)minor);
@@ -544,16 +647,16 @@ static int gss_step_negotiate(HTTP_PROXY_IO_INSTANCE* instance, const char* serv
         return __LINE__;
     }
 
-    if (major == GSS_S_COMPLETE)
-    {
-        instance->negotiate_complete = 1;
-    }
-
     if (output_token.length == 0)
     {
         (void)gss_release_buffer(&minor, &output_token);
         LogError("gss_init_sec_context returned an empty output token");
         return __LINE__;
+    }
+
+    if (major == GSS_S_COMPLETE)
+    {
+        instance->negotiate_complete = 1;
     }
 
     *out_b64 = Azure_Base64_Encode_Bytes((const unsigned char*)output_token.value, output_token.length);
@@ -629,6 +732,7 @@ static int try_proxy_negotiate(HTTP_PROXY_IO_INSTANCE* instance, const char* res
     char* server_token = NULL;
     STRING_HANDLE encoded_output = NULL;
     size_t drain = 0;
+    int connection_close = 0;
     int result;
 
     if (extract_negotiate_challenge(response, &server_token) != 0)
@@ -636,6 +740,7 @@ static int try_proxy_negotiate(HTTP_PROXY_IO_INSTANCE* instance, const char* res
         return __LINE__;
     }
 
+    /* Codes_SRS_HTTP_PROXY_IO_01_103: [ If the proxy replies 407 again after GSSAPI has reported the security context complete, or if gss_init_sec_context fails or yields an empty output token, the on_open_complete callback shall be triggered with IO_OPEN_ERROR. ]*/
     /* If we've already told GSSAPI we're done and the proxy still says 407,
      * we have nothing left to offer — fail. */
     if (instance->negotiate_complete)
@@ -649,9 +754,19 @@ static int try_proxy_negotiate(HTTP_PROXY_IO_INSTANCE* instance, const char* res
      * still need to be discarded before the proxy's reply to the next CONNECT
      * can be parsed — otherwise tail body bytes corrupt the next status line
      * and we get "Cannot decode HTTP response". */
-    if (compute_body_drain(instance->receive_buffer, instance->receive_buffer_size, &drain) != 0)
+    /* Codes_SRS_HTTP_PROXY_IO_01_101: [ If the 407 body length cannot be determined unambiguously (Transfer-Encoding present, Content-Length missing, malformed, or overflowing), the negotiation shall be aborted and the on_open_complete callback triggered with IO_OPEN_ERROR. ]*/
+    if (compute_body_drain(instance->receive_buffer, instance->receive_buffer_size, &drain, &connection_close) != 0)
     {
         LogError("Cannot determine 407 body length for keep-alive drain");
+        free(server_token);
+        return __LINE__;
+    }
+
+    if (connection_close)
+    {
+        /* The follow-up CONNECT would go into a socket the proxy is about to
+         * close; fail fast so the caller can retry on a fresh connection. */
+        LogError("Proxy indicated Connection: close on the 407 response");
         free(server_token);
         return __LINE__;
     }
@@ -681,6 +796,19 @@ static int try_proxy_negotiate(HTTP_PROXY_IO_INSTANCE* instance, const char* res
     result = send_connect_with_negotiate(instance, encoded_output);
     STRING_delete(encoded_output);
     return result;
+}
+
+/* Codes_SRS_HTTP_PROXY_IO_01_104: [ http_proxy_io_open shall discard any partially negotiated state from a previous session (GSS security context, negotiate-complete flag, body-drain counter) before opening the underlying IO. ]*/
+static void reset_negotiate_state(HTTP_PROXY_IO_INSTANCE* instance)
+{
+    if (instance->gss_ctx != GSS_C_NO_CONTEXT)
+    {
+        OM_uint32 minor;
+        (void)gss_delete_sec_context(&minor, &instance->gss_ctx, GSS_C_NO_BUFFER);
+        instance->gss_ctx = GSS_C_NO_CONTEXT;
+    }
+    instance->negotiate_complete = 0;
+    instance->body_bytes_to_drain = 0;
 }
 #endif /* AZURE_C_SHARED_UTILITY_USE_GSSAPI */
 
@@ -1091,6 +1219,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
         case HTTP_PROXY_IO_STATE_WAITING_FOR_CONNECT_RESPONSE:
         {
 #ifdef AZURE_C_SHARED_UTILITY_USE_GSSAPI
+            /* Codes_SRS_HTTP_PROXY_IO_01_100: [ Before parsing the response to the follow-up CONNECT, any not-yet-received body bytes of the 407 response (per Content-Length) shall be discarded. ]*/
             /* Drain any remaining body bytes from the prior 407 response
              * before parsing the reply to the follow-up CONNECT. */
             if (http_proxy_io_instance->body_bytes_to_drain > 0)
@@ -1161,6 +1290,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     else if ((status_code < 200) || (status_code > 299))
                     {
 #ifdef AZURE_C_SHARED_UTILITY_USE_GSSAPI
+                        /* Codes_SRS_HTTP_PROXY_IO_01_096: [ If the CONNECT response status code is 407 and the response contains a Proxy-Authenticate challenge for the Negotiate scheme, the IO shall attempt SPNEGO authentication by sending a new CONNECT request carrying a Proxy-Authorization: Negotiate <base64 token> header. ]*/
                         if ((status_code == 407) &&
                             (try_proxy_negotiate(http_proxy_io_instance,
                                                  (const char*)http_proxy_io_instance->receive_buffer) == 0))
@@ -1239,6 +1369,17 @@ static int http_proxy_io_open(CONCRETE_IO_HANDLE http_proxy_io, ON_IO_OPEN_COMPL
 
             http_proxy_io_instance->on_io_open_complete = on_io_open_complete;
             http_proxy_io_instance->on_io_open_complete_context = on_io_open_complete_context;
+
+            /* Codes_SRS_HTTP_PROXY_IO_01_105: [ http_proxy_io_open shall free any CONNECT response bytes buffered during a previous open attempt before opening the underlying IO. ]*/
+            if (http_proxy_io_instance->receive_buffer != NULL)
+            {
+                free(http_proxy_io_instance->receive_buffer);
+                http_proxy_io_instance->receive_buffer = NULL;
+            }
+            http_proxy_io_instance->receive_buffer_size = 0;
+#ifdef AZURE_C_SHARED_UTILITY_USE_GSSAPI
+            reset_negotiate_state(http_proxy_io_instance);
+#endif
 
             http_proxy_io_instance->http_proxy_io_state = HTTP_PROXY_IO_STATE_OPENING_UNDERLYING_IO;
 
