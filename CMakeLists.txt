@@ -34,6 +34,13 @@ if ((NOT TARGET c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-buil
     set_default_build_options()
 endif()
 
+# Suppress C4702 (unreachable code) which is spuriously emitted during
+# Link-Time Code Generation (/GL + /LTCG) in Release builds.
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4702")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4702")
+endif()
+
 if ((NOT TARGET macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/macro-utils-c/CMakeLists.txt))
     add_subdirectory(deps/macro-utils-c)
 endif()

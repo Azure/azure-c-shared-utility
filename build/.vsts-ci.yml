@@ -64,7 +64,7 @@ jobs:
     displayName: 'Component Detection'
 
 - job: windowsx64
-  timeoutInMinutes: 90
+  timeoutInMinutes: 120
   variables:
     CodeQL.Enabled: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
     CodeQL.Language: cpp
