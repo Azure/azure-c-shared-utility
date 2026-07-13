@@ -165,6 +165,7 @@ if %MAKE_NUGET_PKG% == yes (
 	if not defined build-config (
 		echo ***Building both configurations***
 		msbuild /m %SOLUTION_NAME%.sln /p:Configuration=Release
+		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 		msbuild /m %SOLUTION_NAME%.sln /p:Configuration=Debug
 		if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 	) else (
