@@ -341,18 +341,37 @@ static size_t ContentWriteFunction(void *ptr, size_t size, size_t nmemb, void *u
 }
 
 #ifdef USE_MBEDTLS
-static int parse_key(const char* key, mbedtls_pk_context* out_parsed_key)
+// mbedTLS 4.x requires psa_crypto_init() to have succeeded before ANY
+// cryptographic operation, including indirect ones such as parsing a
+// certificate or a private key. It is idempotent, and a no-op on earlier
+// versions, which do not have a PSA subsystem to bring up.
+static int init_psa_crypto(void)
 {
-    int result;
+    int result = 0;
 
 #if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
-    // mbedTLS 4.x takes its randomness from PSA Crypto, which must be
-    // initialized before parsing a key. psa_crypto_init() is idempotent.
     psa_status_t psa_status = psa_crypto_init();
 
     if (psa_status != PSA_SUCCESS)
     {
         LogError("psa_crypto_init failed (%d)", (int)psa_status);
+        result = MU_FAILURE;
+    }
+#endif // MBEDTLS_VERSION_NUMBER
+
+    return result;
+}
+
+static int parse_key(const char* key, mbedtls_pk_context* out_parsed_key)
+{
+    int result;
+
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+    // mbedTLS 4.x takes its randomness from PSA Crypto. The caller is expected
+    // to have brought PSA up already; this call is a cheap idempotent safety
+    // net in case parse_key() ever gains another caller.
+    if (init_psa_crypto() != 0)
+    {
         result = MU_FAILURE;
     }
     else if ((result = mbedtls_pk_parse_key(out_parsed_key,
@@ -477,8 +496,16 @@ static CURLcode ssl_ctx_callback(CURL *curl, void *ssl_ctx, void *userptr)
             result = CURLE_SSL_CERTPROBLEM;
         }
 #elif USE_MBEDTLS
+        // mbedTLS 4.x requires PSA to be up before ANY X.509 or key parsing.
+        // Both the client-certificate path and the trusted-CA-only path below
+        // call mbedtls_x509_crt_parse(), so this has to happen before either.
+        if (init_psa_crypto() != 0)
+        {
+            LogError("unable to initialize PSA crypto");
+            result = CURLE_SSL_CERTPROBLEM;
+        }
         // set device cert and key
-        if (
+        else if (
             (httpHandleData->x509certificate != NULL) && (httpHandleData->x509privatekey != NULL) &&
             !(
                 (mbedtls_x509_crt_parse(&httpHandleData->cert, (const unsigned char *)httpHandleData->x509certificate, (int)(strlen(httpHandleData->x509certificate) + 1)) == 0) &&

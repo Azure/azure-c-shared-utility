@@ -520,9 +520,14 @@ static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
     }
 }
 
-static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
+static int mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
 {
     const char* pers = "azure_iot_client";
+    int result = 0;
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+    psa_status_t psa_status;
+#endif // MBEDTLS_VERSION_NUMBER
+
     if (tls_io_instance->tls_status != TLS_STATE_INITIALIZED)
     {
         if (tls_io_instance->tls_status == TLS_STATE_CLOSING)
@@ -530,26 +535,30 @@ static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
             // The underlying connection has been closed, so here un-initialize first
             mbedtls_uninit(tls_io_instance);
         }
+
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+        // mbedTLS 4.x routes every source of randomness (TLS, X.509 and key
+        // parsing included) through PSA Crypto, so psa_crypto_init() must
+        // succeed before any other mbedTLS call. It is idempotent. This is done
+        // first so that nothing has been initialized yet if it fails.
+        (void)pers;
+        psa_status = psa_crypto_init();
+
+        if (psa_status != PSA_SUCCESS)
+        {
+            LogError("psa_crypto_init failed (%d)", (int)psa_status);
+            result = MU_FAILURE;
+        }
+        else
+#endif // MBEDTLS_VERSION_NUMBER
+        {
         // mbedTLS initialize...
         mbedtls_x509_crt_init(&tls_io_instance->trusted_certificates_parsed);
         mbedtls_x509_crt_init(&tls_io_instance->owncert);
         mbedtls_pk_init(&tls_io_instance->pKey);
         tls_io_instance->pkey_parsed = false;
 
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
-        {
-            // mbedTLS 4.x routes every source of randomness (TLS, X.509 and key
-            // parsing included) through PSA Crypto, so psa_crypto_init() must
-            // succeed before anything else. It is idempotent.
-            psa_status_t psa_status = psa_crypto_init();
-
-            if (psa_status != PSA_SUCCESS)
-            {
-                LogError("psa_crypto_init failed (%d)", (int)psa_status);
-            }
-        }
-        (void)pers;
-#else
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
         mbedtls_entropy_init(&tls_io_instance->entropy);
         // Add a weak entropy source here,avoid some platform doesn't have strong / hardware entropy
         mbedtls_entropy_add_source(&tls_io_instance->entropy, tlsio_entropy_poll, NULL, MBEDTLS_ENTROPY_MAX_GATHER, MBEDTLS_ENTROPY_SOURCE_WEAK);
@@ -581,7 +590,10 @@ static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
         mbedtls_ssl_setup(&tls_io_instance->ssl, &tls_io_instance->config);
 
         tls_io_instance->tls_status = TLS_STATE_INITIALIZED;
+        }
     }
+
+    return result;
 }
 
 CONCRETE_IO_HANDLE tlsio_mbedtls_create(void *io_create_parameters)
@@ -642,9 +654,24 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void *io_create_parameters)
                 else
                 {
                     result->tls_status = TLS_STATE_NOT_INITIALIZED;
-                    mbedtls_init((void*)result);
-                    result->tlsio_state = TLSIO_STATE_NOT_OPEN;
-                    result->invoke_on_send_complete_callback_for_fragments = tls_io_config->invoke_on_send_complete_callback_for_fragments;
+
+                    // Note: mbedtls_init() only fails before it has initialized
+                    // any mbedTLS context, so there is nothing to unwind with
+                    // mbedtls_uninit() here. Keep that true if it gains new
+                    // failure points.
+                    if (mbedtls_init((void*)result) != 0)
+                    {
+                        LogError("Failure initializing mbedTLS");
+                        xio_destroy(result->socket_io);
+                        free(result->hostname);
+                        free(result);
+                        result = NULL;
+                    }
+                    else
+                    {
+                        result->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                        result->invoke_on_send_complete_callback_for_fragments = tls_io_config->invoke_on_send_complete_callback_for_fragments;
+                    }
                 }
             }
         }

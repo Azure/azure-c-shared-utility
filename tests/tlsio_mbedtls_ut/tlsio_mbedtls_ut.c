@@ -518,11 +518,15 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         }
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_ARG, IGNORED_ARG));
         STRICT_EXPECTED_CALL(xio_create(IGNORED_ARG, IGNORED_ARG));
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+        // PSA must come up before anything else on 4.x, so that nothing has
+        // been initialized if it fails.
+        STRICT_EXPECTED_CALL(psa_crypto_init());
+#endif
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_pk_init(IGNORED_ARG));
 #if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
-        STRICT_EXPECTED_CALL(psa_crypto_init());
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_defaults(IGNORED_ARG, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT));
         STRICT_EXPECTED_CALL(mbedtls_ssl_conf_authmode(IGNORED_ARG, MBEDTLS_SSL_VERIFY_REQUIRED));
@@ -618,6 +622,39 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         //cleanup
         umock_c_negative_tests_deinit();
     }
+
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+    // On mbedTLS 4.x every cryptographic operation - including parsing a
+    // certificate or key and running a handshake - requires a successful
+    // psa_crypto_init(). If it fails, creation must fail rather than hand back
+    // a handle that cannot safely be used.
+    TEST_FUNCTION(tlsio_mbedtls_create_psa_crypto_init_fails)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+
+        STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_ARG, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_ARG, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(xio_create(IGNORED_ARG, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(psa_crypto_init()).SetReturn(PSA_ERROR_INSUFFICIENT_MEMORY);
+        // Nothing else may be initialized, and everything already allocated
+        // has to be released.
+        STRICT_EXPECTED_CALL(xio_destroy(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+
+        //act
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+
+        //assert
+        ASSERT_IS_NULL(handle);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+#endif // MBEDTLS_VERSION_NUMBER
 
     TEST_FUNCTION(tlsio_mbedtls_destroy_succeed)
     {
