@@ -325,6 +325,59 @@ jobs:
     env:
       LD_LIBRARY_PATH: /usr/local/lib
 
+- job: linux_mbed_4x
+  # mbedTLS 4.x moved all cryptography to TF-PSA-Crypto and removed the public
+  # entropy/CTR_DRBG modules, mbedtls_ssl_conf_rng() and
+  # mbedtls_ssl_conf_min_version(). adapters/tlsio_mbedtls.c handles that via
+  # MBEDTLS_VERSION_NUMBER guards; this job keeps that path compiling.
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'ubuntu-24.04'
+  displayName: 'mbedTLS 4.x'
+  steps:
+  - checkout: self
+    submodules: true
+  - script: |
+      set -e
+      sudo apt-get update
+      # Purge the distro mbedTLS 3.x so the 4.x install under /usr/local is the
+      # only one CMake can find.
+      sudo apt-get purge -y 'libmbedtls*' 'libmbedcrypto*' 'libmbedx509*' || true
+      sudo apt-get install -y \
+        clang \
+        cmake \
+        build-essential \
+        pkg-config \
+        curl \
+        libcurl4-openssl-dev \
+        uuid-dev \
+        python3-pip
+    displayName: 'Host setup'
+  - script: |
+      set -e
+      git clone --depth 1 -b mbedtls-4.2.0 https://github.com/Mbed-TLS/mbedtls /tmp/mbedtls-4x
+      cd /tmp/mbedtls-4x
+      git submodule update --init --recursive --depth 1
+      python3 -m pip install --break-system-packages -r scripts/basic.requirements.txt
+      mkdir build && cd build
+      cmake -DUSE_SHARED_MBEDTLS_LIBRARY=ON -DENABLE_TESTING=Off -DENABLE_PROGRAMS=Off -DCMAKE_INSTALL_PREFIX=/usr/local ..
+      make -j$(nproc)
+      sudo make install
+      sudo ldconfig
+    displayName: 'Install mbedTLS 4.2'
+  - script: |
+      chmod +x jenkins/linux_mbed_clang_buildonly.sh
+      ./jenkins/linux_mbed_clang_buildonly.sh
+    displayName: 'Clang Build'
+    env:
+      LD_LIBRARY_PATH: /usr/local/lib
+  - script: |
+      sudo chmod 755 jenkins/linux_mbed.sh
+      sudo -E ./jenkins/linux_mbed.sh
+    displayName: 'Build'
+    env:
+      LD_LIBRARY_PATH: /usr/local/lib
+
 - job: wolfssl
   timeoutInMinutes: 60
   pool:

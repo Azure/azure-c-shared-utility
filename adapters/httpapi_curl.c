@@ -23,11 +23,19 @@
 #include "wolfssl/ssl.h"
 #include "wolfssl/error-ssl.h"
 #elif USE_MBEDTLS
+#include "mbedtls/version.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/ssl.h"
+#define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
+#define TLSIO_MBEDTLS_VERSION_4_0_0    0x04000000
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+// mbedTLS 4.x removed the public entropy and CTR_DRBG modules in favor of the
+// PSA Crypto random generator.
+#include "psa/crypto.h"
+#else
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
-#define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
+#endif
 #endif
 #include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/safe_math.h"
@@ -337,7 +345,23 @@ static int parse_key(const char* key, mbedtls_pk_context* out_parsed_key)
 {
     int result;
 
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+    // mbedTLS 4.x takes its randomness from PSA Crypto, which must be
+    // initialized before parsing a key. psa_crypto_init() is idempotent.
+    psa_status_t psa_status = psa_crypto_init();
+
+    if (psa_status != PSA_SUCCESS)
+    {
+        LogError("psa_crypto_init failed (%d)", (int)psa_status);
+        result = MU_FAILURE;
+    }
+    else if ((result = mbedtls_pk_parse_key(out_parsed_key,
+                                            (const unsigned char *)key, (int)(strlen(key) + 1),
+                                            NULL, 0)) != 0)
+    {
+        LogError("mbedtls_pk_parse_key failed (%d)", result);
+    }
+#elif defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
     const char *pers = "httpapi_curl";
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;

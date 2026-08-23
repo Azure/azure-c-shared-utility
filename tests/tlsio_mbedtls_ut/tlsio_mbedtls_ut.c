@@ -52,15 +52,26 @@ static void my_gballoc_free(void* ptr)
 #include "mbedtls/config.h"
 #include "mbedtls/version.h"
 #include "mbedtls/debug.h"
+#include "mbedtls/version.h"
 #include "mbedtls/ssl.h"
+#include "mbedtls/error.h"
+
+#define TLSIO_MBEDTLS_VERSION_2_16_0   0x02160000
+#define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
+#define TLSIO_MBEDTLS_VERSION_4_0_0    0x04000000
+
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+// mbedTLS 4.x removed the public entropy/CTR_DRBG modules; randomness comes
+// from PSA Crypto instead.
+#include "psa/crypto.h"
+#else
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
-#include "mbedtls/error.h"
+#endif
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_3_0_0
 #include "mbedtls/certs.h"
 #include "mbedtls/entropy_poll.h"
-
-#define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
-#define TLSIO_MBEDTLS_VERSION_2_16_0   0x02160000
+#endif
 
 /**
  * Include the mockable headers here.
@@ -87,18 +98,22 @@ MOCKABLE_FUNCTION(, int, mbedtls_x509_crt_parse, mbedtls_x509_crt*, crt, const u
 MOCKABLE_FUNCTION(, void, mbedtls_x509_crt_init, mbedtls_x509_crt*, crt);
 MOCKABLE_FUNCTION(, void, mbedtls_x509_crt_free, mbedtls_x509_crt*, crt);
 
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0 && MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
 MOCKABLE_FUNCTION(, int, mbedtls_pk_parse_key, mbedtls_pk_context*, ctx, const unsigned char*, key, size_t, keylen, const unsigned char*, pwd, size_t, pwdlen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
 #else
 MOCKABLE_FUNCTION(, int, mbedtls_pk_parse_key, mbedtls_pk_context*, ctx, const unsigned char*, key, size_t, keylen, const unsigned char*, pwd, size_t, pwdlen);
 #endif
 
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+MOCKABLE_FUNCTION(, psa_status_t, psa_crypto_init);
+#else
 MOCKABLE_FUNCTION(, void, mbedtls_ctr_drbg_init, mbedtls_ctr_drbg_context*, ctx);
 MOCKABLE_FUNCTION(, void, mbedtls_ctr_drbg_free, mbedtls_ctr_drbg_context*, ctx)
 MOCKABLE_FUNCTION(, int, mbedtls_ctr_drbg_seed_entropy_len, mbedtls_ctr_drbg_context*, ctx, f_entropy, fe, void*, p_entropy, const unsigned char*, custom, size_t, len, size_t, entropy_len);
 MOCKABLE_FUNCTION(, int, mbedtls_ctr_drbg_random_with_add, void*, p_rng, unsigned char*, output, size_t, output_len, const unsigned char*, additional, size_t, add_len);
 MOCKABLE_FUNCTION(, int, mbedtls_ctr_drbg_seed, mbedtls_ctr_drbg_context*, ctx, f_entropy, fe, void*, p_entropy, const unsigned char*, custom, size_t, len);
 MOCKABLE_FUNCTION(, int, mbedtls_ctr_drbg_random, void*, p_rng, unsigned char*, output, size_t, output_len);
+#endif
 
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_init, mbedtls_ssl_context*, ssl)
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_free, mbedtls_ssl_context*, ssl)
@@ -114,11 +129,17 @@ MOCKABLE_FUNCTION(, size_t, mbedtls_ssl_get_max_frag_len, const mbedtls_ssl_cont
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_get_max_out_record_payload, const mbedtls_ssl_context*, ssl)
 
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_authmode, mbedtls_ssl_config*, conf, int, authmode)
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_rng, mbedtls_ssl_config*, conf, f_rng, fr, void*, p_rng);
+#endif
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_dbg, mbedtls_ssl_config*, conf, f_dbg, fd, void*, p_dbg);
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_set_bio, mbedtls_ssl_context*, ssl, void*, p_bio, mbedtls_ssl_send_t*, f_send, mbedtls_ssl_recv_t*, f_recv, mbedtls_ssl_recv_timeout_t*, f_recv_timeout);
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_ca_chain, mbedtls_ssl_config*, conf, mbedtls_x509_crt*, ca_chain, mbedtls_x509_crl*, ca_crl);
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_min_tls_version, mbedtls_ssl_config*, conf, mbedtls_ssl_protocol_version, tls_version);
+#else
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_min_version, mbedtls_ssl_config*, conf, int, major, int, minor);
+#endif
 
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_set_hostname, mbedtls_ssl_context*, ssl, const char*, hostname);
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_handshake, mbedtls_ssl_context*, ssl);
@@ -134,13 +155,14 @@ MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_renegotiation, mbedtls_ssl_config*, c
 
 MOCKABLE_FUNCTION(, void, mbedtls_debug_set_threshold, int, threshold);
 
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
 MOCKABLE_FUNCTION(, void, mbedtls_entropy_init, mbedtls_entropy_context*, ctx);
 MOCKABLE_FUNCTION(, int, mbedtls_entropy_add_source, mbedtls_entropy_context*, ctx, mbedtls_entropy_f_source_ptr, f_source, void*, p_source, size_t, threshold, int, strong);
 MOCKABLE_FUNCTION(, int, mbedtls_entropy_func, void*, data, unsigned char*, output, size_t, len);
 MOCKABLE_FUNCTION(, void, mbedtls_entropy_free, mbedtls_entropy_context*, ctx)
+#endif
 
 MOCKABLE_FUNCTION(, void, mbedtls_pk_init, mbedtls_pk_context*, ctx);
-MOCKABLE_FUNCTION(, mbedtls_pk_type_t, mbedtls_pk_get_type, const mbedtls_pk_context*, ctx);
 MOCKABLE_FUNCTION(, void, mbedtls_pk_free, mbedtls_pk_context*, ctx);
 
 MOCKABLE_FUNCTION(, void, on_io_open_complete, void*, context, IO_OPEN_RESULT, open_result);
@@ -176,7 +198,9 @@ static mbedtls_ssl_recv_t* mbed_f_recv = NULL;
 static mbedtls_ssl_recv_timeout_t* mbed_f_recv_timeout = NULL;
 static void* g_mbedtls_ctx = NULL;
 
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
 static mbedtls_entropy_f_source_ptr g_entropy_f_source;
+#endif
 
 #define MAX_RETRY           20
 #define RECEIVE_BUFFER_SIZE 1024
@@ -258,6 +282,7 @@ static void my_mbedtls_ssl_set_bio(mbedtls_ssl_context* ssl, void* p_bio, mbedtl
     mbed_f_recv_timeout = f_recv_timeout;
 }
 
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
 static int my_mbedtls_entropy_add_source(mbedtls_entropy_context* ctx, mbedtls_entropy_f_source_ptr f_source, void* p_source, size_t threshold, int strong)
 {
     (void)ctx;
@@ -267,6 +292,7 @@ static int my_mbedtls_entropy_add_source(mbedtls_entropy_context* ctx, mbedtls_e
     g_entropy_f_source = f_source;
     return 0;
 }
+#endif
 
 static int my_mbedtls_ssl_write(mbedtls_ssl_context* ssl, const unsigned char *buf, size_t len)
 {
@@ -371,7 +397,12 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         result = umocktypes_charptr_register_types();
         ASSERT_ARE_EQUAL(int, 0, result);
 
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
         REGISTER_UMOCK_ALIAS_TYPE(mbedtls_entropy_f_source_ptr, void*);
+#else
+        REGISTER_UMOCK_ALIAS_TYPE(psa_status_t, int);
+        REGISTER_UMOCK_ALIAS_TYPE(mbedtls_ssl_protocol_version, int);
+#endif
         REGISTER_UMOCK_ALIAS_TYPE(f_entropy, void*);
         REGISTER_UMOCK_ALIAS_TYPE(f_rng, void*);
         REGISTER_UMOCK_ALIAS_TYPE(f_dbg, void*);
@@ -381,7 +412,6 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_UMOCK_ALIAS_TYPE(ON_IO_ERROR, void*);
         REGISTER_UMOCK_ALIAS_TYPE(ON_IO_CLOSE_COMPLETE, void*);
         REGISTER_UMOCK_ALIAS_TYPE(ON_SEND_COMPLETE, void*);
-        REGISTER_UMOCK_ALIAS_TYPE(mbedtls_pk_type_t, int);
 
         REGISTER_TYPE(IO_SEND_RESULT, IO_SEND_RESULT);
         REGISTER_TYPE(IO_OPEN_RESULT, IO_OPEN_RESULT);
@@ -409,7 +439,9 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
 
         REGISTER_GLOBAL_MOCK_RETURN(mbedtls_ssl_read, 0);
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_ssl_set_bio, my_mbedtls_ssl_set_bio);
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_entropy_add_source, my_mbedtls_entropy_add_source);
+#endif
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_ssl_write, my_mbedtls_ssl_write);
 
         REGISTER_GLOBAL_MOCK_HOOK(on_io_open_complete, my_on_io_open_complete);
@@ -479,6 +511,13 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_pk_init(IGNORED_ARG));
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+        STRICT_EXPECTED_CALL(psa_crypto_init());
+        STRICT_EXPECTED_CALL(mbedtls_ssl_config_init(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_config_defaults(IGNORED_ARG, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_conf_authmode(IGNORED_ARG, MBEDTLS_SSL_VERIFY_REQUIRED));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_conf_min_tls_version(IGNORED_ARG, MBEDTLS_SSL_VERSION_TLS1_2));
+#else
         STRICT_EXPECTED_CALL(mbedtls_entropy_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_add_source(IGNORED_ARG, IGNORED_ARG, NULL, IGNORED_ARG, IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_init(IGNORED_ARG));
@@ -488,6 +527,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mbedtls_ssl_conf_rng(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_conf_authmode(IGNORED_ARG, MBEDTLS_SSL_VERIFY_REQUIRED));
         STRICT_EXPECTED_CALL(mbedtls_ssl_conf_min_version(IGNORED_ARG, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3));
+#endif
 
         STRICT_EXPECTED_CALL(mbedtls_ssl_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_set_bio(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NULL));
@@ -585,8 +625,10 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_pk_free(IGNORED_ARG));
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
         STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_free(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_free(IGNORED_ARG));
+#endif
         STRICT_EXPECTED_CALL(xio_destroy(IGNORED_ARG));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
         STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
@@ -702,6 +744,9 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         tlsio_mbedtls_destroy(handle);
     }
 
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
+    // mbedTLS 4.x uses the PSA Crypto RNG, so the adapter no longer registers
+    // its own weak entropy source.
     TEST_FUNCTION(tlsio_entropy_poll_success)
     {
         //arrange
@@ -727,6 +772,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         //cleanup
         tlsio_mbedtls_destroy(handle);
     }
+#endif
 
     TEST_FUNCTION(tlsio_mbedtls_close_handle_NULL_fail)
     {
@@ -1187,7 +1233,6 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
 
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_ARG, TEST_X509_CERTIFICATE));
         STRICT_EXPECTED_CALL(mbedtls_x509_crt_parse(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-        STRICT_EXPECTED_CALL(mbedtls_pk_get_type(IGNORED_ARG)).SetReturn(MBEDTLS_PK_NONE);
 
         //act
         tlsio_mbedtls_setoption(handle, SU_OPTION_X509_CERT, TEST_X509_CERTIFICATE);
@@ -1217,7 +1262,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
 
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_ARG, TEST_X509_KEY));
 
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0 && MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
         STRICT_EXPECTED_CALL(mbedtls_pk_parse_key(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NULL, 0, IGNORED_ARG, IGNORED_ARG))
             .CopyOutArgumentBuffer_ctx(&pk_info, sizeof(pk_info));
 #else

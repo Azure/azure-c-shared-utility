@@ -9,18 +9,27 @@
 
 #define TLSIO_MBEDTLS_VERSION_2_16_0   0x02160000
 #define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
+#define TLSIO_MBEDTLS_VERSION_4_0_0    0x04000000
 
 #include "mbedtls/version.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
+#include "mbedtls/error.h"
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
+// mbedTLS 4.x removed the public entropy and CTR_DRBG modules. Everything that
+// needs randomness now goes through the PSA Crypto random generator, which is
+// enabled by psa_crypto_init().
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
-#include "mbedtls/error.h"
+#endif // MBEDTLS_VERSION_NUMBER
 #if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_3_0_0
 #include "mbedtls/certs.h"
 #include "mbedtls/entropy_poll.h"
 #endif // MBEDTLS_VERSION_NUMBER
 #include "mbedtls/pk.h"
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+#include "psa/crypto.h"
+#endif // MBEDTLS_VERSION_NUMBER
 
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/optimize_size.h"
@@ -71,8 +80,10 @@ typedef struct TLS_IO_INSTANCE_TAG
     size_t socket_io_read_byte_count;
     SEND_COMPLETE_INFO send_complete_info;
 
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
+#endif // MBEDTLS_VERSION_NUMBER
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config config;
     mbedtls_x509_crt trusted_certificates_parsed;
@@ -83,6 +94,9 @@ typedef struct TLS_IO_INSTANCE_TAG
     char *hostname;
     mbedtls_x509_crt owncert;
     mbedtls_pk_context pKey;
+    // mbedTLS 4.x made mbedtls_pk_get_type() private, so the SDK tracks whether
+    // pKey holds a successfully parsed private key on its own.
+    bool pkey_parsed;
 
     char* x509_certificate;
     char* x509_private_key;
@@ -147,7 +161,13 @@ static bool is_fragmented_send_request(TLS_IO_INSTANCE *tls_io_instance, size_t 
     size_t max_len = mbedtls_ssl_get_max_frag_len(&tls_io_instance->ssl);
 #endif // MBEDTLS_VERSION_NUMBER
 #else
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
+    // MBEDTLS_SSL_MAX_CONTENT_LEN was removed in mbedTLS 3.0 in favor of
+    // separate incoming/outgoing limits.
+    size_t max_len = MBEDTLS_SSL_OUT_CONTENT_LEN;
+#else
     size_t max_len = MBEDTLS_SSL_MAX_CONTENT_LEN;
+#endif // MBEDTLS_VERSION_NUMBER
     (void)tls_io_instance;
 #endif /* MBEDTLS_SSL_MAX_FRAGMENT_LENGTH */
     bool result;
@@ -456,6 +476,7 @@ static int on_io_send(void *context, const unsigned char *buf, size_t sz)
     return result;
 }
 
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
 static int tlsio_entropy_poll(void *v, unsigned char *output, size_t len, size_t *olen)
 {
     (void)v;
@@ -468,6 +489,7 @@ static int tlsio_entropy_poll(void *v, unsigned char *output, size_t len, size_t
     *olen = len;
     return result;
 }
+#endif // MBEDTLS_VERSION_NUMBER
 
 // Un-initialize mbedTLS
 static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
@@ -481,8 +503,14 @@ static void mbedtls_uninit(TLS_IO_INSTANCE *tls_io_instance)
         mbedtls_x509_crt_free(&tls_io_instance->trusted_certificates_parsed);
         mbedtls_x509_crt_free(&tls_io_instance->owncert);
         mbedtls_pk_free(&tls_io_instance->pKey);
+        tls_io_instance->pkey_parsed = false;
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
         mbedtls_ctr_drbg_free(&tls_io_instance->ctr_drbg);
         mbedtls_entropy_free(&tls_io_instance->entropy);
+#endif // MBEDTLS_VERSION_NUMBER
+        // Note: psa_crypto_free() is deliberately not called on mbedTLS 4.x.
+        // The PSA subsystem is global to the process and may still be in use by
+        // other tlsio instances or by the application itself.
 
         tls_io_instance->tls_status = TLS_STATE_NOT_INITIALIZED;
     }
@@ -506,19 +534,42 @@ static void mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
         mbedtls_x509_crt_init(&tls_io_instance->trusted_certificates_parsed);
         mbedtls_x509_crt_init(&tls_io_instance->owncert);
         mbedtls_pk_init(&tls_io_instance->pKey);
+        tls_io_instance->pkey_parsed = false;
 
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+        {
+            // mbedTLS 4.x routes every source of randomness (TLS, X.509 and key
+            // parsing included) through PSA Crypto, so psa_crypto_init() must
+            // succeed before anything else. It is idempotent.
+            psa_status_t psa_status = psa_crypto_init();
+
+            if (psa_status != PSA_SUCCESS)
+            {
+                LogError("psa_crypto_init failed (%d)", (int)psa_status);
+            }
+        }
+        (void)pers;
+#else
         mbedtls_entropy_init(&tls_io_instance->entropy);
         // Add a weak entropy source here,avoid some platform doesn't have strong / hardware entropy
         mbedtls_entropy_add_source(&tls_io_instance->entropy, tlsio_entropy_poll, NULL, MBEDTLS_ENTROPY_MAX_GATHER, MBEDTLS_ENTROPY_SOURCE_WEAK);
 
         mbedtls_ctr_drbg_init(&tls_io_instance->ctr_drbg);
         mbedtls_ctr_drbg_seed(&tls_io_instance->ctr_drbg, mbedtls_entropy_func, &tls_io_instance->entropy, (const unsigned char *)pers, strlen(pers));
+#endif // MBEDTLS_VERSION_NUMBER
 
         mbedtls_ssl_config_init(&tls_io_instance->config);
         mbedtls_ssl_config_defaults(&tls_io_instance->config, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
+        // mbedtls_ssl_conf_rng() was removed in mbedTLS 4.x.
         mbedtls_ssl_conf_rng(&tls_io_instance->config, mbedtls_ctr_drbg_random, &tls_io_instance->ctr_drbg);
+#endif // MBEDTLS_VERSION_NUMBER
         mbedtls_ssl_conf_authmode(&tls_io_instance->config, MBEDTLS_SSL_VERIFY_REQUIRED);
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+        mbedtls_ssl_conf_min_tls_version(&tls_io_instance->config, MBEDTLS_SSL_VERSION_TLS1_2); // v1.2
+#else
         mbedtls_ssl_conf_min_version(&tls_io_instance->config, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3); // v1.2
+#endif // MBEDTLS_VERSION_NUMBER
 
         mbedtls_ssl_init(&tls_io_instance->ssl);
         mbedtls_ssl_set_bio(&tls_io_instance->ssl, tls_io_instance, on_io_send, on_io_recv, NULL);
@@ -934,7 +985,16 @@ static int parse_key(char* key, mbedtls_pk_context* out_parsed_key)
 {
     int result;
 
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+    // mbedTLS 4.x dropped the f_rng/p_rng arguments again: key parsing uses the
+    // PSA Crypto RNG, which mbedtls_init() has already brought up.
+    if ((result = mbedtls_pk_parse_key(out_parsed_key,
+                                        (const unsigned char *)key, (int)(strlen(key) + 1),
+                                        NULL, 0)) != 0)
+    {
+        LogError("mbedtls_pk_parse_key failed (%d)", result);
+    }
+#elif defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
     const char *pers = "tlsio_mbedtls";
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
@@ -1023,7 +1083,7 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
                 free(temp_cert);
                 result = MU_FAILURE;
             }
-            else if (mbedtls_pk_get_type(&tls_io_instance->pKey) != MBEDTLS_PK_NONE &&
+            else if (tls_io_instance->pkey_parsed &&
                      mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey) != 0)
             {
                 LogError("failure calling mbedtls_ssl_conf_own_cert");
@@ -1058,12 +1118,14 @@ int tlsio_mbedtls_setoption(CONCRETE_IO_HANDLE tls_io, const char *optionName, c
             }
             else if (tls_io_instance->owncert.version > 0 && mbedtls_ssl_conf_own_cert(&tls_io_instance->config, &tls_io_instance->owncert, &tls_io_instance->pKey))
             {
+                tls_io_instance->pkey_parsed = true;
                 LogError("failure calling mbedtls_ssl_conf_own_cert");
                 free(temp_key);
                 result = MU_FAILURE;
             }
             else
             {
+                tls_io_instance->pkey_parsed = true;
                 if (tls_io_instance->x509_private_key != NULL)
                 {
                     // Free the memory if it has been previously allocated
