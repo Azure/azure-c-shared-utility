@@ -142,9 +142,9 @@ MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_rng, mbedtls_ssl_config*, conf, f_rng
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_dbg, mbedtls_ssl_config*, conf, f_dbg, fd, void*, p_dbg);
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_set_bio, mbedtls_ssl_context*, ssl, void*, p_bio, mbedtls_ssl_send_t*, f_send, mbedtls_ssl_recv_t*, f_recv, mbedtls_ssl_recv_timeout_t*, f_recv_timeout);
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_ca_chain, mbedtls_ssl_config*, conf, mbedtls_x509_crt*, ca_chain, mbedtls_x509_crl*, ca_crl);
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
-MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_min_tls_version, mbedtls_ssl_config*, conf, mbedtls_ssl_protocol_version, tls_version);
-#else
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
+// Note: mbedtls_ssl_conf_min_tls_version() is a static inline function in
+// mbedTLS 3.x/4.x, so it cannot be mocked - the real one runs on 4.x.
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_min_version, mbedtls_ssl_config*, conf, int, major, int, minor);
 #endif
 
@@ -309,7 +309,11 @@ static int my_mbedtls_ssl_write(mbedtls_ssl_context* ssl, const unsigned char *b
     if (mbed_f_send != NULL)
     {
         // send tls app data
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0
+        ssl->MBEDTLS_PRIVATE(out_msgtype) = MBEDTLS_SSL_MSG_APPLICATION_DATA;
+#else
         ssl->out_msgtype = MBEDTLS_SSL_MSG_APPLICATION_DATA;
+#endif
         mbed_f_send(g_mbedtls_ctx, buf, len);
     }
 
@@ -408,7 +412,6 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_UMOCK_ALIAS_TYPE(mbedtls_entropy_f_source_ptr, void*);
 #else
         REGISTER_UMOCK_ALIAS_TYPE(psa_status_t, int);
-        REGISTER_UMOCK_ALIAS_TYPE(mbedtls_ssl_protocol_version, int);
 #endif
         REGISTER_UMOCK_ALIAS_TYPE(f_entropy, void*);
         REGISTER_UMOCK_ALIAS_TYPE(f_rng, void*);
@@ -523,7 +526,8 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_defaults(IGNORED_ARG, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT));
         STRICT_EXPECTED_CALL(mbedtls_ssl_conf_authmode(IGNORED_ARG, MBEDTLS_SSL_VERIFY_REQUIRED));
-        STRICT_EXPECTED_CALL(mbedtls_ssl_conf_min_tls_version(IGNORED_ARG, MBEDTLS_SSL_VERSION_TLS1_2));
+        // mbedtls_ssl_conf_min_tls_version() is static inline and therefore
+        // not mocked, so it produces no expected call here.
 #else
         STRICT_EXPECTED_CALL(mbedtls_entropy_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_entropy_add_source(IGNORED_ARG, IGNORED_ARG, NULL, IGNORED_ARG, IGNORED_ARG));
