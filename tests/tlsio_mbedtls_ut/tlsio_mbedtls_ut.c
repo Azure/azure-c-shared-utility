@@ -49,16 +49,23 @@ static void my_gballoc_free(void* ptr)
 #include "umock_c/umock_c_negative_tests.h"
 #include "macro_utils/macro_utils.h"
 
-#include "mbedtls/config.h"
+// mbedtls/version.h pulls in the configuration (via mbedtls/build_info.h on
+// 3.x and later), so it has to come first for MBEDTLS_VERSION_NUMBER to be
+// defined for the guards below.
 #include "mbedtls/version.h"
-#include "mbedtls/debug.h"
-#include "mbedtls/version.h"
-#include "mbedtls/ssl.h"
-#include "mbedtls/error.h"
 
 #define TLSIO_MBEDTLS_VERSION_2_16_0   0x02160000
 #define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
 #define TLSIO_MBEDTLS_VERSION_4_0_0    0x04000000
+
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_3_0_0
+// mbedtls/config.h was renamed to mbedtls/mbedtls_config.h in mbedTLS 3.0 and
+// is included automatically by mbedtls/build_info.h from 3.0 onwards.
+#include "mbedtls/config.h"
+#endif
+#include "mbedtls/debug.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/error.h"
 
 #if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
 // mbedTLS 4.x removed the public entropy/CTR_DRBG modules; randomness comes
