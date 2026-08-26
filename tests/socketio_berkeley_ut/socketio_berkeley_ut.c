@@ -463,9 +463,9 @@ TEST_FUNCTION(socketio_open_socket_failure_is_retryable)
     ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
     ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
     ASSERT_ARE_EQUAL(int, 2, g_fcntl_call_count);
-    ASSERT_ARE_EQUAL(int, 2, g_connect_call_count);
-    ASSERT_ARE_EQUAL(int, 2, g_select_call_count);
-    ASSERT_ARE_EQUAL(int, 2, g_getsockopt_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_connect_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_select_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_getsockopt_call_count);
 
     socketio_destroy(socket_io);
 }
@@ -511,7 +511,7 @@ TEST_FUNCTION(socketio_open_fcntl_failure_is_retryable)
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
     ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
-    ASSERT_ARE_EQUAL(int, 2, g_connect_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_connect_call_count);
 
     socketio_destroy(socket_io);
 }
