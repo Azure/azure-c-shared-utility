@@ -238,6 +238,15 @@ static void socketio_cleanup(SOCKET_IO_INSTANCE* socket_io_instance)
     }
 }
 
+static void indicate_open_failure(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    socketio_cleanup(socket_io_instance);
+    if (socket_io_instance->on_io_error != NULL)
+    {
+        socket_io_instance->on_io_error(socket_io_instance->on_io_error_context);
+    }
+}
+
 static int refresh_dns_resolver(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result = 0;
@@ -317,6 +326,11 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
         else if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
         {
             socket_io_instance->io_state = IO_STATE_OPENING;
+        }
+        else if (dns_resolver_get_addrInfo(socket_io_instance->dns_resolver) == NULL)
+        {
+            LogError("DNS resolution failed. Hostname:%s", socket_io_instance->hostname);
+            result = MU_FAILURE;
         }
         else
         {
@@ -659,18 +673,8 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             {
                 // Async connect will return -1.
                 result = 0;
-                if (socket_io_instance->on_io_open_complete != NULL)
-                {
-                    socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
-                }
             }
         }
-
-    }
-
-    if (result != 0)
-    {
-        socketio_cleanup(socket_io_instance);
     }
 
     return result;
@@ -703,51 +707,54 @@ static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     fd_set fdset;
     struct timeval tv;
 
-    FD_ZERO(&fdset);
-    FD_SET(socket_io_instance->socket, &fdset);
-    tv.tv_sec = CONNECT_TIMEOUT;
-    tv.tv_usec = 0;
-
-    do
+    if (socket_io_instance->socket >= FD_SETSIZE)
     {
-        retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
-
-        if (retval < 0)
-        {
-            select_errno = errno;
-        }
-    } while (retval < 0 && select_errno == EINTR);
-
-    if (retval != 1)
-    {
-        LogError("Failure: select failure.");
+        LogError("Failure: socket %d is not below FD_SETSIZE.", socket_io_instance->socket);
         result = MU_FAILURE;
     }
     else
     {
-        int so_error = 0;
-        socklen_t len = sizeof(so_error);
-        err = getsockopt(socket_io_instance->socket, SOL_SOCKET, SO_ERROR, &so_error, &len);
-        if (err != 0)
+        FD_ZERO(&fdset);
+        FD_SET(socket_io_instance->socket, &fdset);
+        tv.tv_sec = CONNECT_TIMEOUT;
+        tv.tv_usec = 0;
+
+        do
         {
-            LogError("Failure: getsockopt failure %d.", errno);
-            result = MU_FAILURE;
-        }
-        else if (so_error != 0)
+            retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
+
+            if (retval < 0)
+            {
+                select_errno = errno;
+            }
+        } while (retval < 0 && select_errno == EINTR);
+
+        if (retval != 1)
         {
-            err = so_error;
-            LogError("Failure: connect failure %d.", so_error);
+            LogError("Failure: select failure.");
             result = MU_FAILURE;
         }
         else
         {
-            result = 0;
+            int so_error = 0;
+            socklen_t len = sizeof(so_error);
+            err = getsockopt(socket_io_instance->socket, SOL_SOCKET, SO_ERROR, &so_error, &len);
+            if (err != 0)
+            {
+                LogError("Failure: getsockopt failure %d.", errno);
+                result = MU_FAILURE;
+            }
+            else if (so_error != 0)
+            {
+                err = so_error;
+                LogError("Failure: connect failure %d.", so_error);
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
+            }
         }
-    }
-
-    if (result != 0)
-    {
-        socketio_cleanup(socket_io_instance);
     }
 
     return result;
@@ -918,18 +925,16 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
             if ((result = refresh_dns_resolver(socket_io_instance)) != 0)
             {
-                socketio_cleanup(socket_io_instance);
+                LogError("refresh_dns_resolver failed");
             }
             else if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
             {
                 LogError("lookup_address_and_connect_socket failed");
-                socketio_cleanup(socket_io_instance);
             }
             else if ((socket_io_instance->io_state == IO_STATE_OPEN) && (result = wait_for_socket_connection(socket_io_instance)) != 0)
             {
                 LogError("wait_for_socket_connection failed");
-                socketio_cleanup(socket_io_instance);
-            } 
+            }
             else
             {
                 socket_io_instance->on_bytes_received = on_bytes_received;
@@ -940,6 +945,11 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
 
                 socket_io_instance->on_io_open_complete = on_io_open_complete;
                 socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
+            }
+
+            if (result != 0)
+            {
+                socketio_cleanup(socket_io_instance);
             }
         }
     }
@@ -1171,37 +1181,25 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 if(lookup_address(socket_io_instance) != 0)
                 {
                     LogError("Socketio_Failure: lookup address failed");
-                    socketio_cleanup(socket_io_instance);
-                    if (socket_io_instance->on_io_error != NULL)
-                    {
-                        socket_io_instance->on_io_error(socket_io_instance->on_io_error_context);
-                    }
+                    indicate_open_failure(socket_io_instance);
                 }
-                else
+                else if (socket_io_instance->io_state == IO_STATE_OPEN)
                 {
-                    if(socket_io_instance->io_state == IO_STATE_OPEN)
+                    if (initiate_socket_connection(socket_io_instance) != 0)
                     {
-                        if (initiate_socket_connection(socket_io_instance) != 0)
-                        {
-                            LogError("Socketio_Failure: initiate_socket_connection failed");
-                            socketio_cleanup(socket_io_instance);
-                            if (socket_io_instance->on_io_error != NULL)
-                            {
-                                socket_io_instance->on_io_error(socket_io_instance->on_io_error_context);
-                            }
-                        }
-                        else if (wait_for_socket_connection(socket_io_instance) != 0)
-                        {
-                            LogError("Socketio_Failure: wait_for_socket_connection failed");
-                            socketio_cleanup(socket_io_instance);
-                            if (socket_io_instance->on_io_error != NULL)
-                            {
-                                socket_io_instance->on_io_error(socket_io_instance->on_io_error_context);
-                            }
-                        }
+                        LogError("Socketio_Failure: initiate_socket_connection failed");
+                        indicate_open_failure(socket_io_instance);
+                    }
+                    else if (wait_for_socket_connection(socket_io_instance) != 0)
+                    {
+                        LogError("Socketio_Failure: wait_for_socket_connection failed");
+                        indicate_open_failure(socket_io_instance);
+                    }
+                    else if (socket_io_instance->on_io_open_complete != NULL)
+                    {
+                        socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK);
                     }
                 }
-
             }
         }
     }
