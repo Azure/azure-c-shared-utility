@@ -94,7 +94,6 @@ void my_gballoc_free(void* ptr)
 #include "umock_c/umock_c.h"
 #include "umock_c/umocktypes_charptr.h"
 #include "azure_c_shared_utility/singlylinkedlist.h"
-static bool g_addrinfo_call_fail;
 static size_t g_addrinfo_call_count;
 static size_t g_addrinfo_failure_count;
 static int g_addrinfo_failure_code;
@@ -145,7 +144,7 @@ MOCK_FUNCTION_END(len)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, INT, getaddrinfo, PCSTR, pNodeName, PCSTR, pServiceName, const ADDRINFOA*, pHints, PADDRINFOA*, ppResult)
 int callFail;
 g_addrinfo_call_count++;
-if (!g_addrinfo_call_fail && g_addrinfo_failure_count == 0)
+if (g_addrinfo_failure_count == 0)
 {
     *ppResult = (PADDRINFOA)malloc(sizeof(ADDRINFOA));
     memcpy(*ppResult, &TEST_ADDR_INFO, sizeof(ADDRINFOA));
@@ -154,15 +153,8 @@ if (!g_addrinfo_call_fail && g_addrinfo_failure_count == 0)
 else
 {
     *ppResult = NULL;
-    if (g_addrinfo_failure_count > 0)
-    {
-        g_addrinfo_failure_count--;
-        callFail = g_addrinfo_failure_code;
-    }
-    else
-    {
-        callFail = MU_FAILURE;
-    }
+    g_addrinfo_failure_count--;
+    callFail = g_addrinfo_failure_code;
 }
 MOCK_FUNCTION_END(callFail)
 MOCK_FUNCTION_WITH_CODE(WSAAPI, void, freeaddrinfo, PADDRINFOA, pResult)
@@ -393,6 +385,26 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL("umock_c reported error :%" PRI_MU_ENUM "", MU_ENUM_VALUE(UMOCK_C_ERROR_CODE, error_code));
 }
 
+// A reopen after cleanup creates a new resolver, so it allocates twice.
+static void reopen_and_assert_success(CONCRETE_IO_HANDLE ioHandle)
+{
+    int result;
+
+    umock_c_reset_all_calls();
+    EXPECTED_CALL(socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .SetReturn((SOCKET)0x4244);
+    EXPECTED_CALL(gballoc_calloc(IGNORED_ARG, IGNORED_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, &TEST_ADDR_INFO, IGNORED_ARG));
+    EXPECTED_CALL(connect(IGNORED_ARG, (const struct sockaddr*)&test_sock_addr, IGNORED_ARG));
+    EXPECTED_CALL(ioctlsocket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+
+    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, (size_t)0x4244, (size_t)*(SOCKET*)ioHandle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
 BEGIN_TEST_SUITE(socketio_win32_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
@@ -459,7 +471,6 @@ TEST_FUNCTION_INITIALIZE(method_init)
     whenShallcalloc_fail = 0;
     list_head_count = 0;
     singlylinkedlist_add_called = false;
-    g_addrinfo_call_fail = false;
     g_addrinfo_call_count = 0;
     g_addrinfo_failure_count = 0;
     g_addrinfo_failure_code = EAI_AGAIN;
@@ -613,6 +624,9 @@ TEST_FUNCTION(socketio_open_socket_fails)
     EXPECTED_CALL(WSAGetLastError());
 #endif
 
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+
     // act
     result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
@@ -621,17 +635,7 @@ TEST_FUNCTION(socketio_open_socket_fails)
     ASSERT_ARE_EQUAL(size_t, (size_t)INVALID_SOCKET, (size_t)*(SOCKET*)ioHandle);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-    umock_c_reset_all_calls();
-    EXPECTED_CALL(socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .SetReturn((SOCKET)0x4244);
-    EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, &TEST_ADDR_INFO, IGNORED_ARG));
-    EXPECTED_CALL(connect(IGNORED_ARG, (const struct sockaddr*)&test_sock_addr, IGNORED_ARG));
-    EXPECTED_CALL(ioctlsocket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-
-    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(size_t, (size_t)0x4244, (size_t)*(SOCKET*)ioHandle);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    reopen_and_assert_success(ioHandle);
 
     // cleanup
     socketio_destroy(ioHandle);
@@ -656,6 +660,8 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
 #endif
 
     EXPECTED_CALL(closesocket(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
 
     // act
     result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
@@ -665,18 +671,8 @@ TEST_FUNCTION(socketio_open_getaddrinfo_fails)
     ASSERT_ARE_EQUAL(size_t, (size_t)INVALID_SOCKET, (size_t)*(SOCKET*)ioHandle);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-    umock_c_reset_all_calls();
-    EXPECTED_CALL(socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .SetReturn((SOCKET)0x4244);
-    EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, &TEST_ADDR_INFO, IGNORED_ARG));
-    EXPECTED_CALL(connect(IGNORED_ARG, (const struct sockaddr*)&test_sock_addr, IGNORED_ARG));
-    EXPECTED_CALL(ioctlsocket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-
-    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(size_t, (size_t)0x4244, (size_t)*(SOCKET*)ioHandle);
+    reopen_and_assert_success(ioHandle);
     ASSERT_ARE_EQUAL(size_t, 2, g_addrinfo_call_count);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     socketio_destroy(ioHandle);
@@ -701,26 +697,20 @@ TEST_FUNCTION(socketio_open_connect_fails)
 #endif
 
     EXPECTED_CALL(closesocket(IGNORED_ARG));
+    EXPECTED_CALL(freeaddrinfo(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
 
     // act
     result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, (size_t)INVALID_SOCKET, (size_t)*(SOCKET*)ioHandle);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-    umock_c_reset_all_calls();
-    EXPECTED_CALL(socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .SetReturn((SOCKET)0x4244);
-    EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, &TEST_ADDR_INFO, IGNORED_ARG));
-    EXPECTED_CALL(connect(IGNORED_ARG, (const struct sockaddr*)&test_sock_addr, IGNORED_ARG));
-    EXPECTED_CALL(ioctlsocket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-
-    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
-    ASSERT_ARE_EQUAL(int, 0, result);
+    reopen_and_assert_success(ioHandle);
     ASSERT_ARE_EQUAL(size_t, 2, g_addrinfo_call_count);
-    ASSERT_ARE_EQUAL(size_t, (size_t)0x4244, (size_t)*(SOCKET*)ioHandle);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     socketio_destroy(ioHandle);
@@ -732,7 +722,6 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
     int result;
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
-    static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     umock_c_reset_all_calls();
 
@@ -747,26 +736,20 @@ TEST_FUNCTION(socketio_open_ioctlsocket_fails)
 #endif
 
     EXPECTED_CALL(closesocket(IGNORED_ARG));
+    EXPECTED_CALL(freeaddrinfo(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
 
     // act
     result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(size_t, (size_t)INVALID_SOCKET, (size_t)*(SOCKET*)ioHandle);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
-    umock_c_reset_all_calls();
-    EXPECTED_CALL(socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .SetReturn((SOCKET)0x4244);
-    EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, &TEST_ADDR_INFO, IGNORED_ARG));
-    EXPECTED_CALL(connect(IGNORED_ARG, (const struct sockaddr*)&test_sock_addr, IGNORED_ARG));
-    EXPECTED_CALL(ioctlsocket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-
-    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
-    ASSERT_ARE_EQUAL(int, 0, result);
+    reopen_and_assert_success(ioHandle);
     ASSERT_ARE_EQUAL(size_t, 2, g_addrinfo_call_count);
-    ASSERT_ARE_EQUAL(size_t, (size_t)0x4244, (size_t)*(SOCKET*)ioHandle);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     socketio_destroy(ioHandle);
@@ -867,34 +850,27 @@ TEST_FUNCTION(socketio_close_Succeeds)
     // arrange
     SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
     CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig);
-    static ADDRINFO addrInfo = { AI_PASSIVE, AF_INET, SOCK_STREAM, IPPROTO_TCP, 128, NULL, (struct sockaddr*)0x11, NULL };
 
     int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
 
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(closesocket(IGNORED_ARG));
+    EXPECTED_CALL(freeaddrinfo(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
 
     // act
     result = socketio_close(ioHandle, test_on_io_close_complete, (void*)0x4242);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
-
+    ASSERT_ARE_EQUAL(size_t, (size_t)INVALID_SOCKET, (size_t)*(SOCKET*)ioHandle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(size_t, 1, g_addrinfo_call_count);
 
-    umock_c_reset_all_calls();
-    EXPECTED_CALL(socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .SetReturn((SOCKET)0x4244);
-    EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, &TEST_ADDR_INFO, IGNORED_ARG));
-    EXPECTED_CALL(connect(IGNORED_ARG, (const struct sockaddr*)&test_sock_addr, IGNORED_ARG));
-    EXPECTED_CALL(ioctlsocket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-
-    result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext, test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
-    ASSERT_ARE_EQUAL(int, 0, result);
+    reopen_and_assert_success(ioHandle);
     ASSERT_ARE_EQUAL(size_t, 2, g_addrinfo_call_count);
-    ASSERT_ARE_EQUAL(size_t, (size_t)0x4244, (size_t)*(SOCKET*)ioHandle);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
     socketio_destroy(ioHandle);
