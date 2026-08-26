@@ -75,9 +75,12 @@ MOCKABLE_FUNCTION(, int, getaddrinfo, const char*, node, const char*, service, c
 
 #undef ENABLE_MOCKS
 
+static int g_freeaddrinfo_call_count = 0;
+
 void freeaddrinfo(struct addrinfo* ai)
 {
     (void)ai;
+    g_freeaddrinfo_call_count++;
 }
 
 
@@ -97,6 +100,21 @@ int my_getaddrinfo(const char *node, const char *service, const struct addrinfo 
     fake_addrinfo.ai_family = AF_INET;
     fake_addrinfo.ai_addr = (struct sockaddr*)(&fake_good_addr);
     ((struct sockaddr_in *) fake_addrinfo.ai_addr)->sin_addr.s_addr = FAKE_GOOD_IP_ADDR;
+    *res = &fake_addrinfo;
+    return 0;
+}
+
+// getaddrinfo succeeds but returns no address of a family this build extracts,
+// which makes the lookup complete and failed while still owning the addrinfo list.
+int my_getaddrinfo_no_usable_address(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res)
+{
+    (void)node;
+    (void)service;
+    (void)hints;
+    fake_addrinfo.ai_next = NULL;
+    fake_addrinfo.ai_family = AF_UNSPEC;
+    fake_addrinfo.ai_addr = (struct sockaddr*)(&fake_good_addr);
+    ((struct sockaddr_in *) fake_addrinfo.ai_addr)->sin_addr.s_addr = 0;
     *res = &fake_addrinfo;
     return 0;
 }
@@ -207,6 +225,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         }
 
         umock_c_reset_all_calls();
+        g_freeaddrinfo_call_count = 0;
 #ifndef NO_LOGGING
         g_log_message[0] = '\0';
 #endif
@@ -335,6 +354,67 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
 
         ///cleanup
         dns_resolver_destroy(dns);
+    }
+
+    /* Tests_SRS_dns_resolver_30_051: [ dns_resolver_destroy shall delete all acquired resources and delete the DNSRESOLVER_HANDLE. ]*/
+    TEST_FUNCTION(dns_resolver__destroy_after_successful_lookup__frees_addrinfo)
+    {
+        ///arrange
+        bool result;
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", 53, NULL);
+        umock_c_reset_all_calls();
+        STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+        result = dns_resolver_is_lookup_complete(dns);
+        ASSERT_IS_TRUE(result, "Unexpected non-completion");
+
+        ///act
+        dns_resolver_destroy(dns);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, 1, g_freeaddrinfo_call_count, "addrinfo was not released");
+    }
+
+    /* Tests_SRS_dns_resolver_30_051: [ dns_resolver_destroy shall delete all acquired resources and delete the DNSRESOLVER_HANDLE. ]*/
+    TEST_FUNCTION(dns_resolver__destroy_when_lookup_returned_no_usable_address__frees_addrinfo)
+    {
+        ///arrange
+        bool result;
+        uint32_t ipv4;
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", 53, NULL);
+        umock_c_reset_all_calls();
+        REGISTER_GLOBAL_MOCK_HOOK(getaddrinfo, my_getaddrinfo_no_usable_address);
+        STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+        result = dns_resolver_is_lookup_complete(dns);
+        ASSERT_IS_TRUE(result, "Unexpected non-completion");
+        ipv4 = dns_resolver_get_ipv4(dns);
+        ASSERT_ARE_EQUAL(uint32_t, 0, ipv4, "Unexpected non-zero IP");
+
+        ///act
+        dns_resolver_destroy(dns);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, 1, g_freeaddrinfo_call_count, "addrinfo leaked on a completed lookup holding no usable address");
+
+        ///cleanup
+        REGISTER_GLOBAL_MOCK_HOOK(getaddrinfo, my_getaddrinfo);
+    }
+
+    /* Tests_SRS_dns_resolver_30_051: [ dns_resolver_destroy shall delete all acquired resources and delete the DNSRESOLVER_HANDLE. ]*/
+    TEST_FUNCTION(dns_resolver__destroy_after_failed_lookup__does_not_free_addrinfo)
+    {
+        ///arrange
+        bool result;
+        DNSRESOLVER_HANDLE dns = dns_resolver_create("fake.com", 53, NULL);
+        umock_c_reset_all_calls();
+        STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)).SetReturn(GETADDRINFO_FAIL);
+        result = dns_resolver_is_lookup_complete(dns);
+        ASSERT_IS_TRUE(result, "Unexpected non-completion");
+
+        ///act
+        dns_resolver_destroy(dns);
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, 0, g_freeaddrinfo_call_count, "addrinfo released when getaddrinfo never returned one");
     }
 
     /* Tests_SRS_dns_resolver_30_020: [ If the dns parameter is NULL, dns_resolver_is_create_complete shall log an error and return false. ]*/

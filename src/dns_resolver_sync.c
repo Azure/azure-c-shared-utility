@@ -209,9 +209,12 @@ void dns_resolver_destroy(DNSRESOLVER_HANDLE dns_in)
     else
     {
         /* Codes_SRS_dns_resolver_30_051: [ dns_resolver_destroy shall delete all acquired resources and delete the DNSRESOLVER_HANDLE. ]*/
-        if(dns->is_complete && !dns->is_failed && dns->addrInfo != NULL)
+        // addrInfo is only set when getaddrinfo succeeded, so it must be released even
+        // when the lookup was then marked failed for holding no usable address.
+        if (dns->addrInfo != NULL)
         {
             freeaddrinfo(dns->addrInfo);
+            dns->addrInfo = NULL;
         }
 
         if(dns->hostname != NULL)
