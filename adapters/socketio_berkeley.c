@@ -317,16 +317,20 @@ static void destroy_network_interface_descriptions(NETWORK_INTERFACE_DESCRIPTION
     }
 }
 
-static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struct ifreq *ifr, NETWORK_INTERFACE_DESCRIPTION* previous_nid)
+// ifr_hwaddr and ifr_addr are members of the same union, so the hardware address
+// and the IP address must be read from separate struct ifreq instances.
+static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struct ifreq *ifr_hw, struct ifreq *ifr_ip, NETWORK_INTERFACE_DESCRIPTION* previous_nid)
 {
     NETWORK_INTERFACE_DESCRIPTION* result;
     size_t malloc_size;
 
-    if ((result = (NETWORK_INTERFACE_DESCRIPTION*)malloc(sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
+    // calloc so that every pointer member is NULL and destroy_network_interface_descriptions
+    // stays safe if the description is only partially constructed.
+    if ((result = (NETWORK_INTERFACE_DESCRIPTION*)calloc(1, sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
     {
         LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
     }
-    else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(strlen(ifr->ifr_name), 1), sizeof(char))) == SIZE_MAX)
+    else if ((malloc_size = safe_multiply_size_t(safe_add_size_t(strlen(ifr_hw->ifr_name), 1), sizeof(char))) == SIZE_MAX)
     {
         LogError("invalid malloc size");
         destroy_network_interface_descriptions(result);
@@ -340,10 +344,10 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
     }
     else
     {
-        strcpy(result->name, ifr->ifr_name);
+        strcpy(result->name, ifr_hw->ifr_name);
 
         char* ip_address;
-        unsigned char* mac = (unsigned char*)ifr->ifr_hwaddr.sa_data;
+        unsigned char* mac = (unsigned char*)ifr_hw->ifr_hwaddr.sa_data;
         size_t malloc_size = safe_multiply_size_t(sizeof(char), MAC_ADDRESS_STRING_LENGTH);
 
         if (malloc_size == SIZE_MAX ||
@@ -359,7 +363,7 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
             destroy_network_interface_descriptions(result);
             result = NULL;
         }
-        else if ((ip_address = inet_ntoa(((struct sockaddr_in*)&ifr->ifr_addr)->sin_addr)) == NULL)
+        else if ((ip_address = inet_ntoa(((struct sockaddr_in*)&ifr_ip->ifr_addr)->sin_addr)) == NULL)
         {
             LogError("failed setting the ip address (inet_ntoa failed)");
             destroy_network_interface_descriptions(result);
@@ -396,7 +400,8 @@ static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESC
 {
     int result;
 
-    struct ifreq ifr;
+    struct ifreq ifr_hw;
+    struct ifreq ifr_ip;
     struct ifconf ifc;
     char buf[IFREQ_BUFFER_SIZE];
 
@@ -420,27 +425,28 @@ static int get_network_interface_descriptions(int socket, NETWORK_INTERFACE_DESC
 
         for (; it != end; ++it)
         {
-            strcpy(ifr.ifr_name, it->ifr_name);
+            strcpy(ifr_hw.ifr_name, it->ifr_name);
+            strcpy(ifr_ip.ifr_name, it->ifr_name);
 
-            if (ioctl(socket, SIOCGIFFLAGS, &ifr) != 0)
+            if (ioctl(socket, SIOCGIFFLAGS, &ifr_ip) != 0)
             {
                 LogError("ioctl failed querying socket (SIOCGIFFLAGS, errno=%d)", errno);
                 result = MU_FAILURE;
                 break;
             }
-            else if (ioctl(socket, SIOCGIFHWADDR, &ifr) != 0)
+            else if (ioctl(socket, SIOCGIFHWADDR, &ifr_hw) != 0)
             {
                 LogError("ioctl failed querying socket (SIOCGIFHWADDR, errno=%d)", errno);
                 result = MU_FAILURE;
                 break;
             }
-            else if (ioctl(socket, SIOCGIFADDR, &ifr) != 0)
+            else if (ioctl(socket, SIOCGIFADDR, &ifr_ip) != 0)
             {
                 LogError("ioctl failed querying socket (SIOCGIFADDR, errno=%d)", errno);
                 result = MU_FAILURE;
                 break;
             }
-            else if ((new_nid = create_network_interface_description(&ifr, new_nid)) == NULL)
+            else if ((new_nid = create_network_interface_description(&ifr_hw, &ifr_ip, new_nid)) == NULL)
             {
                 LogError("Failed creating network interface description");
                 result = MU_FAILURE;
