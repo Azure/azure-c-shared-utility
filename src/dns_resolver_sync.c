@@ -162,7 +162,24 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
             else
             {
                 /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-                LogInfo("Failed DNS lookup for %s: %d", dns->hostname, getAddrResult);
+#ifdef EAI_SYSTEM
+                int saved_errno = errno;
+#endif
+#ifdef _WIN32
+                const char* gai_error = gai_strerrorA(getAddrResult);
+#else
+                const char* gai_error = gai_strerror(getAddrResult);
+#endif
+#ifdef EAI_SYSTEM
+                if (getAddrResult == EAI_SYSTEM)
+                {
+                    LogInfo("Failed DNS lookup for %s: %d (%s), errno=%d", dns->hostname, getAddrResult, gai_error, saved_errno);
+                }
+                else
+#endif
+                {
+                    LogInfo("Failed DNS lookup for %s: %d (%s)", dns->hostname, getAddrResult, gai_error);
+                }
                 dns->is_failed = true;
             }
 
