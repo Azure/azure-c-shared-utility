@@ -324,7 +324,9 @@ static NETWORK_INTERFACE_DESCRIPTION* create_network_interface_description(struc
     NETWORK_INTERFACE_DESCRIPTION* result;
     size_t malloc_size;
 
-    if ((result = (NETWORK_INTERFACE_DESCRIPTION*)malloc(sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
+    // calloc so that every pointer member is NULL and destroy_network_interface_descriptions
+    // stays safe if the description is only partially constructed.
+    if ((result = (NETWORK_INTERFACE_DESCRIPTION*)calloc(1, sizeof(NETWORK_INTERFACE_DESCRIPTION))) == NULL)
     {
         LogError("Failed allocating NETWORK_INTERFACE_DESCRIPTION");
     }
