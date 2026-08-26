@@ -1,6 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#ifndef __APPLE__
+// glibc keeps struct ifreq/ifconf behind __USE_MISC, which the build's
+// _POSIX_C_SOURCE/_XOPEN_SOURCE settings would otherwise hide.
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#endif
+
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
