@@ -57,7 +57,6 @@ static TEST_MUTEX_HANDLE g_testByTest;
 
 static int g_resolver_call_count;
 static int g_resolver_failures;
-static int g_resolver_failure_code;
 static int g_resolver_pending;
 static int g_socket_call_count;
 static int g_socket_failures;
@@ -99,7 +98,6 @@ static void reset_fake_network(void)
 
     g_resolver_call_count = 0;
     g_resolver_failures = 0;
-    g_resolver_failure_code = EAI_AGAIN;
     g_resolver_pending = 0;
     g_socket_call_count = 0;
     g_socket_failures = 0;
@@ -125,13 +123,11 @@ static void reset_fake_network(void)
 
 static DNSRESOLVER_HANDLE fake_dns_resolver_create(const char* hostname, int port, const DNSRESOLVER_OPTIONS* options)
 {
-    static int resolver_state;
-
     (void)hostname;
     (void)port;
     (void)options;
     g_resolver_call_count++;
-    return &resolver_state;
+    return (DNSRESOLVER_HANDLE)real_malloc(sizeof(int));
 }
 
 static bool fake_dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE resolver)
@@ -146,19 +142,12 @@ static bool fake_dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE resolver)
     return true;
 }
 
-static uint32_t fake_dns_resolver_get_ipv4(DNSRESOLVER_HANDLE resolver)
-{
-    (void)resolver;
-    return g_test_sockaddr.sin_addr.s_addr;
-}
-
 static struct addrinfo* fake_dns_resolver_get_addr_info(DNSRESOLVER_HANDLE resolver)
 {
     (void)resolver;
     if (g_resolver_failures > 0)
     {
         g_resolver_failures--;
-        (void)g_resolver_failure_code;
         return NULL;
     }
     return &g_test_addrinfo;
@@ -166,7 +155,8 @@ static struct addrinfo* fake_dns_resolver_get_addr_info(DNSRESOLVER_HANDLE resol
 
 static void fake_dns_resolver_destroy(DNSRESOLVER_HANDLE resolver)
 {
-    (void)resolver;
+    ASSERT_IS_NOT_NULL(resolver);
+    real_free(resolver);
 }
 
 int socket(int domain, int type, int protocol)
@@ -362,6 +352,11 @@ static void on_io_error(void* context)
     }
 }
 
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+{
+    ASSERT_FAIL("umock_c reported error %d", (int)error_code);
+}
+
 static CONCRETE_IO_HANDLE create_socketio(void)
 {
     SOCKETIO_CONFIG config = { TEST_HOSTNAME, TEST_PORT, NULL };
@@ -379,7 +374,7 @@ BEGIN_TEST_SUITE(socketio_berkeley_unittests)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
-    (void)umock_c_init(NULL);
+    ASSERT_ARE_EQUAL(int, 0, umock_c_init(on_umock_c_error));
     REGISTER_UMOCK_ALIAS_TYPE(SINGLYLINKEDLIST_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
@@ -389,7 +384,6 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, real_free);
     REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_create, fake_dns_resolver_create);
     REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_is_lookup_complete, fake_dns_resolver_is_lookup_complete);
-    REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_get_ipv4, fake_dns_resolver_get_ipv4);
     REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_get_addrInfo, fake_dns_resolver_get_addr_info);
     REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_destroy, fake_dns_resolver_destroy);
     REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_create, (SINGLYLINKEDLIST_HANDLE)0x4242);
@@ -427,7 +421,6 @@ TEST_FUNCTION(socketio_open_dns_failure_is_retryable)
     int result;
 
     g_resolver_failures = 1;
-    g_resolver_failure_code = EAI_AGAIN;
 
     result = open_socketio(socket_io, NULL);
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
@@ -488,8 +481,9 @@ TEST_FUNCTION(socketio_open_interface_setup_failure_is_retryable)
     result = open_socketio(socket_io, NULL);
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 2, g_resolver_call_count);
     ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
-    ASSERT_ARE_EQUAL(int, 2, g_connect_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_connect_call_count);
 
     socketio_destroy(socket_io);
 }
@@ -602,6 +596,59 @@ TEST_FUNCTION(socketio_dowork_opening_failure_is_retryable)
     result = open_socketio(socket_io, NULL);
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_dowork_reports_open_after_connect_wait)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    g_resolver_pending = 1;
+    g_connect_einprogress = 1;
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, g_open_callback_count);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+
+    socketio_dowork(socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_open_callback_count);
+    ASSERT_ARE_EQUAL(int, (int)IO_OPEN_OK, (int)g_last_open_result);
+    ASSERT_ARE_EQUAL(int, 0, g_error_callback_count);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_connect_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_select_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_getsockopt_call_count);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_dowork_lookup_failure_is_retryable)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    g_resolver_pending = 1;
+    g_resolver_failures = 1;
+
+    result = open_socketio(socket_io, socket_io);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, g_open_callback_count);
+
+    socketio_dowork(socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_error_callback_count);
+    ASSERT_IS_TRUE(g_error_callback_saw_invalid_socket);
+    ASSERT_ARE_EQUAL(int, 0, g_open_callback_count);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 0, g_socket_call_count);
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 2, g_resolver_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_socket_call_count);
 
     socketio_destroy(socket_io);
 }
