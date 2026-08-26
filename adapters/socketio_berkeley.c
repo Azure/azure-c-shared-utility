@@ -20,6 +20,7 @@
 #endif
 
 #include <signal.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -29,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/time.h>
 #ifdef TIZENRT
 #include <net/lwip/tcp.h>
 #else
@@ -154,8 +156,6 @@ static void* socketio_CloneOption(const char* name, const void* value)
     }
     return result;
 }
-
-
 
 /*this function destroys an option previously created*/
 static void socketio_DestroyOption(const char* name, const void* value)
@@ -703,6 +703,38 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     return result;
 }
 
+// Computes the time left until deadline. Returns false, leaving remaining
+// zeroed, once the deadline has passed.
+static bool get_time_remaining(const struct timeval* deadline, struct timeval* remaining)
+{
+    bool result;
+    struct timeval now;
+
+    (void)gettimeofday(&now, NULL);
+
+    remaining->tv_sec = deadline->tv_sec - now.tv_sec;
+    remaining->tv_usec = deadline->tv_usec - now.tv_usec;
+
+    if (remaining->tv_usec < 0)
+    {
+        remaining->tv_usec += 1000000;
+        remaining->tv_sec--;
+    }
+
+    if (remaining->tv_sec < 0 || (remaining->tv_sec == 0 && remaining->tv_usec == 0))
+    {
+        remaining->tv_sec = 0;
+        remaining->tv_usec = 0;
+        result = false;
+    }
+    else
+    {
+        result = true;
+    }
+
+    return result;
+}
+
 static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result;
@@ -713,6 +745,8 @@ static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     fd_set fdset;
     struct timeval tv;
 
+    // FD_SET indexes the descriptor set by descriptor value, so a descriptor at
+    // or above FD_SETSIZE writes past the end of the set.
     if (socket_io_instance->socket >= FD_SETSIZE)
     {
         LogError("Failure: socket %d is not below FD_SETSIZE.", socket_io_instance->socket);
@@ -720,13 +754,26 @@ static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     }
     else
     {
-        FD_ZERO(&fdset);
-        FD_SET(socket_io_instance->socket, &fdset);
-        tv.tv_sec = CONNECT_TIMEOUT;
-        tv.tv_usec = 0;
+        struct timeval deadline;
 
+        (void)gettimeofday(&deadline, NULL);
+        deadline.tv_sec += CONNECT_TIMEOUT;
+
+        // select() may report EINTR before the connection is decided. Retrying
+        // against a fixed deadline bounds the total wait: platforms that leave
+        // the timeout untouched would otherwise restart it on every signal.
         do
         {
+            if (!get_time_remaining(&deadline, &tv))
+            {
+                // Deadline reached; report it the same way select() reports a timeout.
+                retval = 0;
+                break;
+            }
+
+            FD_ZERO(&fdset);
+            FD_SET(socket_io_instance->socket, &fdset);
+
             retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
 
             if (retval < 0)
