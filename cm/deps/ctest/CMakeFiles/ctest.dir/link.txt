@@ -1,0 +1,2 @@
+/home/agent/.local/usr/bin/ar qc libctest.a CMakeFiles/ctest.dir/src/ctest.c.o
+/home/agent/.local/usr/bin/ranlib libctest.a

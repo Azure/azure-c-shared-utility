@@ -1,0 +1,2 @@
+/home/agent/.local/usr/bin/ar qc libtestrunnerswitcher.a CMakeFiles/testrunnerswitcher.dir/src/ctrs_sprintf.c.o
+/home/agent/.local/usr/bin/ranlib libtestrunnerswitcher.a

@@ -1,0 +1,37 @@
+deps/c-logging/v2/CMakeFiles/c_logging_v2_core.dir/src/logging_stacktrace.c.o: \
+ /session/w683b/deps/c-logging/v2/src/logging_stacktrace.c \
+ /home/agent/.local/usr/include/stdc-predef.h \
+ /home/agent/.local/usr/include/stdio.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
+ /home/agent/.local/usr/include/features.h \
+ /home/agent/.local/usr/include/features-time64.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/wordsize.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/timesize.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/sys/cdefs.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/long-double.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/gnu/stubs.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
+ /home/agent/.local/usr/lib/gcc/x86_64-linux-gnu/12/include/stddef.h \
+ /home/agent/.local/usr/lib/gcc/x86_64-linux-gnu/12/include/stdarg.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/types.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/typesizes.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/time64.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/floatn.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/floatn-common.h \
+ /home/agent/.local/usr/include/string.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \
+ /home/agent/.local/usr/include/strings.h \
+ /home/agent/.local/usr/include/inttypes.h \
+ /home/agent/.local/usr/include/stdint.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/wchar.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
+ /home/agent/.local/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+ /session/w683b/deps/c-logging/v2/inc/c_logging/logging_stacktrace.h

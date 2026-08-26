@@ -1,0 +1,2 @@
+/home/agent/.local/usr/bin/ar qc libmacro_utils_c.a CMakeFiles/macro_utils_c.dir/src/macro_utils.c.o
+/home/agent/.local/usr/bin/ranlib libmacro_utils_c.a

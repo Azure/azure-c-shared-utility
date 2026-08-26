@@ -76,6 +76,7 @@ static int g_connect_failures;
 static int g_connect_einprogress;
 static int g_select_call_count;
 static int g_select_failures;
+static int g_select_eintr;
 static int g_getsockopt_call_count;
 static int g_getsockopt_failures;
 static int g_ioctl_call_count;
@@ -117,6 +118,7 @@ static void reset_fake_network(void)
     g_connect_einprogress = 0;
     g_select_call_count = 0;
     g_select_failures = 0;
+    g_select_eintr = 0;
     g_getsockopt_call_count = 0;
     g_getsockopt_failures = 0;
     g_ioctl_call_count = 0;
@@ -237,6 +239,15 @@ int select(int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, struc
     (void)exceptfds;
     (void)timeout;
     g_select_call_count++;
+    if (g_select_eintr != 0)
+    {
+        if (g_select_eintr > 0)
+        {
+            g_select_eintr--;
+        }
+        errno = EINTR;
+        return -1;
+    }
     if (g_select_failures > 0)
     {
         g_select_failures--;
@@ -534,6 +545,46 @@ TEST_FUNCTION(socketio_open_connect_failure_is_retryable_and_refreshes_resolver)
     ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
     ASSERT_ARE_EQUAL(int, 2, g_resolver_call_count);
     ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_open_select_eintr_is_retried_within_the_connect_deadline)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    g_connect_einprogress = 1;
+    g_select_eintr = 2;
+
+    result = open_socketio(socket_io, NULL);
+
+    // The interrupted waits are retried rather than reported as a failure.
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 3, g_select_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_getsockopt_call_count);
+    ASSERT_ARE_EQUAL(int, 0, g_select_eintr);
+
+    socketio_destroy(socket_io);
+}
+
+// Guards against an unbounded retry loop: a sustained EINTR storm must still be
+// cut off by the connect deadline. g_select_eintr < 0 interrupts every wait.
+TEST_FUNCTION(socketio_open_uninterrupted_select_eintr_stops_at_the_connect_deadline)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    g_connect_einprogress = 1;
+    g_select_eintr = -1;
+
+    result = open_socketio(socket_io, NULL);
+
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_IS_TRUE(g_select_call_count > 1);
+    ASSERT_ARE_EQUAL(int, 0, g_getsockopt_call_count);
 
     socketio_destroy(socket_io);
 }

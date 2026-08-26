@@ -1,0 +1,2 @@
+/home/agent/.local/usr/bin/ar qc libmicromock_ctest.a CMakeFiles/micromock_ctest.dir/src/micromockcharstararenullterminatedstrings.cpp.o CMakeFiles/micromock_ctest.dir/src/micromockexception.cpp.o CMakeFiles/micromock_ctest.dir/src/micromocktestmutex.cpp.o CMakeFiles/micromock_ctest.dir/src/mockcallrecorder.cpp.o CMakeFiles/micromock_ctest.dir/src/mockmethodcallbase.cpp.o CMakeFiles/micromock_ctest.dir/src/mockvaluebase.cpp.o CMakeFiles/micromock_ctest.dir/src/timediscretemicromock.cpp.o
+/home/agent/.local/usr/bin/ranlib libmicromock_ctest.a
