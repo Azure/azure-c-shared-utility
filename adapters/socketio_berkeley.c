@@ -20,7 +20,6 @@
 #endif
 
 #include <signal.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -101,7 +100,6 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     unsigned char recv_bytes[XIO_RECEIVE_BUFFER_SIZE];
     DNSRESOLVER_HANDLE dns_resolver;
-    bool dns_resolver_stale;
 } SOCKET_IO_INSTANCE;
 
 typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
@@ -232,9 +230,11 @@ static void socketio_cleanup(SOCKET_IO_INSTANCE* socket_io_instance)
     socket_io_instance->socket = INVALID_SOCKET;
     socket_io_instance->io_state = IO_STATE_CLOSED;
 
-    if (socket_io_instance->address_type == ADDRESS_TYPE_IP && socket_io_instance->hostname != NULL)
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP && socket_io_instance->hostname != NULL &&
+        socket_io_instance->dns_resolver != NULL)
     {
-        socket_io_instance->dns_resolver_stale = true;
+        dns_resolver_destroy(socket_io_instance->dns_resolver);
+        socket_io_instance->dns_resolver = NULL;
     }
 }
 
@@ -243,23 +243,13 @@ static int refresh_dns_resolver(SOCKET_IO_INSTANCE* socket_io_instance)
     int result = 0;
 
     if (socket_io_instance->address_type == ADDRESS_TYPE_IP && socket_io_instance->hostname != NULL &&
-        (socket_io_instance->dns_resolver == NULL || socket_io_instance->dns_resolver_stale))
+        socket_io_instance->dns_resolver == NULL)
     {
-        if (socket_io_instance->dns_resolver != NULL)
-        {
-            dns_resolver_destroy(socket_io_instance->dns_resolver);
-            socket_io_instance->dns_resolver = NULL;
-        }
-
         socket_io_instance->dns_resolver = dns_resolver_create(socket_io_instance->hostname, socket_io_instance->port, NULL);
         if (socket_io_instance->dns_resolver == NULL)
         {
             LogError("Failure: unable to create DNS resolver.");
             result = MU_FAILURE;
-        }
-        else
-        {
-            socket_io_instance->dns_resolver_stale = false;
         }
     }
 
@@ -976,7 +966,7 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
     else
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
-        if (socket_io_instance->io_state != IO_STATE_CLOSING)
+        if ((socket_io_instance->io_state != IO_STATE_CLOSED) && (socket_io_instance->io_state != IO_STATE_CLOSING))
         {
             // Only shut down an active socket before cleanup.
             if (socket_io_instance->socket != INVALID_SOCKET)
