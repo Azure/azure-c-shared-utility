@@ -14,7 +14,6 @@ generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
 ../../adapters/socketio_berkeley.c
-../../src/dns_resolver_sync.c
 ../../src/crt_abstractions.c
 )
 

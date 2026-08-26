@@ -6,6 +6,10 @@
 #endif
 
 #include <stdint.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 #include <cstdlib>
@@ -26,6 +30,7 @@
 #endif
 
 #include "macro_utils/macro_utils.h"
+#include "c_logging/logger.h"
 
 #include "dns_resolver.h"
 
@@ -121,6 +126,21 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
  * This is necessary for the test suite, just keep as is.
  */
 static TEST_MUTEX_HANDLE g_testByTest;
+static char g_log_message[4096];
+static LOGGER_CONFIG g_saved_logger_config;
+
+static void test_log_sink(LOG_LEVEL log_level, LOG_CONTEXT_HANDLE log_context, const char* file, const char* func, int line, const char* message_format, va_list args)
+{
+    (void)log_level;
+    (void)log_context;
+    (void)file;
+    (void)func;
+    (void)line;
+    (void)vsnprintf(g_log_message, sizeof(g_log_message), message_format, args);
+}
+
+static const LOG_SINK_IF g_test_log_sink = { NULL, test_log_sink, NULL };
+static const LOG_SINK_IF* g_test_log_sinks[] = { &g_test_log_sink };
 
 BEGIN_TEST_SUITE(dns_resolver_ut)
 
@@ -134,6 +154,9 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         int result;
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
+
+        g_saved_logger_config = logger_get_config();
+        logger_set_config((LOGGER_CONFIG){ 1, g_test_log_sinks });
 
         (void)umock_c_init(on_umock_c_error);
 
@@ -159,6 +182,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
      */
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
+        logger_set_config(g_saved_logger_config);
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
@@ -176,6 +200,7 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         }
 
         umock_c_reset_all_calls();
+        g_log_message[0] = '\0';
     }
 
     /**
@@ -434,6 +459,48 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         ///assert
         ASSERT_IS_NULL(result, "Unexpected success with NULL hostname");
     }
+
+    TEST_FUNCTION(dns_resolver_getaddrinfo_failure_logs_gai_strerror)
+    {
+        DNSRESOLVER_HANDLE dns;
+        bool result;
+
+        dns = dns_resolver_create("fake.com", 53, NULL);
+        umock_c_reset_all_calls();
+        g_log_message[0] = '\0';
+        STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+            .SetReturn(EAI_NONAME);
+
+        result = dns_resolver_is_lookup_complete(dns);
+
+        ASSERT_IS_TRUE(result);
+        ASSERT_IS_NOT_NULL(strstr(g_log_message, gai_strerror(EAI_NONAME)));
+
+        dns_resolver_destroy(dns);
+    }
+
+#ifdef EAI_SYSTEM
+    TEST_FUNCTION(dns_resolver_getaddrinfo_eai_system_logs_error)
+    {
+        DNSRESOLVER_HANDLE dns;
+        bool result;
+
+        dns = dns_resolver_create("fake.com", 53, NULL);
+        umock_c_reset_all_calls();
+        g_log_message[0] = '\0';
+        errno = EIO;
+        STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+            .SetReturn(EAI_SYSTEM);
+
+        result = dns_resolver_is_lookup_complete(dns);
+
+        ASSERT_IS_TRUE(result);
+        ASSERT_IS_NOT_NULL(strstr(g_log_message, gai_strerror(EAI_SYSTEM)));
+        ASSERT_IS_NOT_NULL(strstr(g_log_message, "errno=5"));
+
+        dns_resolver_destroy(dns);
+    }
+#endif
 
 
 END_TEST_SUITE(dns_resolver_ut)

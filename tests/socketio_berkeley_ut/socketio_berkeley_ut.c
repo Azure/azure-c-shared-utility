@@ -1,666 +1,631 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#ifdef __cplusplus
-#include <cstdint>
-#else
+#include <errno.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#ifndef __APPLE__
+#include <net/if.h>
+#include <sys/ioctl.h>
 #endif
 
 #include "testrunnerswitcher.h"
 
+static void* real_malloc(size_t size)
+{
+    return malloc(size);
+}
+
+static void* real_calloc(size_t count, size_t size)
+{
+    return calloc(count, size);
+}
+
+static void real_free(void* pointer)
+{
+    free(pointer);
+}
+
 #define ENABLE_MOCKS
-
-#include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/optionhandler.h"
-
+#include "azure_c_shared_utility/dns_resolver.h"
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/socketio.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#define TEST_HOSTNAME "hostname"
+#define TEST_PORT 23456
+#define TEST_SOCKET_FIRST 42
+#define TEST_MAC_ADDRESS "AA:BB:CC:DD:EE:FF"
 
-TEST_MUTEX_HANDLE test_serialize_mutex;
+static TEST_MUTEX_HANDLE g_testByTest;
 
-BEGIN_TEST_SUITE(socketio_berkeley_unittests)
+static int g_resolver_call_count;
+static int g_resolver_failures;
+static int g_resolver_failure_code;
+static int g_resolver_pending;
+static int g_socket_call_count;
+static int g_socket_failures;
+static int g_close_call_count;
+static int g_shutdown_call_count;
+static int g_fcntl_call_count;
+static int g_fcntl_failures;
+static int g_connect_call_count;
+static int g_connect_failures;
+static int g_connect_einprogress;
+static int g_select_call_count;
+static int g_select_failures;
+static int g_getsockopt_call_count;
+static int g_getsockopt_failures;
+static int g_ioctl_call_count;
+static int g_ioctl_failures;
+static int g_next_socket;
+static int g_open_callback_count;
+static IO_OPEN_RESULT g_last_open_result;
+static int g_error_callback_count;
+static bool g_error_callback_saw_invalid_socket;
 
-#if 0
+static struct sockaddr_in g_test_sockaddr;
+static struct addrinfo g_test_addrinfo;
 
-// SOCKETIO_SETOPTION TESTS WERE WORKING BEFORE SWITCH TO umock_c...need to finish the conversion
-
-// socketio_setoption tests
-
-static CONCRETE_IO_HANDLE setup_socket()
+static void reset_fake_network(void)
 {
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-    int result = socketio_open(ioHandle, test_on_io_open_complete, &callbackContext,
-        test_on_bytes_received, &callbackContext, test_on_io_error, &callbackContext);
-    ASSERT_ARE_EQUAL(int, 0, result);
-    return ioHandle;
+    (void)memset(&g_test_sockaddr, 0, sizeof(g_test_sockaddr));
+    g_test_sockaddr.sin_family = AF_INET;
+    g_test_sockaddr.sin_port = htons(TEST_PORT);
+    g_test_sockaddr.sin_addr.s_addr = 0x0100007FU;
+
+    (void)memset(&g_test_addrinfo, 0, sizeof(g_test_addrinfo));
+    g_test_addrinfo.ai_family = AF_INET;
+    g_test_addrinfo.ai_socktype = SOCK_STREAM;
+    g_test_addrinfo.ai_protocol = IPPROTO_TCP;
+    g_test_addrinfo.ai_addrlen = sizeof(g_test_sockaddr);
+    g_test_addrinfo.ai_addr = (struct sockaddr*)&g_test_sockaddr;
+
+    g_resolver_call_count = 0;
+    g_resolver_failures = 0;
+    g_resolver_failure_code = EAI_AGAIN;
+    g_resolver_pending = 0;
+    g_socket_call_count = 0;
+    g_socket_failures = 0;
+    g_close_call_count = 0;
+    g_shutdown_call_count = 0;
+    g_fcntl_call_count = 0;
+    g_fcntl_failures = 0;
+    g_connect_call_count = 0;
+    g_connect_failures = 0;
+    g_connect_einprogress = 0;
+    g_select_call_count = 0;
+    g_select_failures = 0;
+    g_getsockopt_call_count = 0;
+    g_getsockopt_failures = 0;
+    g_ioctl_call_count = 0;
+    g_ioctl_failures = 0;
+    g_next_socket = TEST_SOCKET_FIRST;
+    g_open_callback_count = 0;
+    g_last_open_result = IO_OPEN_ERROR;
+    g_error_callback_count = 0;
+    g_error_callback_saw_invalid_socket = false;
 }
 
-static void verify_mocks_and_destroy_socket(CONCRETE_IO_HANDLE ioHandle)
+static DNSRESOLVER_HANDLE fake_dns_resolver_create(const char* hostname, int port, const DNSRESOLVER_OPTIONS* options)
 {
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    socketio_destroy(ioHandle);
+    static int resolver_state;
+
+    (void)hostname;
+    (void)port;
+    (void)options;
+    g_resolver_call_count++;
+    return &resolver_state;
 }
 
-TEST_FUNCTION(socketio_setoption_fails_when_handle_is_null)
+static bool fake_dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE resolver)
 {
-    // arrange
-    int irrelevant = 1;
+    (void)resolver;
+    if (g_resolver_pending > 0)
+    {
+        g_resolver_pending--;
+        return false;
+    }
 
-    // act
-    int result = socketio_setoption(NULL, "tcp_keepalive", &irrelevant);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    return true;
 }
 
-TEST_FUNCTION(socketio_setoption_fails_when_option_name_is_null)
+static uint32_t fake_dns_resolver_get_ipv4(DNSRESOLVER_HANDLE resolver)
 {
-    // arrange
-    int irrelevant = 1;
-
-    CONCRETE_IO_HANDLE ioHandle = setup_socket();
-
-    umock_c_reset_all_calls();
-
-    // act
-    int result = socketio_setoption(ioHandle, NULL, &irrelevant);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    verify_mocks_and_destroy_socket(ioHandle);
+    (void)resolver;
+    return g_test_sockaddr.sin_addr.s_addr;
 }
 
-TEST_FUNCTION(socketio_setoption_fails_when_value_is_null)
+static struct addrinfo* fake_dns_resolver_get_addr_info(DNSRESOLVER_HANDLE resolver)
 {
-    // arrange
-    CONCRETE_IO_HANDLE ioHandle = setup_socket();
-
-    umock_c_reset_all_calls();
-
-    // act
-    int result = socketio_setoption(ioHandle, "tcp_keepalive", NULL);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    verify_mocks_and_destroy_socket(ioHandle);
+    (void)resolver;
+    if (g_resolver_failures > 0)
+    {
+        g_resolver_failures--;
+        (void)g_resolver_failure_code;
+        return NULL;
+    }
+    return &g_test_addrinfo;
 }
 
-TEST_FUNCTION(socketio_setoption_fails_when_it_receives_an_unsupported_option)
+static void fake_dns_resolver_destroy(DNSRESOLVER_HANDLE resolver)
 {
-    // arrange
-    int irrelevant = 1;
-
-    CONCRETE_IO_HANDLE ioHandle = setup_socket();
-
-    umock_c_reset_all_calls();
-
-    // act
-    int result = socketio_setoption(ioHandle, "unsupported_option_name", &irrelevant);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    verify_mocks_and_destroy_socket(ioHandle);
+    (void)resolver;
 }
 
-TEST_FUNCTION(socketio_setoption_passes_tcp_keepalive_to_setsockopt)
+int socket(int domain, int type, int protocol)
 {
-    // arrange
-    CONCRETE_IO_HANDLE ioHandle = setup_socket();
-
-    umock_c_reset_all_calls();
-
-    int onoff = -42;
-
-    STRICT_EXPECTED_CALL(setsockopt(*(int*)ioHandle, SOL_SOCKET, SO_KEEPALIVE,
-        &onoff, sizeof(int)));
-
-    // act
-    int result = socketio_setoption(ioHandle, "tcp_keepalive", &onoff);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    verify_mocks_and_destroy_socket(ioHandle);
+    (void)domain;
+    (void)type;
+    (void)protocol;
+    g_socket_call_count++;
+    if (g_socket_failures > 0)
+    {
+        g_socket_failures--;
+        return -1;
+    }
+    return g_next_socket++;
 }
 
-TEST_FUNCTION(socketio_setoption_passes_tcp_keepalive_time_to_setsockopt)
+int close(int descriptor)
 {
-    // arrange
-    CONCRETE_IO_HANDLE ioHandle = setup_socket();
-
-    umock_c_reset_all_calls();
-
-    int time = 3;
-
-    STRICT_EXPECTED_CALL(setsockopt(*(int*)ioHandle, SOL_TCP, TCP_KEEPIDLE,
-        &time, sizeof(int)));
-
-    // act
-    int result = socketio_setoption(ioHandle, "tcp_keepalive_time", &time);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    verify_mocks_and_destroy_socket(ioHandle);
+    (void)descriptor;
+    g_close_call_count++;
+    return 0;
 }
 
-TEST_FUNCTION(socketio_setoption_passes_tcp_keepalive_interval_to_setsockopt)
+int shutdown(int descriptor, int how)
 {
-    // arrange
-    CONCRETE_IO_HANDLE ioHandle = setup_socket();
-
-    umock_c_reset_all_calls();
-
-    int interval = 15;
-
-    STRICT_EXPECTED_CALL(setsockopt(*(int*)ioHandle, SOL_TCP, TCP_KEEPINTVL,
-        &interval, sizeof(int)));
-
-    // act
-    int result = socketio_setoption(ioHandle, "tcp_keepalive_interval", &interval);
-
-    // assert
-    ASSERT_ARE_EQUAL(int, 0, result);
-    verify_mocks_and_destroy_socket(ioHandle);
+    (void)descriptor;
+    (void)how;
+    g_shutdown_call_count++;
+    return 0;
 }
 
+int fcntl(int descriptor, int command, ...)
+{
+    (void)descriptor;
+    (void)command;
+    g_fcntl_call_count++;
+    if (g_fcntl_failures > 0)
+    {
+        g_fcntl_failures--;
+        return -1;
+    }
+    return 0;
+}
+
+int connect(int descriptor, const struct sockaddr* address, socklen_t address_length)
+{
+    (void)descriptor;
+    (void)address;
+    (void)address_length;
+    g_connect_call_count++;
+    if (g_connect_einprogress > 0)
+    {
+        g_connect_einprogress--;
+        errno = EINPROGRESS;
+        return -1;
+    }
+    if (g_connect_failures > 0)
+    {
+        g_connect_failures--;
+        errno = ECONNREFUSED;
+        return -1;
+    }
+    return 0;
+}
+
+int select(int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, struct timeval* timeout)
+{
+    (void)nfds;
+    (void)readfds;
+    (void)writefds;
+    (void)exceptfds;
+    (void)timeout;
+    g_select_call_count++;
+    if (g_select_failures > 0)
+    {
+        g_select_failures--;
+        errno = EIO;
+        return -1;
+    }
+    return 1;
+}
+
+int getsockopt(int descriptor, int level, int option, void* value, socklen_t* value_length)
+{
+    (void)descriptor;
+    (void)level;
+    (void)option;
+    g_getsockopt_call_count++;
+    if (g_getsockopt_failures > 0)
+    {
+        g_getsockopt_failures--;
+        errno = EIO;
+        return -1;
+    }
+    *(int*)value = 0;
+    *value_length = sizeof(int);
+    return 0;
+}
+
+int setsockopt(int descriptor, int level, int option, const void* value, socklen_t value_length)
+{
+    (void)descriptor;
+    (void)level;
+    (void)option;
+    (void)value;
+    (void)value_length;
+    return 0;
+}
+
+ssize_t send(int descriptor, const void* buffer, size_t length, int flags)
+{
+    (void)descriptor;
+    (void)buffer;
+    (void)flags;
+    return (ssize_t)length;
+}
+
+ssize_t recv(int descriptor, void* buffer, size_t length, int flags)
+{
+    (void)descriptor;
+    (void)buffer;
+    (void)length;
+    (void)flags;
+    errno = EAGAIN;
+    return -1;
+}
+
+#ifndef __APPLE__
+int ioctl(int descriptor, unsigned long request, ...)
+{
+    va_list arguments;
+    void* argument;
+
+    (void)descriptor;
+    g_ioctl_call_count++;
+    va_start(arguments, request);
+    argument = va_arg(arguments, void*);
+    va_end(arguments);
+
+    if (g_ioctl_failures > 0)
+    {
+        g_ioctl_failures--;
+        errno = EIO;
+        return -1;
+    }
+
+    if (request == SIOCGIFCONF)
+    {
+        struct ifconf* interface_configuration = (struct ifconf*)argument;
+        struct ifreq* interface_request = (struct ifreq*)interface_configuration->ifc_buf;
+        (void)memset(interface_request, 0, sizeof(*interface_request));
+        (void)strcpy(interface_request->ifr_name, "eth0");
+        interface_configuration->ifc_len = sizeof(*interface_request);
+    }
+    else
+    {
+        struct ifreq* interface_request = (struct ifreq*)argument;
+        (void)strcpy(interface_request->ifr_name, "eth0");
+        if (request == SIOCGIFHWADDR)
+        {
+            const unsigned char mac_address[] = { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF };
+            (void)memcpy(interface_request->ifr_hwaddr.sa_data, mac_address, sizeof(mac_address));
+        }
+        else if (request == SIOCGIFADDR)
+        {
+            ((struct sockaddr_in*)&interface_request->ifr_addr)->sin_addr.s_addr = 0x0100007FU;
+        }
+    }
+    return 0;
+}
 #endif
 
-/* Seems like the below tests require a full blown rewrite */
-
-#if 0
-
-TEST_SUITE_INITIALIZE(suite_init)
+static void on_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
-    test_serialize_mutex = MicroMockCreateMutex();
-    ASSERT_IS_NOT_NULL(test_serialize_mutex);
+    (void)context;
+    g_open_callback_count++;
+    g_last_open_result = open_result;
 }
 
-TEST_SUITE_CLEANUP(suite_cleanup)
-{
-    MicroMockDestroyMutex(test_serialize_mutex);
-}
-
-TEST_FUNCTION_INITIALIZE(method_init)
-{
-    if (!MicroMockAcquireMutex(test_serialize_mutex))
-    {
-        ASSERT_FAIL("Could not acquire test serialization mutex.");
-    }
-    list_head_count = 0;
-    list_add_called = false;
-    g_addrinfo_call_fail = false;
-    //g_socket_send_size_value = -1;
-    g_socket_recv_size_value = -1;
-}
-
-TEST_FUNCTION_CLEANUP(method_cleanup)
-{
-    if (!MicroMockReleaseMutex(test_serialize_mutex))
-    {
-        ASSERT_FAIL("Could not release test serialization mutex.");
-    }
-}
-
-static void OnBytesReceived(void* context, const unsigned char* buffer, size_t size)
+static void on_bytes_received(void* context, const unsigned char* buffer, size_t size)
 {
     (void)context;
     (void)buffer;
     (void)size;
 }
 
-static void PrintLogFunction(unsigned int options, char* format, ...)
+static void on_io_error(void* context)
 {
-    (void)options;
-    (void)format;
+    g_error_callback_count++;
+    if (context != NULL)
+    {
+        g_error_callback_saw_invalid_socket = (*(int*)context == -1);
+    }
 }
 
-static void OnSendComplete(void* context, IO_SEND_RESULT send_result)
+static CONCRETE_IO_HANDLE create_socketio(void)
 {
-    (void)context;
-    (void)send_result;
+    SOCKETIO_CONFIG config = { TEST_HOSTNAME, TEST_PORT, NULL };
+    CONCRETE_IO_HANDLE result = socketio_create(&config);
+    ASSERT_IS_NOT_NULL(result);
+    return result;
 }
 
-/* socketio_win32_create */
-TEST_FUNCTION(socketio_create_io_create_parameters_NULL_fails)
+static int open_socketio(CONCRETE_IO_HANDLE socket_io, void* error_context)
 {
-    // arrange
-    socketio_mocks mocks;
-
-    // act
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(NULL, PrintLogFunction);
-
-    // assert
-    ASSERT_IS_NULL(ioHandle);
+    return socketio_open(socket_io, on_open_complete, NULL, on_bytes_received, NULL, on_io_error, error_context);
 }
 
-TEST_FUNCTION(socketio_create_list_create_fails)
+BEGIN_TEST_SUITE(socketio_berkeley_unittests)
+
+TEST_SUITE_INITIALIZE(suite_init)
 {
-    // arrange
-    socketio_mocks mocks;
-
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_ARG));
-    EXPECTED_CALL(mocks, singlylinkedlist_create()).SetReturn((SINGLYLINKEDLIST_HANDLE)NULL);
-    EXPECTED_CALL(mocks, gballoc_free(IGNORED_ARG));
-
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-
-    // act
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-
-    // assert
-    ASSERT_IS_NULL(ioHandle);
+    (void)umock_c_init(NULL);
+    REGISTER_UMOCK_ALIAS_TYPE(SINGLYLINKEDLIST_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(LIST_ITEM_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(OPTIONHANDLER_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(DNSRESOLVER_HANDLE, void*);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, real_malloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_calloc, real_calloc);
+    REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, real_free);
+    REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_create, fake_dns_resolver_create);
+    REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_is_lookup_complete, fake_dns_resolver_is_lookup_complete);
+    REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_get_ipv4, fake_dns_resolver_get_ipv4);
+    REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_get_addrInfo, fake_dns_resolver_get_addr_info);
+    REGISTER_GLOBAL_MOCK_HOOK(dns_resolver_destroy, fake_dns_resolver_destroy);
+    REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_create, (SINGLYLINKEDLIST_HANDLE)0x4242);
+    REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_get_head_item, NULL);
+    REGISTER_GLOBAL_MOCK_RETURN(singlylinkedlist_remove, 0);
+    REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_Create, (OPTIONHANDLER_HANDLE)0x4243);
+    REGISTER_GLOBAL_MOCK_RETURN(OptionHandler_AddOption, OPTIONHANDLER_OK);
+    g_testByTest = TEST_MUTEX_CREATE();
+    ASSERT_IS_NOT_NULL(g_testByTest);
 }
 
-TEST_FUNCTION(socketio_create_succeeds)
+TEST_SUITE_CLEANUP(suite_cleanup)
 {
-    // arrange
-    socketio_mocks mocks;
-
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_ARG));
-    EXPECTED_CALL(mocks, singlylinkedlist_create());
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_ARG));
-
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-
-    // act
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-
-    // assert
-    ASSERT_IS_NOT_NULL(ioHandle);
-    mocks.AssertActualAndExpectedCalls();
-
-    socketio_destroy(ioHandle);
+    TEST_MUTEX_DESTROY(g_testByTest);
+    umock_c_deinit();
 }
 
-// socketio_win32_destroy
-TEST_FUNCTION(socketio_destroy_socket_io_NULL_succeeds)
+TEST_FUNCTION_INITIALIZE(test_init)
 {
-    // arrange
-    socketio_mocks mocks;
-
-    // act
-    socketio_destroy(NULL);
-
-    // assert
+    if (TEST_MUTEX_ACQUIRE(g_testByTest))
+    {
+        ASSERT_FAIL("Could not acquire test serialization mutex.");
+    }
+    reset_fake_network();
 }
 
-TEST_FUNCTION(socketio_destroy_socket_succeeds)
+TEST_FUNCTION_CLEANUP(test_cleanup)
 {
-    // arrange
-    socketio_mocks mocks;
-
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-
-    mocks.ResetAllCalls();
-
-    EXPECTED_CALL(mocks, close(IGNORED_ARG));
-    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_ARG))
-        .ExpectedAtLeastTimes(2);
-    EXPECTED_CALL(mocks, singlylinkedlist_item_get_value(IGNORED_ARG));
-    EXPECTED_CALL(mocks, singlylinkedlist_remove(IGNORED_ARG, IGNORED_ARG));
-    EXPECTED_CALL(mocks, singlylinkedlist_destroy(IGNORED_ARG));
-    EXPECTED_CALL(mocks, gballoc_free(IGNORED_ARG));
-    EXPECTED_CALL(mocks, gballoc_free(IGNORED_ARG));
-
-    list_head_count = 1;
-
-    // act
-    socketio_destroy(ioHandle);
-
-    // assert
+    TEST_MUTEX_RELEASE(g_testByTest);
 }
 
-TEST_FUNCTION(socketio_open_socket_io_NULL_fails)
+TEST_FUNCTION(socketio_open_dns_failure_is_retryable)
 {
-    // arrange
-    socketio_mocks mocks;
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
 
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
+    g_resolver_failures = 1;
+    g_resolver_failure_code = EAI_AGAIN;
 
-    mocks.ResetAllCalls();
-
-    // act
-    int result = socketio_open(NULL, OnBytesReceived, OnIoStateChanged, &callbackContext);
-
-    // assert
+    result = open_socketio(socket_io, NULL);
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
-}
+    ASSERT_ARE_EQUAL(int, (int)IO_OPEN_ERROR, (int)g_last_open_result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
 
-TEST_FUNCTION(socketio_open_socket_fails)
-{
-    // arrange
-    socketio_mocks mocks;
-
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-
-    mocks.ResetAllCalls();
-
-    EXPECTED_CALL(mocks, socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .SetReturn(-1);
-
-    // act
-    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
-
-    socketio_destroy(ioHandle);
-}
-
-
-TEST_FUNCTION(socketio_open_getaddrinfo_fails)
-{
-    // arrange
-    socketio_mocks mocks;
-
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-
-    mocks.ResetAllCalls();
-
-    g_addrinfo_call_fail = true;
-    EXPECTED_CALL(mocks, socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    EXPECTED_CALL(mocks, getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    EXPECTED_CALL(mocks, close(IGNORED_ARG));
-
-    // act
-    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
-
-    socketio_destroy(ioHandle);
-}
-
-TEST_FUNCTION(socketio_open_connect_fails)
-{
-    // arrange
-    socketio_mocks mocks;
-
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-
-    mocks.ResetAllCalls();
-
-    EXPECTED_CALL(mocks, socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    EXPECTED_CALL(mocks, getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    EXPECTED_CALL(mocks, connect(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-        .SetReturn(-1);
-    EXPECTED_CALL(mocks, close(IGNORED_ARG));
-    EXPECTED_CALL(mocks, freeaddrinfo(IGNORED_ARG));
-
-    // act
-    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
-
-    socketio_destroy(ioHandle);
-}
-
-TEST_FUNCTION(socketio_open_ioctlsocket_fails)
-{
-    // arrange
-    socketio_mocks mocks;
-
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-
-    mocks.ResetAllCalls();
-
-    EXPECTED_CALL(mocks, socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    EXPECTED_CALL(mocks, getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    EXPECTED_CALL(mocks, connect(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-    //EXPECTED_CALL(mocks, fcntl(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-    //    .SetReturn(-1);
-    EXPECTED_CALL(mocks, freeaddrinfo(IGNORED_ARG));
-    EXPECTED_CALL(mocks, close(IGNORED_ARG));
-
-    // act
-    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-    mocks.AssertActualAndExpectedCalls();
-
-    socketio_destroy(ioHandle);
-}
-
-//TEST_FUNCTION(socketio_open_succeeds)
-//{
-//    // arrange
-//    socketio_mocks mocks;
-//
-//    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-//    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-//
-//    mocks.ResetAllCalls();
-//
-//    EXPECTED_CALL(mocks, socket(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-//    EXPECTED_CALL(mocks, getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-//    EXPECTED_CALL(mocks, connect(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-//    EXPECTED_CALL(mocks, freeaddrinfo(IGNORED_ARG));
-//
-//    // act
-//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-//
-//    // assert
-//    ASSERT_ARE_EQUAL(int, 0, result);
-//    mocks.AssertActualAndExpectedCalls();
-//
-//    socketio_destroy(ioHandle);
-//}
-
-TEST_FUNCTION(socketio_close_socket_io_NULL_fails)
-{
-    // arrange
-    socketio_mocks mocks;
-
-    // act
-    int result = socketio_close(NULL);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-}
-
-TEST_FUNCTION(socketio_close_Succeeds)
-{
-    // arrange
-    socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-
-    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-
-    mocks.ResetAllCalls();
-
-    EXPECTED_CALL(mocks, close(IGNORED_ARG));
-
-    // act
-    result = socketio_close(ioHandle);
-
-    // assert
+    result = open_socketio(socket_io, NULL);
     ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 2, g_resolver_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_socket_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_fcntl_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_connect_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_select_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_getsockopt_call_count);
+
+    socketio_destroy(socket_io);
 }
 
-TEST_FUNCTION(socketio_send_socket_io_fails)
+TEST_FUNCTION(socketio_open_socket_failure_is_retryable)
 {
-    // arrange
-    socketio_mocks mocks;
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
 
-    // act
-    int result = socketio_send(NULL, (const void*)TEST_BUFFER_VALUE, TEST_BUFFER_SIZE, OnSendComplete, (void*)TEST_CALLBACK_CONTEXT);
+    g_socket_failures = 1;
 
-    // assert
+    result = open_socketio(socket_io, NULL);
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_fcntl_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_connect_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_select_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_getsockopt_call_count);
+
+    socketio_destroy(socket_io);
 }
 
-TEST_FUNCTION(socketio_send_buffer_NULL_fails)
+#ifndef __APPLE__
+TEST_FUNCTION(socketio_open_interface_setup_failure_is_retryable)
 {
-    // arrange
-    socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
 
-    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
+    result = socketio_setoption(socket_io, OPTION_NET_INT_MAC_ADDRESS, TEST_MAC_ADDRESS);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    g_ioctl_failures = 1;
 
-    mocks.ResetAllCalls();
-
-    // act
-    result = socketio_send(ioHandle, NULL, TEST_BUFFER_SIZE, OnSendComplete, (void*)TEST_CALLBACK_CONTEXT);
-
-    // assert
+    result = open_socketio(socket_io, NULL);
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_close_call_count);
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_connect_call_count);
+
+    socketio_destroy(socket_io);
 }
-
-TEST_FUNCTION(socketio_send_size_zero_fails)
-{
-    // arrange
-    socketio_mocks mocks;
-    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-
-    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-
-    mocks.ResetAllCalls();
-
-    // act
-    result = socketio_send(ioHandle, (const void*)TEST_BUFFER_VALUE, 0, OnSendComplete, (void*)TEST_CALLBACK_CONTEXT);
-
-    // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
-}
-
-// TBD:  To be implemented when fcntl is mocked
-//TEST_FUNCTION(socketio_send_succeeds)
-//{
-//    // arrange
-//    socketio_mocks mocks;
-//    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-//    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-//
-//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-//
-//    mocks.ResetAllCalls();
-//
-//    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_ARG));
-//    EXPECTED_CALL(mocks, send(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-//
-//    // act
-//    result = socketio_send(ioHandle, (const void*)TEST_BUFFER_VALUE, TEST_BUFFER_SIZE, OnSendComplete, (void*)TEST_CALLBACK_CONTEXT);
-//
-//    // assert
-//    ASSERT_ARE_EQUAL(int, 0, result);
-//    mocks.AssertActualAndExpectedCalls();
-//
-//    socketio_destroy(ioHandle);
-//}
-
-// TBD:  To be implemented when fcntl is mocked
-//TEST_FUNCTION(socketio_send_returns_1_succeeds)
-//{
-//    // arrange
-//    socketio_mocks mocks;
-//    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-//    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-//
-//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-//    ASSERT_ARE_EQUAL(int, 0, result);
-//
-//    mocks.ResetAllCalls();
-//
-//    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_ARG));
-//    EXPECTED_CALL(mocks, send(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)).SetReturn(1);
-//    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_ARG));
-//    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_ARG));
-//    EXPECTED_CALL(mocks, singlylinkedlist_add(IGNORED_ARG, IGNORED_ARG));
-//
-//    // act
-//    result = socketio_send(ioHandle, (const void*)TEST_BUFFER_VALUE, TEST_BUFFER_SIZE, OnSendComplete, (void*)TEST_CALLBACK_CONTEXT);
-//
-//    // assert
-//    ASSERT_ARE_EQUAL(int, 0, result);
-//    mocks.AssertActualAndExpectedCalls();
-//
-//    socketio_destroy(ioHandle);
-//}
-
-TEST_FUNCTION(socketio_dowork_socket_io_NULL_fails)
-{
-    // arrange
-    socketio_mocks mocks;
-
-    // act
-    socketio_dowork(NULL);
-
-    // assert
-}
-
-// TBD:  To be implemented when fcntl is mocked
-//TEST_FUNCTION(socketio_dowork_succeeds)
-//{
-//    // arrange
-//    socketio_mocks mocks;
-//    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-//    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-//
-//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-//
-//    mocks.ResetAllCalls();
-//
-//    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_ARG));
-//    EXPECTED_CALL(mocks, recv(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-//
-//    // act
-//    socketio_dowork(ioHandle);
-//
-//    // assert
-//    mocks.AssertActualAndExpectedCalls();
-//
-//    socketio_destroy(ioHandle);
-//}
-
-// TBD:  To be implemented when fcntl is mocked
-//TEST_FUNCTION(socketio_dowork_recv_bytes_succeeds)
-//{
-//    // arrange
-//    socketio_mocks mocks;
-//    SOCKETIO_CONFIG socketConfig = { HOSTNAME_ARG, PORT_NUM, NULL };
-//    CONCRETE_IO_HANDLE ioHandle = socketio_create(&socketConfig, PrintLogFunction);
-//
-//    int result = socketio_open(ioHandle, OnBytesReceived, OnIoStateChanged, &callbackContext);
-//
-//    mocks.ResetAllCalls();
-//
-//    EXPECTED_CALL(mocks, singlylinkedlist_get_head_item(IGNORED_ARG));
-//    EXPECTED_CALL(mocks, recv(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-//        .CopyOutArgumentBuffer(2, "t", 1)
-//        .SetReturn(1);
-//    EXPECTED_CALL(mocks, recv(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
-//
-//    // act
-//    socketio_dowork(ioHandle);
-//
-//    // assert
-//    mocks.AssertActualAndExpectedCalls();
-//
-//    socketio_destroy(ioHandle);
-//}
-
 #endif
 
-END_TEST_SUITE(socketio_berkeley_unittests)
+TEST_FUNCTION(socketio_open_fcntl_failure_is_retryable)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
 
+    g_fcntl_failures = 1;
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_close_call_count);
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_connect_call_count);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_open_connect_failure_is_retryable_and_refreshes_resolver)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    g_connect_failures = 1;
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_close_call_count);
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 2, g_resolver_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_open_select_failure_is_retryable)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    g_connect_einprogress = 1;
+    g_select_failures = 1;
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_close_call_count);
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_select_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_getsockopt_call_count);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_open_getsockopt_failure_is_retryable)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    g_connect_einprogress = 1;
+    g_getsockopt_failures = 1;
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_close_call_count);
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+    ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_getsockopt_call_count);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_dowork_opening_failure_is_retryable)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    g_resolver_pending = 1;
+    g_socket_failures = 1;
+
+    result = open_socketio(socket_io, socket_io);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+
+    socketio_dowork(socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_error_callback_count);
+    ASSERT_IS_TRUE(g_error_callback_saw_invalid_socket);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_close_recreates_resolver)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 1, g_resolver_call_count);
+    ASSERT_ARE_EQUAL(int, 1, g_socket_call_count);
+
+    result = socketio_close(socket_io, NULL, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 2, g_resolver_call_count);
+    ASSERT_ARE_EQUAL(int, 2, g_socket_call_count);
+
+    socketio_destroy(socket_io);
+}
+
+END_TEST_SUITE(socketio_berkeley_unittests)
