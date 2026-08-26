@@ -19,37 +19,6 @@ extern "C" {
 #define    SOCK_STREAM    1
 #define IPPROTO_TCP     6
 
-#ifndef EAI_AGAIN
-#define EAI_AGAIN       11002
-#endif
-
-#ifndef EAI_NONAME
-#define EAI_NONAME      11001
-#endif
-
-#ifndef EAI_SYSTEM
-#define EAI_SYSTEM      11
-#endif
-
-static const char* test_gai_strerror(int error_code)
-{
-    switch (error_code)
-    {
-    case EAI_AGAIN:
-        return "temporary failure in name resolution";
-    case EAI_NONAME:
-        return "name or service not known";
-    case EAI_SYSTEM:
-        return "system error";
-    default:
-        return "unknown address error";
-    }
-}
-
-#ifndef gai_strerror
-#define gai_strerror test_gai_strerror
-#endif
-
 
 #define htons(x) x
 

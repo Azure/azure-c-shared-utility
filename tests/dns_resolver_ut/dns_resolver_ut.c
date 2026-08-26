@@ -126,6 +126,8 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
  * This is necessary for the test suite, just keep as is.
  */
 static TEST_MUTEX_HANDLE g_testByTest;
+
+#ifndef NO_LOGGING
 static char g_log_message[4096];
 static LOGGER_CONFIG g_saved_logger_config;
 
@@ -141,6 +143,7 @@ static void test_log_sink(LOG_LEVEL log_level, LOG_CONTEXT_HANDLE log_context, c
 
 static const LOG_SINK_IF g_test_log_sink = { NULL, test_log_sink, NULL };
 static const LOG_SINK_IF* g_test_log_sinks[] = { &g_test_log_sink };
+#endif
 
 BEGIN_TEST_SUITE(dns_resolver_ut)
 
@@ -155,8 +158,10 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         g_testByTest = TEST_MUTEX_CREATE();
         ASSERT_IS_NOT_NULL(g_testByTest);
 
+#ifndef NO_LOGGING
         g_saved_logger_config = logger_get_config();
         logger_set_config((LOGGER_CONFIG){ 1, g_test_log_sinks });
+#endif
 
         (void)umock_c_init(on_umock_c_error);
 
@@ -182,7 +187,9 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
      */
     TEST_SUITE_CLEANUP(TestClassCleanup)
     {
+#ifndef NO_LOGGING
         logger_set_config(g_saved_logger_config);
+#endif
         umock_c_deinit();
 
         TEST_MUTEX_DESTROY(g_testByTest);
@@ -200,7 +207,9 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         }
 
         umock_c_reset_all_calls();
+#ifndef NO_LOGGING
         g_log_message[0] = '\0';
+#endif
     }
 
     /**
@@ -467,14 +476,15 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
 
         dns = dns_resolver_create("fake.com", 53, NULL);
         umock_c_reset_all_calls();
-        g_log_message[0] = '\0';
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
             .SetReturn(EAI_NONAME);
 
         result = dns_resolver_is_lookup_complete(dns);
 
         ASSERT_IS_TRUE(result);
+#ifndef NO_LOGGING
         ASSERT_IS_NOT_NULL(strstr(g_log_message, gai_strerror(EAI_NONAME)));
+#endif
 
         dns_resolver_destroy(dns);
     }
@@ -487,7 +497,6 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
 
         dns = dns_resolver_create("fake.com", 53, NULL);
         umock_c_reset_all_calls();
-        g_log_message[0] = '\0';
         errno = EIO;
         STRICT_EXPECTED_CALL(getaddrinfo(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
             .SetReturn(EAI_SYSTEM);
@@ -495,8 +504,10 @@ BEGIN_TEST_SUITE(dns_resolver_ut)
         result = dns_resolver_is_lookup_complete(dns);
 
         ASSERT_IS_TRUE(result);
+#ifndef NO_LOGGING
         ASSERT_IS_NOT_NULL(strstr(g_log_message, gai_strerror(EAI_SYSTEM)));
         ASSERT_IS_NOT_NULL(strstr(g_log_message, "errno=5"));
+#endif
 
         dns_resolver_destroy(dns);
     }
