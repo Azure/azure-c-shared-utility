@@ -11,4 +11,10 @@ set(${theseTestsName}_c_files
 set(${theseTestsName}_h_files
 )
 
-build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests" ADDITIONAL_LIBS aziotsharedutil)
+file(COPY ../valgrind_suppressions.supp DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+build_c_test_artifacts(${theseTestsName} ON "tests/azure_c_shared_utility_tests"
+  ADDITIONAL_LIBS
+    aziotsharedutil
+  VALGRIND_SUPPRESSIONS_FILE
+    valgrind_suppressions.supp
+)

@@ -57,3 +57,22 @@
    fun:exit
    fun:(below main)
 }
+# The dynamic loader runs library destructors after the process is already tearing
+# down, and some of them (p11-kit, pulled in through OpenSSL) destroy mutexes that
+# valgrind no longer recognises. Version-independent form of the entries above.
+{
+   Mutex destroy during loader teardown (helgrind)
+   Helgrind:Misc
+   obj:*vgpreload_helgrind*
+   ...
+   fun:_dl_fini
+   ...
+}
+{
+   Mutex destroy during loader teardown (drd)
+   drd:MutexErr
+   fun:pthread_mutex_destroy*
+   ...
+   fun:_dl_fini
+   ...
+}
