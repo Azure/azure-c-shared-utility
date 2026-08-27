@@ -20,6 +20,7 @@
 #endif
 
 #include <signal.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -29,6 +30,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/time.h>
 #ifdef TIZENRT
 #include <net/lwip/tcp.h>
 #else
@@ -218,6 +220,51 @@ static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
     }
 }
 
+static void socketio_cleanup(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    if (socket_io_instance->socket != INVALID_SOCKET)
+    {
+        (void)close(socket_io_instance->socket);
+    }
+
+    socket_io_instance->socket = INVALID_SOCKET;
+    socket_io_instance->io_state = IO_STATE_CLOSED;
+
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP && socket_io_instance->hostname != NULL &&
+        socket_io_instance->dns_resolver != NULL)
+    {
+        dns_resolver_destroy(socket_io_instance->dns_resolver);
+        socket_io_instance->dns_resolver = NULL;
+    }
+}
+
+static void indicate_open_failure(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    socketio_cleanup(socket_io_instance);
+    if (socket_io_instance->on_io_error != NULL)
+    {
+        socket_io_instance->on_io_error(socket_io_instance->on_io_error_context);
+    }
+}
+
+static int refresh_dns_resolver(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    int result = 0;
+
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP && socket_io_instance->hostname != NULL &&
+        socket_io_instance->dns_resolver == NULL)
+    {
+        socket_io_instance->dns_resolver = dns_resolver_create(socket_io_instance->hostname, socket_io_instance->port, NULL);
+        if (socket_io_instance->dns_resolver == NULL)
+        {
+            LogError("Failure: unable to create DNS resolver.");
+            result = MU_FAILURE;
+        }
+    }
+
+    return result;
+}
+
 static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned char* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
@@ -271,9 +318,19 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
 
     if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {
-        if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
+        if (socket_io_instance->dns_resolver == NULL)
+        {
+            LogError("DNS resolver is NULL.");
+            result = MU_FAILURE;
+        }
+        else if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
         {
             socket_io_instance->io_state = IO_STATE_OPENING;
+        }
+        else if (dns_resolver_get_addrInfo(socket_io_instance->dns_resolver) == NULL)
+        {
+            LogError("DNS resolution failed. Hostname:%s", socket_io_instance->hostname);
+            result = MU_FAILURE;
         }
         else
         {
@@ -622,20 +679,7 @@ static int initiate_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
             {
                 // Async connect will return -1.
                 result = 0;
-                if (socket_io_instance->on_io_open_complete != NULL)
-                {
-                    socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK /*: IO_OPEN_ERROR*/);
-                }
             }
-        }
-
-        if (result != 0)
-        {
-            if (socket_io_instance->socket >= SOCKET_SUCCESS)
-            {
-                close(socket_io_instance->socket);
-            }
-            socket_io_instance->socket = INVALID_SOCKET;
         }
     }
 
@@ -659,6 +703,38 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     return result;
 }
 
+// Computes the time left until deadline. Returns false, leaving remaining
+// zeroed, once the deadline has passed.
+static bool get_time_remaining(const struct timeval* deadline, struct timeval* remaining)
+{
+    bool result;
+    struct timeval now;
+
+    (void)gettimeofday(&now, NULL);
+
+    remaining->tv_sec = deadline->tv_sec - now.tv_sec;
+    remaining->tv_usec = deadline->tv_usec - now.tv_usec;
+
+    if (remaining->tv_usec < 0)
+    {
+        remaining->tv_usec += 1000000;
+        remaining->tv_sec--;
+    }
+
+    if (remaining->tv_sec < 0 || (remaining->tv_sec == 0 && remaining->tv_usec == 0))
+    {
+        remaining->tv_sec = 0;
+        remaining->tv_usec = 0;
+        result = false;
+    }
+    else
+    {
+        result = true;
+    }
+
+    return result;
+}
+
 static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result;
@@ -669,55 +745,69 @@ static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     fd_set fdset;
     struct timeval tv;
 
-    FD_ZERO(&fdset);
-    FD_SET(socket_io_instance->socket, &fdset);
-    tv.tv_sec = CONNECT_TIMEOUT;
-    tv.tv_usec = 0;
-
-    do
+    // FD_SET indexes the descriptor set by descriptor value, so a descriptor at
+    // or above FD_SETSIZE writes past the end of the set.
+    if (socket_io_instance->socket >= FD_SETSIZE)
     {
-        retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
-
-        if (retval < 0)
-        {
-            select_errno = errno;
-        }
-    } while (retval < 0 && select_errno == EINTR);
-
-    if (retval != 1)
-    {
-        LogError("Failure: select failure.");
+        LogError("Failure: socket %d is not below FD_SETSIZE.", socket_io_instance->socket);
         result = MU_FAILURE;
     }
     else
     {
-        int so_error = 0;
-        socklen_t len = sizeof(so_error);
-        err = getsockopt(socket_io_instance->socket, SOL_SOCKET, SO_ERROR, &so_error, &len);
-        if (err != 0)
+        struct timeval deadline;
+
+        (void)gettimeofday(&deadline, NULL);
+        deadline.tv_sec += CONNECT_TIMEOUT;
+
+        // select() may report EINTR before the connection is decided. Retrying
+        // against a fixed deadline bounds the total wait: platforms that leave
+        // the timeout untouched would otherwise restart it on every signal.
+        do
         {
-            LogError("Failure: getsockopt failure %d.", errno);
-            result = MU_FAILURE;
-        }
-        else if (so_error != 0)
+            if (!get_time_remaining(&deadline, &tv))
+            {
+                // Deadline reached; report it the same way select() reports a timeout.
+                retval = 0;
+                break;
+            }
+
+            FD_ZERO(&fdset);
+            FD_SET(socket_io_instance->socket, &fdset);
+
+            retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
+
+            if (retval < 0)
+            {
+                select_errno = errno;
+            }
+        } while (retval < 0 && select_errno == EINTR);
+
+        if (retval != 1)
         {
-            err = so_error;
-            LogError("Failure: connect failure %d.", so_error);
+            LogError("Failure: select failure.");
             result = MU_FAILURE;
         }
         else
         {
-            result = 0;
+            int so_error = 0;
+            socklen_t len = sizeof(so_error);
+            err = getsockopt(socket_io_instance->socket, SOL_SOCKET, SO_ERROR, &so_error, &len);
+            if (err != 0)
+            {
+                LogError("Failure: getsockopt failure %d.", errno);
+                result = MU_FAILURE;
+            }
+            else if (so_error != 0)
+            {
+                err = so_error;
+                LogError("Failure: connect failure %d.", so_error);
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = 0;
+            }
         }
-    }
-
-    if (result != 0)
-    {
-        if (socket_io_instance->socket >= SOCKET_SUCCESS)
-        {
-            close(socket_io_instance->socket);
-        }
-        socket_io_instance->socket = INVALID_SOCKET;
     }
 
     return result;
@@ -883,14 +973,21 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         }
         else
         {
-            if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
+            socket_io_instance->on_io_open_complete = NULL;
+            socket_io_instance->on_io_open_complete_context = NULL;
+
+            if ((result = refresh_dns_resolver(socket_io_instance)) != 0)
+            {
+                LogError("refresh_dns_resolver failed");
+            }
+            else if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
             {
                 LogError("lookup_address_and_connect_socket failed");
             }
             else if ((socket_io_instance->io_state == IO_STATE_OPEN) && (result = wait_for_socket_connection(socket_io_instance)) != 0)
             {
                 LogError("wait_for_socket_connection failed");
-            } 
+            }
             else
             {
                 socket_io_instance->on_bytes_received = on_bytes_received;
@@ -902,10 +999,15 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
                 socket_io_instance->on_io_open_complete = on_io_open_complete;
                 socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
             }
+
+            if (result != 0)
+            {
+                socketio_cleanup(socket_io_instance);
+            }
         }
     }
 
-    if (socket_io_instance->io_state != IO_STATE_OPENING)
+    if (socket_io_instance != NULL && socket_io_instance->io_state != IO_STATE_OPENING)
     {
         if (on_io_open_complete != NULL)
         {
@@ -929,11 +1031,12 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         if ((socket_io_instance->io_state != IO_STATE_CLOSED) && (socket_io_instance->io_state != IO_STATE_CLOSING))
         {
-            // Only close if the socket isn't already in the closed or closing state
-            (void)shutdown(socket_io_instance->socket, SHUT_RDWR);
-            close(socket_io_instance->socket);
-            socket_io_instance->socket = INVALID_SOCKET;
-            socket_io_instance->io_state = IO_STATE_CLOSED;
+            // Only shut down an active socket before cleanup.
+            if (socket_io_instance->socket != INVALID_SOCKET)
+            {
+                (void)shutdown(socket_io_instance->socket, SHUT_RDWR);
+            }
+            socketio_cleanup(socket_io_instance);
         }
 
         if (on_io_close_complete != NULL)
@@ -1131,25 +1234,25 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 if(lookup_address(socket_io_instance) != 0)
                 {
                     LogError("Socketio_Failure: lookup address failed");
-                    indicate_error(socket_io_instance);
+                    indicate_open_failure(socket_io_instance);
                 }
-                else
+                else if (socket_io_instance->io_state == IO_STATE_OPEN)
                 {
-                    if(socket_io_instance->io_state == IO_STATE_OPEN)
+                    if (initiate_socket_connection(socket_io_instance) != 0)
                     {
-                        if (initiate_socket_connection(socket_io_instance) != 0)
-                        {
-                            LogError("Socketio_Failure: initiate_socket_connection failed");
-                            indicate_error(socket_io_instance);
-                        }
-                        else if (wait_for_socket_connection(socket_io_instance) != 0)
-                        {
-                            LogError("Socketio_Failure: wait_for_socket_connection failed");
-                            indicate_error(socket_io_instance);
-                        }
+                        LogError("Socketio_Failure: initiate_socket_connection failed");
+                        indicate_open_failure(socket_io_instance);
+                    }
+                    else if (wait_for_socket_connection(socket_io_instance) != 0)
+                    {
+                        LogError("Socketio_Failure: wait_for_socket_connection failed");
+                        indicate_open_failure(socket_io_instance);
+                    }
+                    else if (socket_io_instance->on_io_open_complete != NULL)
+                    {
+                        socket_io_instance->on_io_open_complete(socket_io_instance->on_io_open_complete_context, IO_OPEN_OK);
                     }
                 }
-
             }
         }
     }
@@ -1286,4 +1389,3 @@ const IO_INTERFACE_DESCRIPTION* socketio_get_interface_description(void)
 {
     return &socket_io_interface_description;
 }
-

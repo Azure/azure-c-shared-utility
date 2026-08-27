@@ -109,6 +109,42 @@ static void indicate_error(SOCKET_IO_INSTANCE* socket_io_instance)
     }
 }
 
+static void socketio_cleanup(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    if (socket_io_instance->socket != INVALID_SOCKET)
+    {
+        (void)closesocket(socket_io_instance->socket);
+    }
+
+    socket_io_instance->socket = INVALID_SOCKET;
+    socket_io_instance->io_state = IO_STATE_CLOSED;
+
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP && socket_io_instance->hostname != NULL &&
+        socket_io_instance->dns_resolver != NULL)
+    {
+        dns_resolver_destroy(socket_io_instance->dns_resolver);
+        socket_io_instance->dns_resolver = NULL;
+    }
+}
+
+static int refresh_dns_resolver(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    int result = 0;
+
+    if (socket_io_instance->address_type == ADDRESS_TYPE_IP && socket_io_instance->hostname != NULL &&
+        socket_io_instance->dns_resolver == NULL)
+    {
+        socket_io_instance->dns_resolver = dns_resolver_create(socket_io_instance->hostname, socket_io_instance->port, NULL);
+        if (socket_io_instance->dns_resolver == NULL)
+        {
+            LogError("Failure: unable to create DNS resolver.");
+            result = MU_FAILURE;
+        }
+    }
+
+    return result;
+}
+
 static int add_pending_io(SOCKET_IO_INSTANCE* socket_io_instance, const unsigned char* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
 {
     int result;
@@ -159,7 +195,12 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
     
     if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {
-        if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
+        if (socket_io_instance->dns_resolver == NULL)
+        {
+            LogError("DNS resolver is NULL.");
+            result = MU_FAILURE;
+        }
+        else if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
         {
             socket_io_instance->io_state = IO_STATE_OPENING;
         }
@@ -405,7 +446,10 @@ void socketio_destroy(CONCRETE_IO_HANDLE socket_io)
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
         /* we cannot do much if the close fails, so just ignore the result */
-        (void)closesocket(socket_io_instance->socket);
+        if (socket_io_instance->socket != INVALID_SOCKET)
+        {
+            (void)closesocket(socket_io_instance->socket);
+        }
 
         /* clear allpending IOs */
 
@@ -458,6 +502,9 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
         }
         else
         {
+            socket_io_instance->on_io_open_complete = NULL;
+            socket_io_instance->on_io_open_complete_context = NULL;
+
 #ifdef AF_UNIX_ON_WINDOWS
             int addr_family = socket_io_instance->address_type == ADDRESS_TYPE_IP ? AF_INET : AF_UNIX;
 #else
@@ -467,20 +514,24 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             if (socket_io_instance->socket == INVALID_SOCKET)
             {
                 LogError("Failure: socket create failure %d.", WSAGetLastError());
+                socketio_cleanup(socket_io_instance);
+                result = MU_FAILURE;
+            }
+            else if (refresh_dns_resolver(socket_io_instance) != 0)
+            {
+                socketio_cleanup(socket_io_instance);
                 result = MU_FAILURE;
             }
             else if (lookup_address(socket_io_instance) != 0)
             {
                 LogError("lookup_address failed");
-                (void)closesocket(socket_io_instance->socket);
-                socket_io_instance->socket = INVALID_SOCKET;
+                socketio_cleanup(socket_io_instance);
                 result = MU_FAILURE;
             }
             else if (socket_io_instance->io_state == IO_STATE_OPEN && initiate_socket_connection(socket_io_instance) != 0)
             {
                 LogError("initiate_socket_connection failed");
-                (void)closesocket(socket_io_instance->socket);
-                socket_io_instance->socket = INVALID_SOCKET;
+                socketio_cleanup(socket_io_instance);
                 result = MU_FAILURE;
             }
             else
@@ -521,12 +572,9 @@ int socketio_close(CONCRETE_IO_HANDLE socket_io, ON_IO_CLOSE_COMPLETE on_io_clos
     {
         SOCKET_IO_INSTANCE* socket_io_instance = (SOCKET_IO_INSTANCE*)socket_io;
 
-        if ((socket_io_instance->io_state != IO_STATE_CLOSING) &&
-            (socket_io_instance->io_state != IO_STATE_CLOSED))
+        if ((socket_io_instance->io_state != IO_STATE_CLOSED) && (socket_io_instance->io_state != IO_STATE_CLOSING))
         {
-            (void)closesocket(socket_io_instance->socket);
-            socket_io_instance->socket = INVALID_SOCKET;
-            socket_io_instance->io_state = IO_STATE_CLOSED;
+            socketio_cleanup(socket_io_instance);
         }
 
         if (on_io_close_complete != NULL)
@@ -712,16 +760,14 @@ void socketio_dowork(CONCRETE_IO_HANDLE socket_io)
                 if (lookup_address(socket_io_instance) != 0)
                 {
                     LogError("lookup_address failed");
-                    (void)closesocket(socket_io_instance->socket);
-                    socket_io_instance->socket = INVALID_SOCKET;
-                    socket_io_instance->io_state = IO_STATE_CLOSED;
+                    socketio_cleanup(socket_io_instance);
+                    indicate_error(socket_io_instance);
                 }
                 else if (socket_io_instance->io_state == IO_STATE_OPEN && initiate_socket_connection(socket_io_instance) != 0)
                 {
                     LogError("initialize_socket_connection failed");
-                    (void)closesocket(socket_io_instance->socket);
-                    socket_io_instance->socket = INVALID_SOCKET;
-                    socket_io_instance->io_state = IO_STATE_CLOSED;
+                    socketio_cleanup(socket_io_instance);
+                    indicate_error(socket_io_instance);
                 }
             }
         }

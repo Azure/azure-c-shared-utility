@@ -43,8 +43,7 @@ if(${run_unittests})
         add_subdirectory(platform_win32_ut)
         add_subdirectory(timer_win32_ut)
     else()
-        # socketio_berkeley_ut disabled: all tests are behind #if 0, and new ctest fails on zero test count
-        #add_subdirectory(socketio_berkeley_ut)
+        add_subdirectory(socketio_berkeley_ut)
     endif()
 
     #normally, with proper include paths, the below tests can be run under windows too.
