@@ -206,14 +206,16 @@ static unsigned char* decode_ecc_private_key_without_curve_oid(const unsigned ch
 
 /* Handles a PKCS#8 PrivateKeyInfo ("-----BEGIN PRIVATE KEY-----"). The inner, algorithm specific
    private key is unwrapped and then decoded as PKCS#1 (RSA) or RFC 5915 (ECC).
-   Returns NULL without logging when the input is not a PKCS#8 PrivateKeyInfo at all. */
-static unsigned char* decode_pkcs8_private_key(const unsigned char* private_key, DWORD key_length, DWORD* blob_size, x509_CERT_TYPE* cert_type)
+   Returns NULL without logging when the input is not a PKCS#8 PrivateKeyInfo at all; is_pkcs8 tells
+   the caller which of the two happened, so that it does not report an already reported failure. */
+static unsigned char* decode_pkcs8_private_key(const unsigned char* private_key, DWORD key_length, DWORD* blob_size, x509_CERT_TYPE* cert_type, BOOL* is_pkcs8)
 {
     unsigned char* result;
     CRYPT_PRIVATE_KEY_INFO* key_info = NULL;
     DWORD key_info_size = 0;
 
     *cert_type = x509_TYPE_UNKNOWN;
+    *is_pkcs8 = FALSE;
 
     if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, pkcs8_private_key_info_type, private_key, key_length, CRYPT_DECODE_ALLOC_FLAG, NULL, &key_info, &key_info_size))
     {
@@ -222,11 +224,14 @@ static unsigned char* decode_pkcs8_private_key(const unsigned char* private_key,
     }
     else if (key_info == NULL)
     {
+        *is_pkcs8 = TRUE;
         LogError("CryptDecodeObjectEx returned a NULL PKCS#8 private key info");
         result = NULL;
     }
     else
     {
+        *is_pkcs8 = TRUE;
+
         if (key_info->Algorithm.pszObjId == NULL)
         {
             LogError("PKCS#8 private key does not carry an algorithm identifier");
@@ -352,16 +357,24 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
         }
     }
     /*PKCS#8 PrivateKeyInfo, "-----BEGIN PRIVATE KEY-----", the format emitted by current tooling*/
-    else if ((result = decode_pkcs8_private_key(private_key, key_length, blob_size, cert_type)) == NULL)
+    else
     {
-        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-        if (is_encrypted_pkcs8_private_key(private_key, key_length))
+        BOOL is_pkcs8 = FALSE;
+
+        if (((result = decode_pkcs8_private_key(private_key, key_length, blob_size, cert_type, &is_pkcs8)) == NULL) &&
+            !is_pkcs8)
         {
-            LogError("The x509 private key is an encrypted PKCS#8 private key, which is not supported. Supply an unencrypted PKCS#8, PKCS#1 or EC private key instead");
-        }
-        else
-        {
-            LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
+            /*the key is in none of the supported encodings; a PKCS#8 private key info that failed to
+              decode has already been reported in detail by decode_pkcs8_private_key*/
+            /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+            if (is_encrypted_pkcs8_private_key(private_key, key_length))
+            {
+                LogError("The x509 private key is an encrypted PKCS#8 private key, which is not supported. Supply an unencrypted PKCS#8, PKCS#1 or EC private key instead");
+            }
+            else
+            {
+                LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
+            }
         }
     }
 

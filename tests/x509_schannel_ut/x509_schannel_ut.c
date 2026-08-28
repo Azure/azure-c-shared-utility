@@ -943,8 +943,8 @@ TEST_FUNCTION(x509_schannel_create_with_pkcs8_private_key_of_unsupported_algorit
 
     g_pkcs8_algorithm_oid = "1.3.101.112"; /*id-Ed25519*/
     setup_x509_schannel_create_pkcs8_common_mocks();
-    /*an unusable private key is checked against the encrypted PKCS#8 shape so that the error says why*/
-    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_ENCRYPTED_PRIVATE_KEY_INFO, IGNORED_ARG, IGNORED_ARG, CRYPT_DECODE_ALLOC_FLAG, NULL, IGNORED_ARG, IGNORED_ARG)).SetReturn(FALSE);
+    /*the private key info decoded, so the failure has already been reported in detail and the
+      encrypted PKCS#8 shape is not probed for*/
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
