@@ -86,7 +86,8 @@ add_executable(install_export_consumer main.c)
 target_link_libraries(install_export_consumer aziotsharedutil)
 
 add_custom_command(TARGET install_export_consumer POST_BUILD
-    COMMAND install_export_consumer
+    COMMAND "$<TARGET_FILE:install_export_consumer>"
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:install_export_consumer>"
     COMMENT "Running the consumer built against the installed package")
 
 # When the project is built as dynamic there is a second exported library target,
