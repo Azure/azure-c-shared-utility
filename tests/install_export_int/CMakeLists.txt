@@ -32,23 +32,42 @@ if(host_processor_count EQUAL 0)
     set(host_processor_count 1)
 endif()
 
-add_test(NAME ${theseTestsName}
-    COMMAND ${CMAKE_COMMAND}
-        "-DSOURCE_DIR=${CMAKE_CURRENT_LIST_DIR}/../.."
-        "-DCONSUMER_DIR=${CMAKE_CURRENT_LIST_DIR}/consumer"
-        "-DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/scratch"
-        "-DGENERATOR=${CMAKE_GENERATOR}"
-        "-DGENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
-        "-DGENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
-        "-DC_COMPILER=${CMAKE_C_COMPILER}"
-        "-DCXX_COMPILER=${CMAKE_CXX_COMPILER}"
-        "-DBUILD_TYPE=${CMAKE_BUILD_TYPE}"
-        "-DPARALLEL_LEVEL=${host_processor_count}"
-        "-DFORWARDED_OPTIONS=${forwarded_options}"
-        -P "${CMAKE_CURRENT_LIST_DIR}/install_export_test.cmake")
+get_property(generator_is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 
-# The test configures and builds the project from scratch, so it needs a much
-# larger budget than a unit test.
-set_tests_properties(${theseTestsName} PROPERTIES
-    TIMEOUT 3600
-    LABELS "integration;packaging")
+# Single config generators take the configuration at configure time, multi config
+# generators take it per build, and the test has to drive the scratch build the
+# same way ctest was invoked.
+if(generator_is_multi_config)
+    set(configuration_arguments "-DCONFIG=$<CONFIG>")
+else()
+    set(configuration_arguments "-DBUILD_TYPE=${CMAKE_BUILD_TYPE}")
+endif()
+
+if(CMAKE_CROSSCOMPILING)
+    # The test builds a consumer and runs it, which a cross compiling build
+    # cannot do. The install/export rules are host independent, so this costs no
+    # coverage as long as at least one native leg runs the test.
+    message(STATUS "${theseTestsName}: not registered, the consumer cannot be run when cross compiling")
+else()
+    add_test(NAME ${theseTestsName}
+        COMMAND ${CMAKE_COMMAND}
+            "-DSOURCE_DIR=${CMAKE_CURRENT_LIST_DIR}/../.."
+            "-DCONSUMER_DIR=${CMAKE_CURRENT_LIST_DIR}/consumer"
+            "-DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/scratch"
+            "-DGENERATOR=${CMAKE_GENERATOR}"
+            "-DGENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+            "-DGENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
+            "-DC_COMPILER=${CMAKE_C_COMPILER}"
+            "-DCXX_COMPILER=${CMAKE_CXX_COMPILER}"
+            "-DTOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}"
+            ${configuration_arguments}
+            "-DPARALLEL_LEVEL=${host_processor_count}"
+            "-DFORWARDED_OPTIONS=${forwarded_options}"
+            -P "${CMAKE_CURRENT_LIST_DIR}/install_export_test.cmake")
+
+    # The test configures and builds the project from scratch, so it needs a much
+    # larger budget than a unit test.
+    set_tests_properties(${theseTestsName} PROPERTIES
+        TIMEOUT 3600
+        LABELS "integration;packaging")
+endif()

@@ -83,6 +83,9 @@ endif()
 if(BUILD_TYPE)
     list(APPEND configure_command "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
 endif()
+if(TOOLCHAIN_FILE)
+    list(APPEND configure_command "-DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE}")
+endif()
 
 # FORWARDED_OPTIONS carries the enclosing build's feature switches, so that the
 # scratch build produces the same set of exported targets as the build under test.
@@ -93,8 +96,8 @@ endforeach()
 run_step("configuring the project for install" ${configure_command})
 
 set(build_command "${CMAKE_COMMAND}" --build "${library_build_dir}")
-if(BUILD_TYPE)
-    list(APPEND build_command --config "${BUILD_TYPE}")
+if(CONFIG)
+    list(APPEND build_command --config "${CONFIG}")
 endif()
 if(PARALLEL_LEVEL)
     list(APPEND build_command --parallel ${PARALLEL_LEVEL})
@@ -103,8 +106,8 @@ endif()
 run_step("building the project" ${build_command})
 
 set(install_command "${CMAKE_COMMAND}" --install "${library_build_dir}")
-if(BUILD_TYPE)
-    list(APPEND install_command --config "${BUILD_TYPE}")
+if(CONFIG)
+    list(APPEND install_command --config "${CONFIG}")
 endif()
 
 run_step("installing the project" ${install_command})
@@ -137,6 +140,9 @@ endif()
 if(BUILD_TYPE)
     list(APPEND consumer_configure_command "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}")
 endif()
+if(TOOLCHAIN_FILE)
+    list(APPEND consumer_configure_command "-DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE}")
+endif()
 
 # This is the step that reproduces the reported failure: CMake refuses to
 # generate when an imported target names an include directory that the install
@@ -144,8 +150,8 @@ endif()
 run_step("configuring a consumer against the installed package" ${consumer_configure_command})
 
 set(consumer_build_command "${CMAKE_COMMAND}" --build "${consumer_build_dir}")
-if(BUILD_TYPE)
-    list(APPEND consumer_build_command --config "${BUILD_TYPE}")
+if(CONFIG)
+    list(APPEND consumer_build_command --config "${CONFIG}")
 endif()
 
 # Building the consumer compiles the public headers through the exported include
