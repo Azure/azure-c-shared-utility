@@ -34,6 +34,23 @@ x509_schannel_create creates a handle wrapping a PCCERT_CONTEXT and other inform
 
 **SRS_X509_SCHANNEL_02_004: [** `x509_schannel_create` shall decode the private key by calling `CryptDecodeObjectEx`. **]**
 
+The private key is accepted in any of the following PEM/DER encodings:
+
+| PEM header | Structure | How it is decoded |
+|---|---|---|
+| `-----BEGIN RSA PRIVATE KEY-----` | PKCS#1 `RSAPrivateKey` | `CryptDecodeObjectEx` with `PKCS_RSA_PRIVATE_KEY` |
+| `-----BEGIN EC PRIVATE KEY-----` | RFC 5915 / SEC1 `ECPrivateKey` | `CryptDecodeObjectEx` with `X509_ECC_PRIVATE_KEY` |
+| `-----BEGIN PRIVATE KEY-----` | PKCS#8 `PrivateKeyInfo` | `CryptDecodeObjectEx` with `PKCS_PRIVATE_KEY_INFO`, then the wrapped key is decoded as PKCS#1 (`szOID_RSA_RSA`) or RFC 5915 (`szOID_ECC_PUBLIC_KEY`) according to the algorithm identifier |
+
+RFC 5915 requires the `parameters [0]` (curve OID) field of `ECPrivateKey` to be omitted when the key is
+carried inside a PKCS#8 `PrivateKeyInfo`. If `X509_ECC_PRIVATE_KEY` rejects that encoding, the private key
+scalar is recovered from the raw `ECPrivateKey` `SEQUENCE` instead (`X509_SEQUENCE_OF_ANY` followed by
+`X509_OCTET_STRING`); the public point comes from the certificate and the curve from the scalar length, so
+the curve OID is not needed.
+
+`-----BEGIN ENCRYPTED PRIVATE KEY-----` (PKCS#8 `EncryptedPrivateKeyInfo`) is not supported. It is detected
+so that the failure is reported with an actionable message rather than as a generic decode error.
+
 **SRS_X509_SCHANNEL_07_001: [** `x509_schannel_create` shall determine whether the certificate is of type RSA or ECC. **]** 
 
 **SRS_X509_SCHANNEL_02_005: [** `x509_schannel_create` shall call `CryptAcquireContext`. **]**

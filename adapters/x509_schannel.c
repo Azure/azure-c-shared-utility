@@ -3,6 +3,8 @@
 
 #include "windows.h"
 
+#include <string.h>
+
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/x509_schannel.h"
 #include "azure_c_shared_utility/xlogging.h"
@@ -30,6 +32,26 @@ typedef struct X509_SCHANNEL_HANDLE_DATA_TAG
     PCCERT_CONTEXT x509certificate_context;
     x509_CERT_TYPE cert_type;
 } X509_SCHANNEL_HANDLE_DATA;
+
+/* The CryptDecodeObjectEx structure types are integers cast to LPCSTR, which MSVC flags as C4306
+   on 64 bit builds. They are materialized once here so that the suppression stays in one place. */
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4306)
+#endif // _MSC_VER
+
+static const LPCSTR pkcs1_rsa_private_key_type = PKCS_RSA_PRIVATE_KEY;
+static const LPCSTR pkcs8_private_key_info_type = PKCS_PRIVATE_KEY_INFO;
+static const LPCSTR pkcs8_encrypted_private_key_info_type = PKCS_ENCRYPTED_PRIVATE_KEY_INFO;
+#if _MSC_VER > 1500
+static const LPCSTR sec1_ecc_private_key_type = X509_ECC_PRIVATE_KEY;
+static const LPCSTR sequence_of_any_type = X509_SEQUENCE_OF_ANY;
+static const LPCSTR octet_string_type = X509_OCTET_STRING;
+#endif
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif // _MSC_VER
 
 static const char end_certificate_in_pem[] = "-----END CERTIFICATE-----";
 static const size_t end_certificate_in_pem_length = sizeof(end_certificate_in_pem) - 1;
@@ -75,48 +97,230 @@ static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD cryp
     return result;
 }
 
-static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_length, DWORD* blob_size, x509_CERT_TYPE* cert_type)
+/* Decodes a DER encoded private key of a known structure type (PKCS_RSA_PRIVATE_KEY or
+   X509_ECC_PRIVATE_KEY) into the key blob consumed further down by CryptImportKey/NCryptImportKey.
+   The size of the resulting blob is returned in blob_size (when not NULL). */
+static unsigned char* decode_private_key_blob(LPCSTR key_type, const unsigned char* private_key, DWORD key_length, DWORD* blob_size)
 {
     unsigned char* result;
-    
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4306)
-#endif // _MSC_VER
-
-    LPCSTR key_type = PKCS_RSA_PRIVATE_KEY;
-    
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif // _MSC_VER
-
     DWORD private_key_blob_size = 0;
 
     /*Codes_SRS_X509_SCHANNEL_02_004: [ x509_schannel_create shall decode the private key by calling CryptDecodeObjectEx. ]*/
     if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
     {
-#if _MSC_VER > 1500
-        key_type = X509_ECC_PRIVATE_KEY;
-        if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
-        {
-            /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-            LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
-            *cert_type = x509_TYPE_UNKNOWN;
-        }
-        else
-        {
-            *cert_type = x509_TYPE_ECC;
-        }
-#else
+        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+        result = NULL;
+    }
+    else if ((result = (unsigned char*)malloc(private_key_blob_size)) == NULL)
+    {
+        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+        LogError("unable to malloc for x509 private key blob");
+    }
+    else if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, result, &private_key_blob_size))
+    {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
         LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
-        *cert_type = x509_TYPE_UNKNOWN;
-#endif
+        free(result);
+        result = NULL;
+    }
+    else if (blob_size != NULL)
+    {
+        *blob_size = private_key_blob_size;
+    }
+
+    return result;
+}
+
+#if _MSC_VER > 1500
+/* RFC 5915 says the ECPrivateKey "parameters [0]" field MUST be omitted when the key is carried
+   inside a PKCS#8 PrivateKeyInfo (the curve lives in the outer AlgorithmIdentifier), and that is
+   what OpenSSL emits. Should the ASN.1 decoder reject that shape, rebuild the
+   CRYPT_ECC_PRIVATE_KEY_INFO from the raw ECPrivateKey SEQUENCE instead: only the private key
+   scalar is consumed downstream, the public point is taken from the certificate and the curve is
+   derived from the scalar length. */
+static unsigned char* decode_ecc_private_key_without_curve_oid(const unsigned char* ecc_private_key, DWORD ecc_private_key_length, DWORD* blob_size)
+{
+    unsigned char* result;
+    CRYPT_SEQUENCE_OF_ANY* sequence = NULL;
+    DWORD sequence_size = 0;
+
+    if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, sequence_of_any_type, ecc_private_key, ecc_private_key_length, CRYPT_DECODE_ALLOC_FLAG, NULL, &sequence, &sequence_size))
+    {
+        LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx the ECC private key sequence");
+        result = NULL;
+    }
+    else if (sequence == NULL)
+    {
+        LogError("CryptDecodeObjectEx returned a NULL ECC private key sequence");
+        result = NULL;
     }
     else
     {
+        /*ECPrivateKey ::= SEQUENCE { version INTEGER, privateKey OCTET STRING, ... }*/
+        CRYPT_DATA_BLOB* private_key_octets = NULL;
+        DWORD private_key_octets_size = 0;
+
+        if (sequence->cValue < 2)
+        {
+            LogError("ECC private key sequence has %u elements, at least 2 are required", (unsigned int)sequence->cValue);
+            result = NULL;
+        }
+        else if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, octet_string_type, sequence->rgValue[1].pbData, sequence->rgValue[1].cbData, CRYPT_DECODE_ALLOC_FLAG, NULL, &private_key_octets, &private_key_octets_size) ||
+            (private_key_octets == NULL))
+        {
+            LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx the ECC private key scalar");
+            result = NULL;
+        }
+        else
+        {
+            size_t key_info_size = safe_add_size_t(sizeof(CRYPT_ECC_PRIVATE_KEY_INFO), private_key_octets->cbData);
+
+            if ((key_info_size == SIZE_MAX) || (key_info_size > MAXDWORD) ||
+                ((result = (unsigned char*)malloc(key_info_size)) == NULL))
+            {
+                LogError("unable to malloc for the ECC private key info, size:%zu", key_info_size);
+                result = NULL;
+            }
+            else
+            {
+                CRYPT_ECC_PRIVATE_KEY_INFO* key_info = (CRYPT_ECC_PRIVATE_KEY_INFO*)result;
+                memset(key_info, 0, sizeof(CRYPT_ECC_PRIVATE_KEY_INFO));
+                key_info->dwVersion = CRYPT_ECC_PRIVATE_KEY_INFO_v1;
+                key_info->PrivateKey.cbData = private_key_octets->cbData;
+                key_info->PrivateKey.pbData = result + sizeof(CRYPT_ECC_PRIVATE_KEY_INFO);
+                (void)memcpy(key_info->PrivateKey.pbData, private_key_octets->pbData, private_key_octets->cbData);
+
+                if (blob_size != NULL)
+                {
+                    *blob_size = (DWORD)key_info_size;
+                }
+            }
+            (void)LocalFree(private_key_octets);
+        }
+        (void)LocalFree(sequence);
+    }
+
+    return result;
+}
+#endif
+
+/* Handles a PKCS#8 PrivateKeyInfo ("-----BEGIN PRIVATE KEY-----"). The inner, algorithm specific
+   private key is unwrapped and then decoded as PKCS#1 (RSA) or RFC 5915 (ECC).
+   Returns NULL without logging when the input is not a PKCS#8 PrivateKeyInfo at all. */
+static unsigned char* decode_pkcs8_private_key(const unsigned char* private_key, DWORD key_length, DWORD* blob_size, x509_CERT_TYPE* cert_type)
+{
+    unsigned char* result;
+    CRYPT_PRIVATE_KEY_INFO* key_info = NULL;
+    DWORD key_info_size = 0;
+
+    *cert_type = x509_TYPE_UNKNOWN;
+
+    if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, pkcs8_private_key_info_type, private_key, key_length, CRYPT_DECODE_ALLOC_FLAG, NULL, &key_info, &key_info_size))
+    {
+        /*not a PKCS#8 PrivateKeyInfo, it is up to the caller to report this*/
+        result = NULL;
+    }
+    else if (key_info == NULL)
+    {
+        LogError("CryptDecodeObjectEx returned a NULL PKCS#8 private key info");
+        result = NULL;
+    }
+    else
+    {
+        if (key_info->Algorithm.pszObjId == NULL)
+        {
+            LogError("PKCS#8 private key does not carry an algorithm identifier");
+            result = NULL;
+        }
+        else if (strcmp(key_info->Algorithm.pszObjId, szOID_RSA_RSA) == 0)
+        {
+            if ((result = decode_private_key_blob(pkcs1_rsa_private_key_type, key_info->PrivateKey.pbData, key_info->PrivateKey.cbData, blob_size)) == NULL)
+            {
+                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+                LogErrorWinHTTPWithGetLastErrorAsString("Failed to decode the RSA private key wrapped in the PKCS#8 private key info");
+            }
+            else
+            {
+                *cert_type = x509_TYPE_RSA;
+            }
+        }
+#if _MSC_VER > 1500
+        else if (strcmp(key_info->Algorithm.pszObjId, szOID_ECC_PUBLIC_KEY) == 0)
+        {
+            if ((result = decode_private_key_blob(sec1_ecc_private_key_type, key_info->PrivateKey.pbData, key_info->PrivateKey.cbData, blob_size)) == NULL)
+            {
+                /*the ECPrivateKey carried by a PKCS#8 private key info has no curve OID of its own*/
+                result = decode_ecc_private_key_without_curve_oid(key_info->PrivateKey.pbData, key_info->PrivateKey.cbData, blob_size);
+            }
+            if (result == NULL)
+            {
+                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+                LogError("Failed to decode the ECC private key wrapped in the PKCS#8 private key info");
+            }
+            else
+            {
+                *cert_type = x509_TYPE_ECC;
+            }
+        }
+#endif
+        else
+        {
+            LogError("Unsupported PKCS#8 private key algorithm \"%s\", only RSA and ECC private keys are supported", key_info->Algorithm.pszObjId);
+            result = NULL;
+        }
+        (void)LocalFree(key_info);
+    }
+
+    return result;
+}
+
+/*returns TRUE when the DER blob is a PKCS#8 EncryptedPrivateKeyInfo ("-----BEGIN ENCRYPTED PRIVATE KEY-----")*/
+static BOOL is_encrypted_pkcs8_private_key(const unsigned char* private_key, DWORD key_length)
+{
+    BOOL result;
+    void* encrypted_key_info = NULL;
+    DWORD encrypted_key_info_size = 0;
+
+    if (CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, pkcs8_encrypted_private_key_info_type, private_key, key_length, CRYPT_DECODE_ALLOC_FLAG, NULL, &encrypted_key_info, &encrypted_key_info_size))
+    {
+        if (encrypted_key_info != NULL)
+        {
+            (void)LocalFree(encrypted_key_info);
+        }
+        result = TRUE;
+    }
+    else
+    {
+        result = FALSE;
+    }
+    return result;
+}
+
+static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_length, DWORD* blob_size, x509_CERT_TYPE* cert_type)
+{
+    unsigned char* result;
+    LPCSTR key_type = pkcs1_rsa_private_key_type;
+    DWORD private_key_blob_size = 0;
+
+    *cert_type = x509_TYPE_UNKNOWN;
+
+    /*Codes_SRS_X509_SCHANNEL_02_004: [ x509_schannel_create shall decode the private key by calling CryptDecodeObjectEx. ]*/
+    /*PKCS#1 RSAPrivateKey, "-----BEGIN RSA PRIVATE KEY-----"*/
+    if (CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
+    {
         *cert_type = x509_TYPE_RSA;
     }
+#if _MSC_VER > 1500
+    else
+    {
+        /*RFC 5915 / SEC1 ECPrivateKey, "-----BEGIN EC PRIVATE KEY-----"*/
+        key_type = sec1_ecc_private_key_type;
+        if (CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
+        {
+            *cert_type = x509_TYPE_ECC;
+        }
+    }
+#endif
 
     if (*cert_type != x509_TYPE_UNKNOWN)
     {
@@ -143,9 +347,18 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
             }
         }
     }
-    else
+    /*PKCS#8 PrivateKeyInfo, "-----BEGIN PRIVATE KEY-----", the format emitted by current tooling*/
+    else if ((result = decode_pkcs8_private_key(private_key, key_length, blob_size, cert_type)) == NULL)
     {
-        result = NULL;
+        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+        if (is_encrypted_pkcs8_private_key(private_key, key_length))
+        {
+            LogError("The x509 private key is an encrypted PKCS#8 private key, which is not supported. Supply an unencrypted PKCS#8, PKCS#1 or EC private key instead");
+        }
+        else
+        {
+            LogErrorWinHTTPWithGetLastErrorAsString("Failed to CryptDecodeObjectEx x509 private key");
+        }
     }
 
     return result;
