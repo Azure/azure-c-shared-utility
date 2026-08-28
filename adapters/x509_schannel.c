@@ -280,6 +280,7 @@ static BOOL is_encrypted_pkcs8_private_key(const unsigned char* private_key, DWO
     BOOL result;
     void* encrypted_key_info = NULL;
     DWORD encrypted_key_info_size = 0;
+    DWORD last_error = GetLastError();
 
     if (CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, pkcs8_encrypted_private_key_info_type, private_key, key_length, CRYPT_DECODE_ALLOC_FLAG, NULL, &encrypted_key_info, &encrypted_key_info_size))
     {
@@ -291,6 +292,9 @@ static BOOL is_encrypted_pkcs8_private_key(const unsigned char* private_key, DWO
     }
     else
     {
+        /*the caller reports the error of the decode that actually failed, so this probe must not
+          leave its own error behind*/
+        SetLastError(last_error);
         result = FALSE;
     }
     return result;
