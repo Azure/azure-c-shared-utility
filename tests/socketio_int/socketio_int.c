@@ -72,50 +72,34 @@ static void on_io_error(void* context)
     (void)context;
 }
 
-// Binds an ephemeral loopback port and immediately releases it. Connecting to the returned
-// port is then refused until the test brings a listener up on it.
-static int reserve_unused_port(void)
+// Binds an ephemeral loopback port and keeps the socket bound, so the port stays owned by
+// this test for its whole lifetime and no other process can take it. The socket is not
+// listening yet, so connecting to it is refused until begin_listening is called on it.
+static TEST_SOCKET reserve_port(int* port)
 {
     struct sockaddr_in address;
     test_socklen_t address_length = sizeof(address);
-    int result;
-    TEST_SOCKET probe = socket(AF_INET, SOCK_STREAM, 0);
+    TEST_SOCKET reserved = socket(AF_INET, SOCK_STREAM, 0);
 
-    ASSERT_IS_TRUE(probe != TEST_INVALID_SOCKET, "could not create the probe socket");
+    ASSERT_IS_TRUE(reserved != TEST_INVALID_SOCKET, "could not create the reservation socket");
 
     (void)memset(&address, 0, sizeof(address));
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     address.sin_port = 0;
 
-    ASSERT_ARE_EQUAL(int, 0, bind(probe, (struct sockaddr*)&address, sizeof(address)), "could not bind the probe socket");
-    ASSERT_ARE_EQUAL(int, 0, getsockname(probe, (struct sockaddr*)&address, &address_length), "could not read the probe socket port");
+    ASSERT_ARE_EQUAL(int, 0, bind(reserved, (struct sockaddr*)&address, sizeof(address)), "could not bind the reservation socket");
+    ASSERT_ARE_EQUAL(int, 0, getsockname(reserved, (struct sockaddr*)&address, &address_length), "could not read the reserved port");
 
-    result = (int)ntohs(address.sin_port);
-    test_close_socket(probe);
+    *port = (int)ntohs(address.sin_port);
 
-    return result;
+    return reserved;
 }
 
-static TEST_SOCKET start_listener(int port)
+// Turns the reserved socket into a listening one. The port never changes hands.
+static void begin_listening(TEST_SOCKET reserved)
 {
-    struct sockaddr_in address;
-    int reuse = 1;
-    TEST_SOCKET listener = socket(AF_INET, SOCK_STREAM, 0);
-
-    ASSERT_IS_TRUE(listener != TEST_INVALID_SOCKET, "could not create the listener socket");
-
-    (void)setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse));
-
-    (void)memset(&address, 0, sizeof(address));
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    address.sin_port = htons((unsigned short)port);
-
-    ASSERT_ARE_EQUAL(int, 0, bind(listener, (struct sockaddr*)&address, sizeof(address)), "could not bind the listener socket");
-    ASSERT_ARE_EQUAL(int, 0, listen(listener, 4), "could not listen on the listener socket");
-
-    return listener;
+    ASSERT_ARE_EQUAL(int, 0, listen(reserved, 4), "could not listen on the reserved socket");
 }
 
 // Opens the io and drives it to a decision. Returns true only when the open completed
@@ -196,7 +180,9 @@ TEST_FUNCTION(socketio_open_succeeds_when_retried_after_a_connect_failure)
 {
     ///arrange
     SOCKETIO_CONFIG config;
-    int port = reserve_unused_port();
+    int port;
+
+    g_listener = reserve_port(&port);
 
     config.hostname = TEST_HOSTNAME;
     config.port = port;
@@ -207,7 +193,7 @@ TEST_FUNCTION(socketio_open_succeeds_when_retried_after_a_connect_failure)
 
     ASSERT_IS_FALSE(open_completes_successfully(g_io), "the open must fail while nothing is listening");
 
-    g_listener = start_listener(port);
+    begin_listening(g_listener);
 
     ///act
     ///assert
@@ -219,7 +205,9 @@ TEST_FUNCTION(socketio_open_succeeds_when_retried_after_a_connect_failure_and_a_
 {
     ///arrange
     SOCKETIO_CONFIG config;
-    int port = reserve_unused_port();
+    int port;
+
+    g_listener = reserve_port(&port);
 
     config.hostname = TEST_HOSTNAME;
     config.port = port;
@@ -231,7 +219,7 @@ TEST_FUNCTION(socketio_open_succeeds_when_retried_after_a_connect_failure_and_a_
     ASSERT_IS_FALSE(open_completes_successfully(g_io), "the open must fail while nothing is listening");
     ASSERT_ARE_EQUAL(int, 0, xio_close(g_io, NULL, NULL), "xio_close failed after the failed open");
 
-    g_listener = start_listener(port);
+    begin_listening(g_listener);
 
     ///act
     ///assert
@@ -244,9 +232,10 @@ TEST_FUNCTION(socketio_open_succeeds_after_a_successful_open_and_close)
 {
     ///arrange
     SOCKETIO_CONFIG config;
-    int port = reserve_unused_port();
+    int port;
 
-    g_listener = start_listener(port);
+    g_listener = reserve_port(&port);
+    begin_listening(g_listener);
 
     config.hostname = TEST_HOSTNAME;
     config.port = port;

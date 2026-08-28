@@ -58,20 +58,24 @@
    fun:(below main)
 }
 # The dynamic loader runs library destructors after the process is already tearing
-# down, and some of them (p11-kit, pulled in through OpenSSL) destroy mutexes that
-# valgrind no longer recognises. Version-independent form of the entries above.
+# down, and p11-kit (pulled in through OpenSSL) destroys mutexes that valgrind no
+# longer recognises. Version-independent form of the entries above: the library and
+# vgpreload paths are wildcarded, but the p11-kit frame is still required so this
+# does not hide genuine mutex-destruction defects in other libraries.
 {
-   Mutex destroy during loader teardown (helgrind)
+   Mutex destroy by p11-kit during loader teardown (helgrind)
    Helgrind:Misc
    obj:*vgpreload_helgrind*
+   obj:*libp11-kit*
    ...
    fun:_dl_fini
    ...
 }
 {
-   Mutex destroy during loader teardown (drd)
+   Mutex destroy by p11-kit during loader teardown (drd)
    drd:MutexErr
    fun:pthread_mutex_destroy*
+   obj:*libp11-kit*
    ...
    fun:_dl_fini
    ...
