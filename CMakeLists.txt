@@ -12,7 +12,10 @@ endif()
 project(azure_c_shared_utility)
 
 FILE(READ ${CMAKE_CURRENT_LIST_DIR}/version.txt C_SHARED_VERSION)
-string(REGEX MATCH "^([0-9]+)[\\.]([0-9]+)[\\.]([0-9]+)$" _ ${C_SHARED_VERSION})
+string(STRIP "${C_SHARED_VERSION}" C_SHARED_VERSION)
+if(NOT C_SHARED_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
+    message(FATAL_ERROR "Malformed version in version.txt: '${C_SHARED_VERSION}'")
+endif()
 set(C_SHARED_VERSION_MAJOR ${CMAKE_MATCH_1})
 
 #bring in dependencies
