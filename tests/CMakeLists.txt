@@ -103,6 +103,8 @@ if(${run_unittests})
 endif()
 
 if(${run_int_tests})
+    add_subdirectory(socketio_int)
+
     if(WIN32)
         add_subdirectory(x509_schannel_int)
         add_subdirectory(string_utils_int)
