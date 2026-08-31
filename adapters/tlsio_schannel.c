@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #define SECURITY_WIN32
-#define SEC_TCHAR   SEC_CHAR
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -57,7 +56,7 @@ typedef struct TLS_IO_INSTANCE_TAG
     void* on_io_error_context;
     CtxtHandle security_context;
     TLSIO_STATE tlsio_state;
-    SEC_TCHAR* host_name;
+    SEC_CHAR* host_name;
     CredHandle credential_handle;
     bool credential_handle_allocated;
     bool ignore_server_name_check;
@@ -339,7 +338,7 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
         auth_data.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
     }
 
-    status = AcquireCredentialsHandle(NULL, UNISP_NAME, SECPKG_CRED_OUTBOUND, NULL,
+    status = AcquireCredentialsHandleA(NULL, UNISP_NAME_A, SECPKG_CRED_OUTBOUND, NULL,
         &auth_data, NULL, NULL, &tls_io_instance->credential_handle, NULL);
     if (status != SEC_E_OK)
     {
@@ -362,7 +361,7 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
         security_buffers_desc.pBuffers = init_security_buffers;
         security_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
-        status = InitializeSecurityContext(&tls_io_instance->credential_handle,
+        status = InitializeSecurityContextA(&tls_io_instance->credential_handle,
             NULL, tls_io_instance->host_name, ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS, 0, 0, NULL, 0,
             &tls_io_instance->security_context, &security_buffers_desc,
             &context_attributes, NULL);
@@ -441,7 +440,7 @@ static int verify_custom_certificate_if_needed(TLS_IO_INSTANCE* tls_io_instance)
     {
         PCERT_CONTEXT serverCertificateToVerify = NULL;
 
-        SECURITY_STATUS status = QueryContextAttributes(&tls_io_instance->security_context, SECPKG_ATTR_REMOTE_CERT_CONTEXT, &serverCertificateToVerify);
+        SECURITY_STATUS status = QueryContextAttributesA(&tls_io_instance->security_context, SECPKG_ATTR_REMOTE_CERT_CONTEXT, &serverCertificateToVerify);
         if (status != SEC_E_OK)
         {
             LogError("QueryContextAttributes failed: %x", status);
@@ -508,7 +507,7 @@ static int send_chunk(CONCRETE_IO_HANDLE tls_io, const void* buffer, size_t size
         else
         {
             SecPkgContext_StreamSizes  sizes;
-            SECURITY_STATUS status = QueryContextAttributes(&tls_io_instance->security_context, SECPKG_ATTR_STREAM_SIZES, &sizes);
+            SECURITY_STATUS status = QueryContextAttributesA(&tls_io_instance->security_context, SECPKG_ATTR_STREAM_SIZES, &sizes);
             if (status != SEC_E_OK)
             {
                 LogError("QueryContextAttributes failed: %x", status);
@@ -667,7 +666,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 output_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
                 flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
-                status = InitializeSecurityContext(&tls_io_instance->credential_handle,
+                status = InitializeSecurityContextA(&tls_io_instance->credential_handle,
                     &tls_io_instance->security_context, tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
                     &tls_io_instance->security_context, &output_buffers_desc,
                     &context_attributes, NULL);
@@ -824,10 +823,10 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 default:
                     {
                         LPVOID srcText = NULL;
-                        if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
+                        if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&srcText, 0, NULL) > 0)
                         {
-                            LogError("[%#x] %s", status, (LPTSTR)srcText);
+                            LogError("[%#x] %s", status, (LPSTR)srcText);
                             LocalFree(srcText);
                         }
                         else
@@ -963,7 +962,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     output_buffers_desc.ulVersion = SECBUFFER_VERSION;
 
                     flags = ISC_REQ_EXTENDED_ERROR | ISC_REQ_STREAM | ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_USE_SUPPLIED_CREDS;
-                    status = InitializeSecurityContext(&tls_io_instance->credential_handle,
+                    status = InitializeSecurityContextA(&tls_io_instance->credential_handle,
                         &tls_io_instance->security_context, tls_io_instance->host_name, flags, 0, 0, &input_buffers_desc, 0,
                         &tls_io_instance->security_context, &output_buffers_desc,
                         &context_attributes, NULL);
@@ -1010,10 +1009,10 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                 default:
                     {
                         LPVOID srcText = NULL;
-                        if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&srcText, 0, NULL) > 0)
+                        if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+                            status, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&srcText, 0, NULL) > 0)
                         {
-                            LogError("[%#x] %s", status, (LPTSTR)srcText);
+                            LogError("[%#x] %s", status, (LPSTR)srcText);
                             LocalFree(srcText);
                         }
                         else
@@ -1095,9 +1094,9 @@ CONCRETE_IO_HANDLE tlsio_schannel_create(void* io_create_parameters)
             (void)memset(result, 0, sizeof(TLS_IO_INSTANCE));
 
             size_t malloc_size = safe_add_size_t(strlen(tls_io_config->hostname), 1);
-            malloc_size = safe_multiply_size_t(malloc_size, sizeof(SEC_TCHAR));
+            malloc_size = safe_multiply_size_t(malloc_size, sizeof(SEC_CHAR));
             if (malloc_size == SIZE_MAX ||
-                (result->host_name = (SEC_TCHAR*)malloc(malloc_size)) == NULL)
+                (result->host_name = (SEC_CHAR*)malloc(malloc_size)) == NULL)
             {
                 LogError("malloc failed, size:%zu", malloc_size);
                 free(result);

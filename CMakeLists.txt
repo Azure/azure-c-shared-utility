@@ -12,6 +12,11 @@ endif()
 project(azure_c_shared_utility)
 
 FILE(READ ${CMAKE_CURRENT_LIST_DIR}/version.txt C_SHARED_VERSION)
+string(STRIP "${C_SHARED_VERSION}" C_SHARED_VERSION)
+if(NOT C_SHARED_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
+    message(FATAL_ERROR "Malformed version in version.txt: '${C_SHARED_VERSION}'")
+endif()
+set(C_SHARED_VERSION_MAJOR ${CMAKE_MATCH_1})
 
 #bring in dependencies
 #do not add or build any tests of the dependencies
@@ -599,7 +604,11 @@ if(${build_as_dynamic})
         ${source_h_files}
         ${def_files}
     )
-    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil_dll")
+    set_target_properties(aziotsharedutil_dll PROPERTIES
+        OUTPUT_NAME "aziotsharedutil_dll"
+        VERSION ${C_SHARED_VERSION}
+        SOVERSION ${C_SHARED_VERSION_MAJOR}
+    )
 endif()
 
 set(aziotsharedutil_target_libs)

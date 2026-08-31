@@ -143,7 +143,7 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
     // Expected format: "(<runtime name>; <operating system name>; <platform>)"
     STRING_HANDLE result;
     SYSTEM_INFO sys_info;
-    OSVERSIONINFO osvi;
+    OSVERSIONINFOA osvi;
     char *arch;
     GetSystemInfo(&sys_info);
 
@@ -176,7 +176,7 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 #ifdef _MSC_VER
 #pragma warning(disable:4996 28159)  // GetVersionEx is deprecated 
 #endif
-    if (GetVersionEx(&osvi))
+    if (GetVersionExA(&osvi))
     {
         DWORD product_type;
         if (GetProductInfo(osvi.dwMajorVersion, osvi.dwMinorVersion, 0, 0, &product_type))
