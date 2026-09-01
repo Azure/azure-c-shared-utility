@@ -85,6 +85,9 @@ endif()
 add_executable(install_export_consumer main.c)
 target_link_libraries(install_export_consumer aziotsharedutil)
 
+add_executable(install_export_consumer_cpp main.cpp)
+target_link_libraries(install_export_consumer_cpp aziotsharedutil)
+
 add_custom_command(TARGET install_export_consumer POST_BUILD
     COMMAND "$<TARGET_FILE:install_export_consumer>"
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:install_export_consumer>"
@@ -99,4 +102,7 @@ if(TARGET aziotsharedutil_dll)
 
     add_executable(install_export_consumer_dll main.c)
     target_link_libraries(install_export_consumer_dll aziotsharedutil_dll)
+
+    add_executable(install_export_consumer_dll_cpp main.cpp)
+    target_link_libraries(install_export_consumer_dll_cpp aziotsharedutil_dll)
 endif()
