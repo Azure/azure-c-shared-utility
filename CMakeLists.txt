@@ -565,6 +565,16 @@ endif()
 add_library(aziotsharedutil ${source_c_files} ${source_h_files} ${aziotsharedutil_md_files})
 setTargetBuildProperties(aziotsharedutil)
 
+# Public headers require MSVC's conforming preprocessor. Suppress C5105 as
+# well because Windows SDK headers can emit it when that preprocessor is used.
+set(msvc_preprocessor_interface_options
+    $<$<COMPILE_LANG_AND_ID:C,MSVC>:/Zc:preprocessor>
+    $<$<COMPILE_LANG_AND_ID:C,MSVC>:/wd5105>
+    $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/Zc:preprocessor>
+    $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/wd5105>
+)
+target_compile_options(aziotsharedutil INTERFACE ${msvc_preprocessor_interface_options})
+
 target_include_directories(aziotsharedutil PUBLIC $<BUILD_INTERFACE:${SHARED_UTIL_INC_FOLDER}>)
 target_link_libraries(aziotsharedutil PUBLIC macro_utils_c)
 # c_logging_v2 and umock_c provide headers needed by aziotsharedutil sources.
@@ -609,6 +619,7 @@ if(${build_as_dynamic})
         VERSION ${C_SHARED_VERSION}
         SOVERSION ${C_SHARED_VERSION_MAJOR}
     )
+    target_compile_options(aziotsharedutil_dll INTERFACE ${msvc_preprocessor_interface_options})
 endif()
 
 set(aziotsharedutil_target_libs)
