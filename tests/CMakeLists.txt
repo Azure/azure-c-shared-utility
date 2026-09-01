@@ -110,3 +110,10 @@ if(${run_int_tests})
         add_subdirectory(string_utils_int)
     endif()
 endif()
+
+# Guards the CMake install/export rules. It is not tied to run_int_tests because
+# the defect it catches is invisible from inside this project's build and breaks
+# every downstream find_package consumer, so it runs whenever tests are enabled.
+if(${run_install_export_test})
+    add_subdirectory(install_export_int)
+endif()
