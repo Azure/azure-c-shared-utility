@@ -79,23 +79,14 @@ if(TARGET c_logging_v2_core)
     assert_exported_include_dirs_exist(c_logging_v2_core)
 endif()
 
-# macro_utils_generated.h, which the public headers pull in, defines
-# MU_THE_NTH_ARG with 141 parameters. MSVC's traditional preprocessor caps macro
-# parameters at 127 and rejects the header with C1112, so the conforming
-# preprocessor has to be selected. It is available from VS2019 16.6, and
-# macro_utils.h already refuses to build on anything older than VS2019.
-function(use_conforming_preprocessor target)
-    if(MSVC)
-        target_compile_options(${target} PRIVATE /Zc:preprocessor)
-    endif()
-endfunction()
-
 # The assertions above describe the contract; the build below proves it, by
 # compiling and linking a translation unit that includes the public headers and
 # calls into the library using nothing but the imported target.
 add_executable(install_export_consumer main.c)
 target_link_libraries(install_export_consumer aziotsharedutil)
-use_conforming_preprocessor(install_export_consumer)
+
+add_executable(install_export_consumer_cpp main.cpp)
+target_link_libraries(install_export_consumer_cpp aziotsharedutil)
 
 add_custom_command(TARGET install_export_consumer POST_BUILD
     COMMAND "$<TARGET_FILE:install_export_consumer>"
@@ -111,5 +102,7 @@ if(TARGET aziotsharedutil_dll)
 
     add_executable(install_export_consumer_dll main.c)
     target_link_libraries(install_export_consumer_dll aziotsharedutil_dll)
-    use_conforming_preprocessor(install_export_consumer_dll)
+
+    add_executable(install_export_consumer_dll_cpp main.cpp)
+    target_link_libraries(install_export_consumer_dll_cpp aziotsharedutil_dll)
 endif()
