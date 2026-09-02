@@ -142,20 +142,16 @@ static void internal_close(TLS_IO_INSTANCE* tls_io_instance)
     /* Codes_SRS_TLSIO_30_009: [ The phrase "enter TLSIO_STATE_EXT_CLOSING" means the adapter shall iterate through any unsent messages in the queue and shall delete each message after calling its on_send_complete with the associated callback_context and IO_SEND_CANCELLED. ]*/
     /* Codes_SRS_TLSIO_30_006: [ The phrase "enter TLSIO_STATE_EXT_CLOSED" means the adapter shall forcibly close any existing connections then call the on_io_close_complete function and pass the on_io_close_complete_context that was supplied in tlsio_close_async. ]*/
     /* Codes_SRS_TLSIO_30_051: [ On success, if the underlying TLS does not support asynchronous closing, then the adapter shall enter TLSIO_STATE_EXT_CLOSED immediately after entering TLSIO_STATE_EX_CLOSING. ]*/
-    if (tls_io_instance->tlsio_state == TLSIO_STATE_OPEN)
+    // The streams must be closed whenever they have actually been opened, and not only in
+    // TLSIO_STATE_OPEN: an error or a failed handshake leaves them open in other states, and
+    // CFRelease alone neither stops the byte flow nor gives back the underlying socket.
+    if (tls_io_instance->sockRead != NULL)
     {
-        if (tls_io_instance->sockRead != NULL)
+        CFStreamStatus read_status = CFReadStreamGetStatus(tls_io_instance->sockRead);
+        if (read_status != kCFStreamStatusNotOpen && read_status != kCFStreamStatusClosed)
         {
             CFReadStreamClose(tls_io_instance->sockRead);
         }
-        if (tls_io_instance->sockWrite != NULL)
-        {
-            CFWriteStreamClose(tls_io_instance->sockWrite);
-        }
-    }
-
-    if (tls_io_instance->sockRead != NULL)
-    {
         CFRelease(tls_io_instance->sockRead);
         tls_io_instance->sockRead = NULL;
     }
@@ -163,6 +159,11 @@ static void internal_close(TLS_IO_INSTANCE* tls_io_instance)
     // If the reader is NULL then the writer should be too but let's be thorough
     if (tls_io_instance->sockWrite != NULL)
     {
+        CFStreamStatus write_status = CFWriteStreamGetStatus(tls_io_instance->sockWrite);
+        if (write_status != kCFStreamStatusNotOpen && write_status != kCFStreamStatusClosed)
+        {
+            CFWriteStreamClose(tls_io_instance->sockWrite);
+        }
         CFRelease(tls_io_instance->sockWrite);
         tls_io_instance->sockWrite = NULL;
     }
@@ -192,7 +193,9 @@ static void tlsio_appleios_destroy(CONCRETE_IO_HANDLE tls_io)
         if (tls_io_instance->tlsio_state != TLSIO_STATE_CLOSED)
         {
             /* Codes_SRS_TLSIO_30_022: [ If the adapter is in any state other than TLSIO_STATE_EX_CLOSED when tlsio_destroy is called, the adapter shall enter TLSIO_STATE_EX_CLOSING and then enter TLSIO_STATE_EX_CLOSED before completing the destroy process. ]*/
-            LogError("tlsio_appleios_destroy called while not in TLSIO_STATE_CLOSED.");
+            // Destroy while open is explicitly allowed by the tlsio contract and is fully
+            // handled here, so this is LogInfo rather than LogError.
+            LogInfo("tlsio_appleios_destroy called while not in TLSIO_STATE_CLOSED.");
             internal_close(tls_io_instance);
         }
         /* Codes_SRS_TLSIO_30_021: [ The tlsio_destroy shall release all allocated resources and then release tlsio_handle. ]*/
