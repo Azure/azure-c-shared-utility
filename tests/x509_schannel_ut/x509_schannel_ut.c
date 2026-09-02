@@ -181,6 +181,9 @@ static TEST_MUTEX_HANDLE g_testByTest;
 static const unsigned char TEST_DATA_INFO[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10 };
 #define TEST_KEY_SIZE       10
 
+/*algorithm OID handed back by the PKCS_PRIVATE_KEY_INFO mock, chosen by each test*/
+static const char* g_pkcs8_algorithm_oid = szOID_RSA_RSA;
+
 
 static CERT_CONTEXT testCertContextToVerify;
 
@@ -253,7 +256,69 @@ static BOOL my_CryptDecodeObjectEx(
     (void)lpszStructType;
     (void)dwCertEncodingType;
 #if _MSC_VER > 1500
-    if (lpszStructType == X509_ECC_PRIVATE_KEY)
+    if (lpszStructType == PKCS_PRIVATE_KEY_INFO)
+    {
+        /*the production code asks for CRYPT_DECODE_ALLOC_FLAG, so hand back a LocalAlloc'd structure*/
+        if (pcbStructInfo != NULL)
+        {
+            *pcbStructInfo = sizeof(CRYPT_PRIVATE_KEY_INFO);
+        }
+        if (pvStructInfo != NULL)
+        {
+            CRYPT_PRIVATE_KEY_INFO* key_info = (CRYPT_PRIVATE_KEY_INFO*)LocalAlloc(LPTR, sizeof(CRYPT_PRIVATE_KEY_INFO));
+            if (key_info == NULL)
+            {
+                return FALSE;
+            }
+            key_info->Version = 0;
+            key_info->Algorithm.pszObjId = (LPSTR)g_pkcs8_algorithm_oid;
+            key_info->PrivateKey.cbData = TEST_KEY_SIZE;
+            key_info->PrivateKey.pbData = (BYTE*)TEST_DATA_INFO;
+            key_info->pAttributes = NULL;
+            *(CRYPT_PRIVATE_KEY_INFO**)pvStructInfo = key_info;
+        }
+    }
+    else if (lpszStructType == X509_SEQUENCE_OF_ANY)
+    {
+        if (pcbStructInfo != NULL)
+        {
+            *pcbStructInfo = sizeof(CRYPT_SEQUENCE_OF_ANY);
+        }
+        if (pvStructInfo != NULL)
+        {
+            CRYPT_SEQUENCE_OF_ANY* sequence = (CRYPT_SEQUENCE_OF_ANY*)LocalAlloc(LPTR, sizeof(CRYPT_SEQUENCE_OF_ANY) + 2 * sizeof(CRYPT_DER_BLOB));
+            if (sequence == NULL)
+            {
+                return FALSE;
+            }
+            sequence->cValue = 2;
+            sequence->rgValue = (PCRYPT_DER_BLOB)(sequence + 1);
+            sequence->rgValue[0].cbData = TEST_KEY_SIZE;
+            sequence->rgValue[0].pbData = (BYTE*)TEST_DATA_INFO;
+            sequence->rgValue[1].cbData = TEST_KEY_SIZE;
+            sequence->rgValue[1].pbData = (BYTE*)TEST_DATA_INFO;
+            *(CRYPT_SEQUENCE_OF_ANY**)pvStructInfo = sequence;
+        }
+    }
+    else if (lpszStructType == X509_OCTET_STRING)
+    {
+        if (pcbStructInfo != NULL)
+        {
+            *pcbStructInfo = sizeof(CRYPT_DATA_BLOB);
+        }
+        if (pvStructInfo != NULL)
+        {
+            CRYPT_DATA_BLOB* octets = (CRYPT_DATA_BLOB*)LocalAlloc(LPTR, sizeof(CRYPT_DATA_BLOB));
+            if (octets == NULL)
+            {
+                return FALSE;
+            }
+            octets->cbData = TEST_KEY_SIZE;
+            octets->pbData = (BYTE*)TEST_DATA_INFO;
+            *(CRYPT_DATA_BLOB**)pvStructInfo = octets;
+        }
+    }
+    else if (lpszStructType == X509_ECC_PRIVATE_KEY)
     {
         if (pcbStructInfo != NULL)
         {
@@ -545,6 +610,7 @@ TEST_SUITE_CLEANUP(TestClassCleanup)
 TEST_FUNCTION_INITIALIZE(initialize)
 {
     umock_c_reset_all_calls();
+    g_pkcs8_algorithm_oid = szOID_RSA_RSA;
     memset(&testCertContextToVerify, 0, sizeof(testCertContextToVerify));
 }
 
@@ -733,6 +799,195 @@ TEST_FUNCTION(x509_schannel_create_ecc_succeeds)
 
     ///cleanup
     x509_schannel_destroy(h);
+}
+#endif
+
+#if _MSC_VER > 1500
+static void setup_x509_schannel_create_pkcs8_common_mocks(void)
+{
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is creating the handle storage space*/
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("certificate", 0, CRYPT_STRING_ANY, NULL, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is creating the binary storage for the certificate*/
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("certificate", 0, CRYPT_STRING_ANY, IGNORED_ARG, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("private key", 0, CRYPT_STRING_ANY, NULL, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is creating the binary storage for the private key*/
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("private key", 0, CRYPT_STRING_ANY, IGNORED_ARG, IGNORED_ARG, NULL, NULL));
+    /*a PKCS#8 private key info is neither a PKCS#1 RSA private key nor a bare RFC 5915 ECC private key*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG)).SetReturn(FALSE);
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_ECC_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG)).SetReturn(FALSE);
+    /*so it is decoded as a PKCS#8 private key info*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, IGNORED_ARG, IGNORED_ARG, CRYPT_DECODE_ALLOC_FLAG, NULL, IGNORED_ARG, IGNORED_ARG));
+}
+
+/*Tests_SRS_X509_SCHANNEL_02_004: [ x509_schannel_create shall decode the private key by calling CryptDecodeObjectEx. ]*/
+/*Tests_SRS_X509_SCHANNEL_02_009: [ If all the operations above succeed, then x509_schannel_create shall succeeds and return a non-NULL X509_SCHANNEL_HANDLE. ]*/
+TEST_FUNCTION(x509_schannel_create_with_pkcs8_rsa_private_key_succeeds)
+{
+    ///arrange
+    X509_SCHANNEL_HANDLE h;
+
+    g_pkcs8_algorithm_oid = szOID_RSA_RSA;
+    setup_x509_schannel_create_pkcs8_common_mocks();
+    /*the RSA private key wrapped by the PKCS#8 private key info is a PKCS#1 RSA private key*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is allocating space for the decoded private key*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CryptAcquireContextA(IGNORED_ARG, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT));
+    STRICT_EXPECTED_CALL(CryptImportKey((HCRYPTPROV)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, (HCRYPTKEY)NULL, 0, IGNORED_ARG))
+        .IgnoreArgument_hProv();
+    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_HANDLE_PROP_ID, 0, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+
+    ///act
+    h = x509_schannel_create("certificate", "private key");
+
+    ///assert
+    ASSERT_IS_NOT_NULL(h);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    x509_schannel_destroy(h);
+}
+
+/*Tests_SRS_X509_SCHANNEL_07_001: [ x509_schannel_create shall determine whether the certificate is of type RSA or ECC. ]*/
+TEST_FUNCTION(x509_schannel_create_with_pkcs8_ecc_private_key_succeeds)
+{
+    ///arrange
+    X509_SCHANNEL_HANDLE h;
+
+    g_pkcs8_algorithm_oid = szOID_ECC_PUBLIC_KEY;
+    setup_x509_schannel_create_pkcs8_common_mocks();
+    /*the ECC private key wrapped by the PKCS#8 private key info is an RFC 5915 ECC private key*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_ECC_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is allocating space for the decoded private key*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_ECC_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(NCryptOpenStorageProvider(IGNORED_ARG, MS_KEY_STORAGE_PROVIDER, 0))
+        .IgnoreArgument_pszProviderName();
+    STRICT_EXPECTED_CALL(NCryptImportKey((NCRYPT_PROV_HANDLE)IGNORED_ARG, (NCRYPT_KEY_HANDLE)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NCRYPT_OVERWRITE_KEY_FLAG))
+        .IgnoreArgument_hProvider()
+        .IgnoreArgument_hImportKey();
+    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
+        .IgnoreArgument_hObject();
+    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
+        .IgnoreArgument_hObject();
+    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+
+    ///act
+    h = x509_schannel_create("certificate", "private key");
+
+    ///assert
+    ASSERT_IS_NOT_NULL(h);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    x509_schannel_destroy(h);
+}
+
+/*Tests_SRS_X509_SCHANNEL_07_001: [ x509_schannel_create shall determine whether the certificate is of type RSA or ECC. ]*/
+TEST_FUNCTION(x509_schannel_create_with_pkcs8_ecc_private_key_without_curve_oid_succeeds)
+{
+    ///arrange
+    X509_SCHANNEL_HANDLE h;
+
+    g_pkcs8_algorithm_oid = szOID_ECC_PUBLIC_KEY;
+    setup_x509_schannel_create_pkcs8_common_mocks();
+    /*RFC 5915 requires the curve OID to be omitted inside a PKCS#8 private key info, so the
+      ECC private key decoder can reject the wrapped key ...*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_ECC_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG)).SetReturn(FALSE);
+    /*... in which case the private key scalar is recovered from the raw ECPrivateKey sequence*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_SEQUENCE_OF_ANY, IGNORED_ARG, IGNORED_ARG, CRYPT_DECODE_ALLOC_FLAG, NULL, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_OCTET_STRING, IGNORED_ARG, IGNORED_ARG, CRYPT_DECODE_ALLOC_FLAG, NULL, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is allocating the rebuilt ECC private key info*/
+    STRICT_EXPECTED_CALL(CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(NCryptOpenStorageProvider(IGNORED_ARG, MS_KEY_STORAGE_PROVIDER, 0))
+        .IgnoreArgument_pszProviderName();
+    STRICT_EXPECTED_CALL(NCryptImportKey((NCRYPT_PROV_HANDLE)IGNORED_ARG, (NCRYPT_KEY_HANDLE)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NCRYPT_OVERWRITE_KEY_FLAG))
+        .IgnoreArgument_hProvider()
+        .IgnoreArgument_hImportKey();
+    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
+        .IgnoreArgument_hObject();
+    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
+        .IgnoreArgument_hObject();
+    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+
+    ///act
+    h = x509_schannel_create("certificate", "private key");
+
+    ///assert
+    ASSERT_IS_NOT_NULL(h);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+    x509_schannel_destroy(h);
+}
+
+/*Tests_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+TEST_FUNCTION(x509_schannel_create_with_pkcs8_private_key_of_unsupported_algorithm_fails)
+{
+    ///arrange
+    X509_SCHANNEL_HANDLE h;
+
+    g_pkcs8_algorithm_oid = "1.3.101.112"; /*id-Ed25519*/
+    setup_x509_schannel_create_pkcs8_common_mocks();
+    /*the private key info decoded, so the failure has already been reported in detail and the
+      encrypted PKCS#8 shape is not probed for*/
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+
+    ///act
+    h = x509_schannel_create("certificate", "private key");
+
+    ///assert
+    ASSERT_IS_NULL(h);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+TEST_FUNCTION(x509_schannel_create_with_a_private_key_that_cannot_be_decoded_fails)
+{
+    ///arrange
+    X509_SCHANNEL_HANDLE h;
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is creating the handle storage space*/
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("certificate", 0, CRYPT_STRING_ANY, NULL, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("certificate", 0, CRYPT_STRING_ANY, IGNORED_ARG, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("private key", 0, CRYPT_STRING_ANY, NULL, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("private key", 0, CRYPT_STRING_ANY, IGNORED_ARG, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG)).SetReturn(FALSE);
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_ECC_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG)).SetReturn(FALSE);
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, IGNORED_ARG, IGNORED_ARG, CRYPT_DECODE_ALLOC_FLAG, NULL, IGNORED_ARG, IGNORED_ARG)).SetReturn(FALSE);
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_ENCRYPTED_PRIVATE_KEY_INFO, IGNORED_ARG, IGNORED_ARG, CRYPT_DECODE_ALLOC_FLAG, NULL, IGNORED_ARG, IGNORED_ARG)).SetReturn(FALSE);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+
+    ///act
+    h = x509_schannel_create("certificate", "private key");
+
+    ///assert
+    ASSERT_IS_NULL(h);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
 }
 #endif
 
