@@ -92,6 +92,8 @@ int http_proxy_io_open(CONCRETE_IO_HANDLE http_proxy_io, ON_IO_OPEN_COMPLETE on_
 
 **SRS_HTTP_PROXY_IO_01_051: [** The arguments `on_io_open_complete_context`, `on_bytes_received_context` and `on_io_error_context` shall be allowed to be NULL. **]**
 
+**SRS_HTTP_PROXY_IO_01_105: [** `http_proxy_io_open` shall free any CONNECT response bytes buffered during a previous open attempt before opening the underlying IO. **]**
+
 ###  http_proxy_io_close
 
 `http_proxy_io_close` is the implementation provided via `http_proxy_io_get_interface_description` for the `concrete_io_close` member.
@@ -269,6 +271,28 @@ extern const IO_INTERFACE_DESCRIPTION* http_proxy_io_get_interface_description(v
 **SRS_HTTP_PROXY_IO_01_088: [** `on_underlying_io_error` called with NULL context shall do nothing. **]**
 
 **SRS_HTTP_PROXY_IO_01_089: [** If the `on_underlying_io_error` callback is called while the IO is OPEN, the `on_io_error` callback shall be called with the `on_io_error_context` argument as `context`. **]**
+
+###  Negotiate (SPNEGO) proxy authentication
+
+The following requirements apply only when the library is built with `AZURE_C_SHARED_UTILITY_USE_GSSAPI` (CMake option `use_gssapi`). Relevant specifications: RFC 4559 (SPNEGO-based HTTP authentication), RFC 7235 (HTTP authentication framework).
+
+**SRS_HTTP_PROXY_IO_01_096: [** If the CONNECT response status code is 407 and the response contains a `Proxy-Authenticate` challenge for the `Negotiate` scheme, the IO shall attempt SPNEGO authentication by sending a new CONNECT request carrying a `Proxy-Authorization: Negotiate <base64 token>` header. **]**
+
+**SRS_HTTP_PROXY_IO_01_097: [** The `Negotiate` challenge shall be recognized case-insensitively at any position within a comma-separated challenge list and across multiple `Proxy-Authenticate` header lines. **]**
+
+**SRS_HTTP_PROXY_IO_01_098: [** If the challenge carries a base64 token, that token shall be base64-decoded and passed as the input token to `gss_init_sec_context` for the next handshake round; a bare `Negotiate` challenge shall start a round with no input token. **]**
+
+**SRS_HTTP_PROXY_IO_01_099: [** `gss_init_sec_context` shall be invoked requesting the SPNEGO mechanism (OID 1.3.6.1.5.5.2). **]**
+
+**SRS_HTTP_PROXY_IO_01_100: [** Before parsing the response to the follow-up CONNECT, any not-yet-received body bytes of the 407 response (per `Content-Length`) shall be discarded. **]**
+
+**SRS_HTTP_PROXY_IO_01_101: [** If the 407 body length cannot be determined unambiguously (`Transfer-Encoding` present, `Content-Length` missing, malformed, or overflowing), the negotiation shall be aborted and the `on_open_complete` callback triggered with `IO_OPEN_ERROR`. **]**
+
+**SRS_HTTP_PROXY_IO_01_102: [** If the 407 response indicates `Connection: close` (or `Proxy-Connection: close`), the negotiation shall be aborted and the `on_open_complete` callback triggered with `IO_OPEN_ERROR`. **]**
+
+**SRS_HTTP_PROXY_IO_01_103: [** If the proxy replies 407 again after GSSAPI has reported the security context complete, or if `gss_init_sec_context` fails or yields an empty output token, the `on_open_complete` callback shall be triggered with `IO_OPEN_ERROR`. **]**
+
+**SRS_HTTP_PROXY_IO_01_104: [** `http_proxy_io_open` shall discard any partially negotiated state from a previous session (GSS security context, negotiate-complete flag, body-drain counter) before opening the underlying IO. **]**
 
 ## RFC 2817 relevant part
 
