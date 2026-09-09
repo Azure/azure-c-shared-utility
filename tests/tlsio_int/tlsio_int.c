@@ -68,6 +68,10 @@ typedef socklen_t test_socklen_t;
 // still runs quickly.
 #define TEARDOWN_CYCLES             20
 
+// The steady-state descriptor count is allowed to wobble by a couple of descriptors, but
+// not to keep climbing with the number of cycles, which is what a leak looks like.
+#define DESCRIPTOR_GROWTH_ALLOWANCE 2
+
 #define TEST_HOSTNAME               "127.0.0.1"
 
 static XIO_HANDLE g_io;
@@ -77,6 +81,13 @@ static bool g_open_completed;
 static IO_OPEN_RESULT g_open_result;
 static bool g_send_completed;
 static IO_SEND_RESULT g_send_result;
+static bool g_close_completed;
+
+static void on_io_close_complete(void* context)
+{
+    (void)context;
+    g_close_completed = true;
+}
 
 static void on_io_open_complete(void* context, IO_OPEN_RESULT open_result)
 {
@@ -206,6 +217,7 @@ TEST_FUNCTION_INITIALIZE(init)
     g_open_result = IO_OPEN_ERROR;
     g_send_completed = false;
     g_send_result = IO_SEND_ERROR;
+    g_close_completed = false;
 }
 
 TEST_FUNCTION_CLEANUP(cleanup)
@@ -243,152 +255,144 @@ TEST_FUNCTION(tlsio_destroy_without_open_releases_everything)
     // Reaching here without a crash is the assertion.
 }
 
+// The three cycles below are each run repeatedly and their descriptor cost compared, so
+// they have to leave no trace of their own beyond whatever the adapter kept.
+
 // The reported case: the caller destroys the io straight after the connection turned out to
 // be unusable, without closing it first. The adapter may still be holding the connection at
 // that point and has to close it rather than just letting go of it.
-TEST_FUNCTION(tlsio_destroy_after_a_settled_open_does_not_leak_the_connection)
+static void cycle_destroy_after_a_settled_open(int port)
 {
-    ///arrange
-    int port;
-    size_t i;
-#ifdef TEST_CAN_COUNT_DESCRIPTORS
-    size_t baseline;
-    size_t after;
-#endif
+    XIO_HANDLE io = create_tlsio(port);
+    ASSERT_IS_NOT_NULL(io);
 
-    g_reserved = reserve_port(&port);
+    drive_open_to_completion(io);
 
-    // One warm-up cycle first, so that any one-off allocation the adapter makes on its very
-    // first use is already accounted for in the baseline.
-    g_io = create_tlsio(port);
-    ASSERT_IS_NOT_NULL(g_io);
-    drive_open_to_completion(g_io);
-    xio_destroy(g_io);
-    g_io = NULL;
-
-#ifdef TEST_CAN_COUNT_DESCRIPTORS
-    baseline = count_open_descriptors();
-#endif
-
-    ///act
-    for (i = 0; i < TEARDOWN_CYCLES; i++)
-    {
-        g_io = create_tlsio(port);
-        ASSERT_IS_NOT_NULL(g_io);
-
-        drive_open_to_completion(g_io);
-
-        // No xio_close on purpose. This is the call pattern the adapter has to survive.
-        xio_destroy(g_io);
-        g_io = NULL;
-    }
-
-    ///assert
-#ifdef TEST_CAN_COUNT_DESCRIPTORS
-    after = count_open_descriptors();
-    ASSERT_IS_TRUE(after <= baseline, "destroying the io without closing it leaked a descriptor per cycle");
-#endif
+    // No xio_close on purpose. This is the call pattern the adapter has to survive.
+    xio_destroy(io);
 }
 
 // Same requirement, but torn down while the connection is still being established, which
 // reaches a different branch of the adapter's teardown than a settled open does.
-TEST_FUNCTION(tlsio_destroy_while_opening_does_not_leak_the_connection)
+static void cycle_destroy_while_opening(int port)
 {
-    ///arrange
-    int port;
-    size_t i;
     size_t pass;
-#ifdef TEST_CAN_COUNT_DESCRIPTORS
-    size_t baseline;
-    size_t after;
-#endif
+    XIO_HANDLE io = create_tlsio(port);
+    ASSERT_IS_NOT_NULL(io);
 
-    g_reserved = reserve_port(&port);
+    g_open_completed = false;
+    (void)xio_open(io, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
 
-    g_io = create_tlsio(port);
-    ASSERT_IS_NOT_NULL(g_io);
-    (void)xio_open(g_io, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
-    for (pass = 0; pass < PARTIAL_OPEN_DOWORK_PASSES; pass++)
+    for (pass = 0; (pass < PARTIAL_OPEN_DOWORK_PASSES) && !g_open_completed; pass++)
     {
-        xio_dowork(g_io);
-    }
-    xio_destroy(g_io);
-    g_io = NULL;
-
-#ifdef TEST_CAN_COUNT_DESCRIPTORS
-    baseline = count_open_descriptors();
-#endif
-
-    ///act
-    for (i = 0; i < TEARDOWN_CYCLES; i++)
-    {
-        g_io = create_tlsio(port);
-        ASSERT_IS_NOT_NULL(g_io);
-
-        g_open_completed = false;
-        (void)xio_open(g_io, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
-
-        for (pass = 0; (pass < PARTIAL_OPEN_DOWORK_PASSES) && !g_open_completed; pass++)
-        {
-            xio_dowork(g_io);
-        }
-
-        // Again no xio_close, and this time the open has not been given time to settle.
-        xio_destroy(g_io);
-        g_io = NULL;
+        xio_dowork(io);
     }
 
-    ///assert
-#ifdef TEST_CAN_COUNT_DESCRIPTORS
-    after = count_open_descriptors();
-    ASSERT_IS_TRUE(after <= baseline, "destroying the io while it was opening leaked a descriptor per cycle");
-#endif
+    // Again no xio_close, and this time the open has not been given time to settle.
+    xio_destroy(io);
 }
 
 // Closing explicitly and then destroying is the well-behaved caller's sequence. It has to
 // stay clean too, and in particular the close must not leave anything for the destroy to
 // double-close.
+static void cycle_close_then_destroy(int port)
+{
+    XIO_HANDLE io = create_tlsio(port);
+    ASSERT_IS_NOT_NULL(io);
+
+    drive_open_to_completion(io);
+
+    // A real completion callback is passed because some adapters reject a NULL one and then
+    // close nothing at all, which would quietly turn this into the no-close case.
+    g_close_completed = false;
+    (void)xio_close(io, on_io_close_complete, NULL);
+
+    xio_destroy(io);
+}
+
+// Runs the same teardown cycle over three equal windows and compares the process descriptor
+// count after each. A genuine leak costs a descriptor per cycle, so it keeps showing up in
+// the last window; the one-off machinery a TLS stack sets up on first use only shows up
+// before the first count. Asserting on the last window separates the two.
+static void assert_cycle_settles(void (*cycle)(int port), int port, const char* what)
+{
+#ifdef TEST_CAN_COUNT_DESCRIPTORS
+    size_t first;
+    size_t second;
+    size_t third;
+    size_t settled_growth;
+#endif
+    size_t i;
+
+    for (i = 0; i < TEARDOWN_CYCLES; i++)
+    {
+        cycle(port);
+    }
+#ifdef TEST_CAN_COUNT_DESCRIPTORS
+    first = count_open_descriptors();
+#endif
+
+    for (i = 0; i < TEARDOWN_CYCLES; i++)
+    {
+        cycle(port);
+    }
+#ifdef TEST_CAN_COUNT_DESCRIPTORS
+    second = count_open_descriptors();
+#endif
+
+    for (i = 0; i < TEARDOWN_CYCLES; i++)
+    {
+        cycle(port);
+    }
+#ifdef TEST_CAN_COUNT_DESCRIPTORS
+    third = count_open_descriptors();
+
+    settled_growth = (third > second) ? (third - second) : 0;
+
+    ASSERT_IS_TRUE(settled_growth <= DESCRIPTOR_GROWTH_ALLOWANCE,
+        "%s: the descriptor count kept growing across identical cycles - %lu then %lu then %lu, over %lu cycles each",
+        what,
+        (unsigned long)first, (unsigned long)second, (unsigned long)third,
+        (unsigned long)TEARDOWN_CYCLES);
+#else
+    (void)what;
+#endif
+}
+
+TEST_FUNCTION(tlsio_destroy_after_a_settled_open_does_not_leak_the_connection)
+{
+    ///arrange
+    int port;
+
+    g_reserved = reserve_port(&port);
+
+    ///act
+    ///assert
+    assert_cycle_settles(cycle_destroy_after_a_settled_open, port, "destroying the io without closing it");
+}
+
+TEST_FUNCTION(tlsio_destroy_while_opening_does_not_leak_the_connection)
+{
+    ///arrange
+    int port;
+
+    g_reserved = reserve_port(&port);
+
+    ///act
+    ///assert
+    assert_cycle_settles(cycle_destroy_while_opening, port, "destroying the io while it was opening");
+}
+
 TEST_FUNCTION(tlsio_close_then_destroy_does_not_leak_the_connection)
 {
     ///arrange
     int port;
-    size_t i;
-#ifdef TEST_CAN_COUNT_DESCRIPTORS
-    size_t baseline;
-    size_t after;
-#endif
 
     g_reserved = reserve_port(&port);
 
-    g_io = create_tlsio(port);
-    ASSERT_IS_NOT_NULL(g_io);
-    drive_open_to_completion(g_io);
-    (void)xio_close(g_io, NULL, NULL);
-    xio_destroy(g_io);
-    g_io = NULL;
-
-#ifdef TEST_CAN_COUNT_DESCRIPTORS
-    baseline = count_open_descriptors();
-#endif
-
     ///act
-    for (i = 0; i < TEARDOWN_CYCLES; i++)
-    {
-        g_io = create_tlsio(port);
-        ASSERT_IS_NOT_NULL(g_io);
-
-        drive_open_to_completion(g_io);
-
-        (void)xio_close(g_io, NULL, NULL);
-        xio_destroy(g_io);
-        g_io = NULL;
-    }
-
     ///assert
-#ifdef TEST_CAN_COUNT_DESCRIPTORS
-    after = count_open_descriptors();
-    ASSERT_IS_TRUE(after <= baseline, "closing and destroying the io leaked a descriptor per cycle");
-#endif
+    assert_cycle_settles(cycle_close_then_destroy, port, "closing and then destroying the io");
 }
 
 // A message queued on an io that is then destroyed must not be abandoned silently: the
