@@ -14,7 +14,10 @@ CORES=$(grep -c ^processor /proc/cpuinfo 2>/dev/null || sysctl -n hw.ncpu)
 rm -r -f $build_folder
 mkdir -p $build_folder
 pushd $build_folder
-cmake .. -Drun_unittests:bool=ON -G Xcode
+# This is the only leg that builds the Apple TLS adapter (use_applessl is selected when
+# openssl is not requested), so the integration tests are enabled here to give that adapter
+# runtime coverage rather than compile-only coverage.
+cmake .. -Drun_unittests:bool=ON -Drun_int_tests:bool=ON -G Xcode
 cmake --build . -- --jobs=$CORES
 ctest -C "debug" -V
 popd
