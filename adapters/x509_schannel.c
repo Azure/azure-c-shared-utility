@@ -261,7 +261,7 @@ static int set_rsa_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
     int result;
     /*Codes_SRS_X509_SCHANNEL_02_005: [ x509_schannel_create shall call CryptAcquireContext. ]*/
     /*at this moment, both the private key and the certificate are decoded for further usage*/
-    if (!CryptAcquireContext(&(x509_handle->hProv), NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
+    if (!CryptAcquireContextA(&(x509_handle->hProv), NULL, MS_ENH_RSA_AES_PROV_A, PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
         LogErrorWinHTTPWithGetLastErrorAsString("CryptAcquireContext failed");

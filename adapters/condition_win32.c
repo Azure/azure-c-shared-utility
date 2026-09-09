@@ -26,7 +26,7 @@ COND_HANDLE Condition_Init(void)
     if (cond != NULL)
     {
         (void)memset(cond, 0, sizeof(CONDITION));
-        cond->event_handle = CreateEvent(NULL, FALSE, FALSE, NULL);
+        cond->event_handle = CreateEventA(NULL, FALSE, FALSE, NULL);
 
         if (cond->event_handle == NULL)
         {

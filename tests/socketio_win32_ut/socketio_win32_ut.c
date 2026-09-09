@@ -260,7 +260,15 @@ char* umocktypes_stringify_const_ADDRINFOA_ptr(const ADDRINFOA** value)
     char temp_buffer[256];
     int length;
 
-    length = sprintf(temp_buffer, "{ ai_flags = %d, ai_family = %d, ai_socktype = %d, ai_protocol = %d, ai_addrlen = %u, ai_canonname = %s", (*value)->ai_flags, (*value)->ai_family, (*value)->ai_socktype, (*value)->ai_protocol, (unsigned int)((*value)->ai_addrlen), (*value)->ai_canonname);
+    if (*value == NULL)
+    {
+        length = sprintf(temp_buffer, "NULL");
+    }
+    else
+    {
+        const char* canonname = ((*value)->ai_canonname == NULL) ? "NULL" : (*value)->ai_canonname;
+        length = sprintf(temp_buffer, "{ ai_flags = %d, ai_family = %d, ai_socktype = %d, ai_protocol = %d, ai_addrlen = %u, ai_canonname = %s", (*value)->ai_flags, (*value)->ai_family, (*value)->ai_socktype, (*value)->ai_protocol, (unsigned int)((*value)->ai_addrlen), canonname);
+    }
     if (length > 0)
     {
         result = (char*)malloc(strlen(temp_buffer) + 1);
@@ -276,12 +284,16 @@ char* umocktypes_stringify_const_ADDRINFOA_ptr(const ADDRINFOA** value)
 int umocktypes_are_equal_const_ADDRINFOA_ptr(const ADDRINFOA** left, const ADDRINFOA** right)
 {
     int result = 1;
-    if (((*left)->ai_flags != (*right)->ai_flags) ||
+    if ((*left == NULL) || (*right == NULL))
+    {
+        result = (*left == *right);
+    }
+    else if (((*left)->ai_flags != (*right)->ai_flags) ||
         ((*left)->ai_family != (*right)->ai_family) ||
         ((*left)->ai_socktype != (*right)->ai_socktype) ||
         ((*left)->ai_protocol != (*right)->ai_protocol) ||
-        ((((*left)->ai_canonname == NULL) || ((*right)->ai_canonname == NULL)) && ((*left)->ai_canonname != (*right)->ai_canonname)) ||
-        (strcmp((*left)->ai_canonname, (*right)->ai_canonname) != 0))
+        (((*left)->ai_canonname == NULL) != ((*right)->ai_canonname == NULL)) ||
+        (((*left)->ai_canonname != NULL) && (strcmp((*left)->ai_canonname, (*right)->ai_canonname) != 0)))
     {
         result = 0;
     }
@@ -293,20 +305,28 @@ int umocktypes_copy_const_ADDRINFOA_ptr(ADDRINFOA** destination, const ADDRINFOA
 {
     int result;
 
-    *destination = (ADDRINFOA*)malloc(sizeof(ADDRINFOA));
-    if (*destination == NULL)
+    if (*source == NULL)
     {
-        result = MU_FAILURE;
+        *destination = NULL;
+        result = 0;
     }
     else
     {
-        (*destination)->ai_flags = (*source)->ai_flags;
-        (*destination)->ai_family = (*source)->ai_family;
-        (*destination)->ai_socktype = (*source)->ai_socktype;
-        (*destination)->ai_protocol = (*source)->ai_protocol;
-        (*destination)->ai_canonname = (*source)->ai_canonname;
+        *destination = (ADDRINFOA*)malloc(sizeof(ADDRINFOA));
+        if (*destination == NULL)
+        {
+            result = MU_FAILURE;
+        }
+        else
+        {
+            (*destination)->ai_flags = (*source)->ai_flags;
+            (*destination)->ai_family = (*source)->ai_family;
+            (*destination)->ai_socktype = (*source)->ai_socktype;
+            (*destination)->ai_protocol = (*source)->ai_protocol;
+            (*destination)->ai_canonname = (*source)->ai_canonname;
 
-        result = 0;
+            result = 0;
+        }
     }
 
     return result;

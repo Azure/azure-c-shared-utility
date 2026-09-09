@@ -139,7 +139,7 @@ char* FILETIME_toAsciiArray(const FILETIME* fileTime)
             else
             {
                 char localDate[255];
-                if (GetDateFormat(LOCALE_USER_DEFAULT, DATE_LONGDATE, &systemTime, NULL, localDate, sizeof(localDate)/sizeof(localDate[0])) == 0)
+                if (GetDateFormatA(LOCALE_USER_DEFAULT, DATE_LONGDATE, &systemTime, NULL, localDate, sizeof(localDate)/sizeof(localDate[0])) == 0)
                 {
                     LogLastError("failure in GetDateFormat");
                     result = NULL;
@@ -147,7 +147,7 @@ char* FILETIME_toAsciiArray(const FILETIME* fileTime)
                 else
                 {
                     char localTime[255];
-                    if (GetTimeFormat(LOCALE_USER_DEFAULT, 0, &systemTime, NULL, localTime, sizeof(localTime)/sizeof(localTime[0])) == 0)
+                    if (GetTimeFormatA(LOCALE_USER_DEFAULT, 0, &systemTime, NULL, localTime, sizeof(localTime)/sizeof(localTime[0])) == 0)
                     {
                         LogLastError("failure in GetTimeFormat");
                         result = NULL;

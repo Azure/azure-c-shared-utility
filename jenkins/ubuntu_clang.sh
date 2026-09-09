@@ -12,7 +12,7 @@ build_folder=$build_root"/cmake"
 rm -r -f $build_folder
 mkdir -p $build_folder
 pushd $build_folder
-cmake .. -Drun_valgrind:BOOL=ON -Drun_unittests:bool=ON
+cmake .. -Drun_valgrind:BOOL=ON -Drun_unittests:bool=ON -Drun_int_tests:bool=ON
 cmake --build . -- --jobs=$(nproc)
 
 popd

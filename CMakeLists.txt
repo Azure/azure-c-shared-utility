@@ -12,6 +12,11 @@ endif()
 project(azure_c_shared_utility)
 
 FILE(READ ${CMAKE_CURRENT_LIST_DIR}/version.txt C_SHARED_VERSION)
+string(STRIP "${C_SHARED_VERSION}" C_SHARED_VERSION)
+if(NOT C_SHARED_VERSION MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
+    message(FATAL_ERROR "Malformed version in version.txt: '${C_SHARED_VERSION}'")
+endif()
+set(C_SHARED_VERSION_MAJOR ${CMAKE_MATCH_1})
 
 #bring in dependencies
 #do not add or build any tests of the dependencies
@@ -87,6 +92,7 @@ option(use_installed_dependencies "set use_installed_dependencies to ON to use i
 option(use_default_uuid "set use_default_uuid to ON to use the out of the box UUID that comes with the SDK rather than platform specific implementations" OFF)
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF). Chsare dutility does not have any e2e tests, but the option needs to exist to evaluate in IF statements" OFF)
 option(run_int_tests "set run_int_tests to ON to integration tests (default is OFF)." OFF)
+option(run_install_export_test "set run_install_export_test to OFF to skip the install/export regression test, which configures and builds the project a second time (default is ON when tests are enabled)" ON)
 option(use_builtin_httpapi "set use_builtin_httpapi to ON to use the built-in httpapi_compact that comes with C shared utility (default is OFF)" OFF)
 option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 option(suppress_header_searches "do not try to find headers - used when compiler check will fail" OFF)
@@ -559,6 +565,16 @@ endif()
 add_library(aziotsharedutil ${source_c_files} ${source_h_files} ${aziotsharedutil_md_files})
 setTargetBuildProperties(aziotsharedutil)
 
+# Public headers require MSVC's conforming preprocessor. Suppress C5105 as
+# well because Windows SDK headers can emit it when that preprocessor is used.
+set(msvc_preprocessor_interface_options
+    $<$<COMPILE_LANG_AND_ID:C,MSVC>:/Zc:preprocessor>
+    $<$<COMPILE_LANG_AND_ID:C,MSVC>:/wd5105>
+    $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/Zc:preprocessor>
+    $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/wd5105>
+)
+target_compile_options(aziotsharedutil INTERFACE ${msvc_preprocessor_interface_options})
+
 target_include_directories(aziotsharedutil PUBLIC $<BUILD_INTERFACE:${SHARED_UTIL_INC_FOLDER}>)
 target_link_libraries(aziotsharedutil PUBLIC macro_utils_c)
 # c_logging_v2 and umock_c provide headers needed by aziotsharedutil sources.
@@ -598,7 +614,12 @@ if(${build_as_dynamic})
         ${source_h_files}
         ${def_files}
     )
-    set_target_properties(aziotsharedutil_dll PROPERTIES OUTPUT_NAME "aziotsharedutil_dll")
+    set_target_properties(aziotsharedutil_dll PROPERTIES
+        OUTPUT_NAME "aziotsharedutil_dll"
+        VERSION ${C_SHARED_VERSION}
+        SOVERSION ${C_SHARED_VERSION_MAJOR}
+    )
+    target_compile_options(aziotsharedutil_dll INTERFACE ${msvc_preprocessor_interface_options})
 endif()
 
 set(aziotsharedutil_target_libs)
@@ -792,13 +813,26 @@ if(TARGET c_logging_v2 AND TARGET c_logging_v2_core)
     list(APPEND targets c_logging_v2 c_logging_v2_core)
 endif()
 
+# Public headers install to ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility and are
+# consumed as #include "azure_c_shared_utility/<h>.h", so the exported root must be
+# ${CMAKE_INSTALL_INCLUDEDIR} itself. The public xlogging.h also pulls in
+# "c_logging/logger.h", installed under ${CMAKE_INSTALL_INCLUDEDIR}/c_logging/v2.
+# The legacy azureiot root is kept for the sibling SDK components that install there,
+# and is now created unconditionally so it is never a non-existent exported path.
+set(exported_include_dirs ${CMAKE_INSTALL_INCLUDEDIR})
+if(TARGET c_logging_v2 AND TARGET c_logging_v2_core)
+    list(APPEND exported_include_dirs ${CMAKE_INSTALL_INCLUDEDIR}/c_logging/v2)
+endif()
+list(APPEND exported_include_dirs ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
+
 install (TARGETS ${targets} EXPORT aziotsharedutilTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
+    INCLUDES DESTINATION ${exported_include_dirs}
 )
 install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_c_shared_utility)
+install (DIRECTORY DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
 install (FILES ${micromock_h_files_full_path} ${INSTALL_H_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot)
 
 
