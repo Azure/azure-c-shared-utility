@@ -103,7 +103,18 @@ if(${run_unittests})
 endif()
 
 if(${run_int_tests})
-    add_subdirectory(socketio_int)
+    # socketio_int drives socketio_get_interface_description directly, which only exists as
+    # a real implementation when socketio is part of the build. The Apple TLS configuration
+    # builds without socketio and supplies a stub that returns NULL.
+    if(use_socketio)
+        add_subdirectory(socketio_int)
+    endif()
+
+    # tlsio_int drives platform_get_default_tlsio, so it only makes sense when the build
+    # actually carries a TLS stack.
+    if(use_openssl OR use_schannel OR use_mbedtls OR use_wolfssl OR use_bearssl OR use_applessl)
+        add_subdirectory(tlsio_int)
+    endif()
 
     if(WIN32)
         add_subdirectory(x509_schannel_int)
