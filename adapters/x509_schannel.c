@@ -157,6 +157,39 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
 }
 
 #if _MSC_VER > 1500
+/* Names the key container after the certificate thumbprint. Two clients using different
+   certificates therefore never share a container, and a process killed before
+   x509_schannel_destroy runs leaves at most one container per certificate: the next run with that
+   same certificate reuses it instead of orphaning another one. */
+static int build_key_container_name(X509_SCHANNEL_HANDLE_DATA* x509_handle)
+{
+    int result;
+    BYTE thumbprint[20];
+    DWORD thumbprint_size = sizeof(thumbprint);
+
+    if (!CertGetCertificateContextProperty(x509_handle->x509certificate_context, CERT_SHA1_HASH_PROP_ID, thumbprint, &thumbprint_size))
+    {
+        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+        LogErrorWinHTTPWithGetLastErrorAsString("unable to CertGetCertificateContextProperty for the certificate thumbprint");
+        result = MU_FAILURE;
+    }
+    else
+    {
+        DWORD i;
+        size_t offset;
+
+        (void)wcscpy_s(x509_handle->key_name, KEY_NAME_MAX_LENGTH, KEY_NAME L"-");
+        offset = wcslen(x509_handle->key_name);
+        for (i = 0; i < thumbprint_size; i++)
+        {
+            (void)swprintf_s(x509_handle->key_name + offset, KEY_NAME_MAX_LENGTH - offset, L"%02X", thumbprint[i]);
+            offset += 2;
+        }
+        result = 0;
+    }
+    return result;
+}
+
 /* Imports the decoded private key blob into a CNG key storage provider and links it to the
    certificate context. Schannel can only use a client certificate for TLS 1.2 client
    authentication when the private key is reachable this way: a key published as a legacy
@@ -166,20 +199,14 @@ static unsigned char* decode_crypt_object(unsigned char* private_key, DWORD key_
 static int import_private_key_to_ncrypt(X509_SCHANNEL_HANDLE_DATA* x509_handle, LPCWSTR key_blob_type, unsigned char* key_blob, DWORD key_blob_size)
 {
     int result;
-    static volatile LONG key_name_suffix = 0;
     SECURITY_STATUS status;
 
-    /* Every handle gets its own key container, otherwise two clients using different certificates
-       would overwrite each other's private key. */
-    if (swprintf_s(x509_handle->key_name, KEY_NAME_MAX_LENGTH, KEY_NAME L"-%lu-%ld",
-        (unsigned long)GetCurrentProcessId(), InterlockedIncrement(&key_name_suffix)) < 0)
+    /*Codes_SRS_X509_SCHANNEL_02_015: [ x509_schannel_create shall name the key container after the certificate thumbprint. ]*/
+    if (build_key_container_name(x509_handle) != 0)
     {
-        /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-        LogError("unable to build the private key container name");
         result = MU_FAILURE;
     }
-    /* Codes_SRS_X509_SCHANNEL_02_005: [ x509_schannel_create shall call CryptAcquireContext. ] */
-    /* NOTE: As no WinCrypt key storage provider supports ECC keys, NCrypt is used instead */
+    /*Codes_SRS_X509_SCHANNEL_02_005: [ When compiled with _MSC_VER > 1500, x509_schannel_create shall open a CNG key storage provider by calling NCryptOpenStorageProvider, otherwise it shall call CryptAcquireContext. ]*/
     else if ((status = NCryptOpenStorageProvider(&x509_handle->hProv, MS_KEY_STORAGE_PROVIDER, 0)) != ERROR_SUCCESS)
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
@@ -204,7 +231,7 @@ static int import_private_key_to_ncrypt(X509_SCHANNEL_HANDLE_DATA* x509_handle, 
         keyProvInfo.pwszContainerName = x509_handle->key_name;
         keyProvInfo.pwszProvName = (LPWSTR)MS_KEY_STORAGE_PROVIDER;
 
-        /*Codes_SRS_X509_SCHANNEL_02_006: [ x509_schannel_create shall import the private key by calling CryptImportKey. ] */
+        /*Codes_SRS_X509_SCHANNEL_02_006: [ When compiled with _MSC_VER > 1500, x509_schannel_create shall import the private key by calling NCryptImportKey, otherwise it shall call CryptImportKey. ] */
         status = NCryptImportKey(x509_handle->hProv, 0, key_blob_type, &ncBufDesc, &x509_handle->x509hcryptkey, key_blob, key_blob_size, NCRYPT_OVERWRITE_KEY_FLAG);
         if (status != ERROR_SUCCESS)
         {
@@ -229,7 +256,7 @@ static int import_private_key_to_ncrypt(X509_SCHANNEL_HANDLE_DATA* x509_handle, 
         {
             if (x509_handle->x509hcryptkey != 0)
             {
-                (void)NCryptDeleteKey(x509_handle->x509hcryptkey, 0);
+                (void)NCryptFreeObject(x509_handle->x509hcryptkey);
                 x509_handle->x509hcryptkey = 0;
             }
             (void)NCryptFreeObject(x509_handle->hProv);
@@ -290,7 +317,7 @@ static int set_rsa_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
     /* at this moment, both the private key and the certificate are decoded for further usage */
     result = import_private_key_to_ncrypt(x509_handle, LEGACY_RSAPRIVATE_BLOB, x509privatekeyBlob, x509privatekeyBlobSize);
 #else
-    /*Codes_SRS_X509_SCHANNEL_02_005: [ x509_schannel_create shall call CryptAcquireContext. ]*/
+    /*Codes_SRS_X509_SCHANNEL_02_005: [ When compiled with _MSC_VER > 1500, x509_schannel_create shall open a CNG key storage provider by calling NCryptOpenStorageProvider, otherwise it shall call CryptAcquireContext. ]*/
     /*at this moment, both the private key and the certificate are decoded for further usage*/
     if (!CryptAcquireContextA(&(x509_handle->hProv), NULL, MS_ENH_RSA_AES_PROV_A, PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
     {
@@ -300,7 +327,7 @@ static int set_rsa_certificate_info(X509_SCHANNEL_HANDLE_DATA* x509_handle, unsi
     }
     else
     {
-        /*Codes_SRS_X509_SCHANNEL_02_006: [ x509_schannel_create shall import the private key by calling CryptImportKey. ] */
+        /*Codes_SRS_X509_SCHANNEL_02_006: [ When compiled with _MSC_VER > 1500, x509_schannel_create shall import the private key by calling NCryptImportKey, otherwise it shall call CryptImportKey. ] */
         if (!CryptImportKey(x509_handle->hProv, x509privatekeyBlob, x509privatekeyBlobSize, (HCRYPTKEY)NULL, 0, &(x509_handle->x509hcryptkey)))
         {
             /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
@@ -464,13 +491,7 @@ void x509_schannel_destroy(X509_SCHANNEL_HANDLE x509_schannel_handle)
         /* both RSA and ECC private keys are imported through NCrypt */
         if (x509crypto->x509hcryptkey != 0)
         {
-            /* the key container is persisted by NCryptImportKey, so it has to be removed and not just closed */
-            SECURITY_STATUS status = NCryptDeleteKey(x509crypto->x509hcryptkey, 0);
-            if (status != ERROR_SUCCESS)
-            {
-                LogError("NCryptDeleteKey failed with error 0x%08X", status);
-                (void)NCryptFreeObject(x509crypto->x509hcryptkey);
-            }
+            (void)NCryptFreeObject(x509crypto->x509hcryptkey);
         }
         if (x509crypto->hProv != 0)
         {
