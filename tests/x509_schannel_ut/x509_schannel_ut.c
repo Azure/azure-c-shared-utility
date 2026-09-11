@@ -79,6 +79,13 @@ MOCKABLE_FUNCTION(WINAPI, BOOL, CertSetCertificateContextProperty,
     const void           *, pvData
 );
 
+MOCKABLE_FUNCTION(WINAPI, BOOL, CertGetCertificateContextProperty,
+    PCCERT_CONTEXT, pCertContext,
+    DWORD, dwPropId,
+    void                 *, pvData,
+    DWORD                *, pcbData
+);
+
 MOCKABLE_FUNCTION(WINAPI, BOOL, CryptStringToBinaryA,
     LPCTSTR, pszString,
     DWORD, cchString,
@@ -401,13 +408,81 @@ static BOOL my_CertGetCertificateChain(
 
 
 
+#define TEST_CAPTURED_KEY_NAME_SIZE 128
+#define TEST_THUMBPRINT_SIZE        20
+
+/* Filled in by my_NCryptImportKey so the tests can assert on the key container name. */
+static wchar_t g_captured_key_name[TEST_CAPTURED_KEY_NAME_SIZE];
+static bool g_captured_key_name_is_valid;
+static BYTE g_thumbprint_fill;
+
 #if _MSC_VER > 1500
 static SECURITY_STATUS my_NCryptFreeObject(_In_ NCRYPT_HANDLE hObject)
 {
     my_gballoc_free((void*)hObject);
     return ERROR_SUCCESS;
 }
+
+static SECURITY_STATUS my_NCryptOpenStorageProvider(NCRYPT_PROV_HANDLE* phProvider, LPCWSTR pszProviderName, DWORD dwFlags)
+{
+    (void)pszProviderName;
+    (void)dwFlags;
+    *phProvider = (NCRYPT_PROV_HANDLE)my_gballoc_malloc(3);
+    return ERROR_SUCCESS;
+}
+
+static SECURITY_STATUS my_NCryptImportKey(NCRYPT_PROV_HANDLE hProvider, NCRYPT_KEY_HANDLE hImportKey, LPCWSTR pszBlobType, NCryptBufferDesc* pParameterList, NCRYPT_KEY_HANDLE* phKey, PBYTE pbData, DWORD cbData, DWORD dwFlags)
+{
+    (void)hProvider;
+    (void)hImportKey;
+    (void)pszBlobType;
+    (void)pbData;
+    (void)cbData;
+    (void)dwFlags;
+
+    g_captured_key_name_is_valid = false;
+    g_captured_key_name[0] = L'\0';
+    if ((pParameterList != NULL) && (pParameterList->cBuffers == 1) &&
+        (pParameterList->pBuffers != NULL) &&
+        (pParameterList->pBuffers[0].BufferType == NCRYPTBUFFER_PKCS_KEY_NAME) &&
+        (pParameterList->pBuffers[0].pvBuffer != NULL))
+    {
+        const wchar_t* container = (const wchar_t*)pParameterList->pBuffers[0].pvBuffer;
+        size_t chars = pParameterList->pBuffers[0].cbBuffer / sizeof(wchar_t);
+        /* cbBuffer has to cover the name and its terminator, otherwise NCrypt reads out of bounds */
+        if ((chars > 1) && (chars <= TEST_CAPTURED_KEY_NAME_SIZE) &&
+            (container[chars - 1] == L'\0') && (wcslen(container) == (chars - 1)))
+        {
+            (void)wcscpy_s(g_captured_key_name, TEST_CAPTURED_KEY_NAME_SIZE, container);
+            g_captured_key_name_is_valid = true;
+        }
+    }
+
+    *phKey = (NCRYPT_KEY_HANDLE)my_gballoc_malloc(4);
+    return ERROR_SUCCESS;
+}
 #endif
+
+static BOOL my_CertGetCertificateContextProperty(PCCERT_CONTEXT pCertContext, DWORD dwPropId, void* pvData, DWORD* pcbData)
+{
+    (void)pCertContext;
+    (void)dwPropId;
+    if (pvData == NULL)
+    {
+        *pcbData = TEST_THUMBPRINT_SIZE;
+    }
+    else if (*pcbData < TEST_THUMBPRINT_SIZE)
+    {
+        *pcbData = TEST_THUMBPRINT_SIZE;
+        return FALSE;
+    }
+    else
+    {
+        memset(pvData, g_thumbprint_fill, TEST_THUMBPRINT_SIZE);
+        *pcbData = TEST_THUMBPRINT_SIZE;
+    }
+    return TRUE;
+}
 
 static BOOL my_CryptDestroyKey(
     HCRYPTKEY hKey
@@ -510,6 +585,9 @@ TEST_SUITE_INITIALIZE(a)
     REGISTER_GLOBAL_MOCK_HOOK(CertSetCertificateContextProperty, my_CertSetCertificateContextProperty);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertSetCertificateContextProperty, FALSE);
 
+    REGISTER_GLOBAL_MOCK_HOOK(CertGetCertificateContextProperty, my_CertGetCertificateContextProperty);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertGetCertificateContextProperty, FALSE);
+
     REGISTER_GLOBAL_MOCK_HOOK(CertFreeCertificateContext, my_CertFreeCertificateContext);
 
     REGISTER_GLOBAL_MOCK_RETURN(CertOpenStore, testCertStore);
@@ -524,10 +602,10 @@ TEST_SUITE_INITIALIZE(a)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertVerifyCertificateChainPolicy, FALSE);
 
 #if _MSC_VER > 1500
-    REGISTER_GLOBAL_MOCK_RETURN(NCryptOpenStorageProvider, ERROR_SUCCESS);
+    REGISTER_GLOBAL_MOCK_HOOK(NCryptOpenStorageProvider, my_NCryptOpenStorageProvider);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(NCryptOpenStorageProvider, ERROR_INVALID_FUNCTION);
 
-    REGISTER_GLOBAL_MOCK_RETURN(NCryptImportKey, ERROR_SUCCESS);
+    REGISTER_GLOBAL_MOCK_HOOK(NCryptImportKey, my_NCryptImportKey);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(NCryptImportKey, ERROR_INVALID_FUNCTION);
 
     REGISTER_GLOBAL_MOCK_HOOK(NCryptFreeObject, my_NCryptFreeObject);
@@ -546,6 +624,9 @@ TEST_FUNCTION_INITIALIZE(initialize)
 {
     umock_c_reset_all_calls();
     memset(&testCertContextToVerify, 0, sizeof(testCertContextToVerify));
+    memset(g_captured_key_name, 0, sizeof(g_captured_key_name));
+    g_captured_key_name_is_valid = false;
+    g_thumbprint_fill = 0xAB;
 }
 
 TEST_FUNCTION_CLEANUP(cleans)
@@ -570,15 +651,12 @@ static void setup_x509_schannel_create_ecc_mocks(void)
     STRICT_EXPECTED_CALL(CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, IGNORED_ARG, IGNORED_ARG)); /*create a certificate context from an encoded certificate*/
 
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CertGetCertificateContextProperty(IGNORED_ARG, CERT_SHA1_HASH_PROP_ID, IGNORED_ARG, IGNORED_ARG)); /*the key container is named after the certificate thumbprint*/
     STRICT_EXPECTED_CALL(NCryptOpenStorageProvider(IGNORED_ARG, MS_KEY_STORAGE_PROVIDER, 0))
         .IgnoreArgument_pszProviderName();
     STRICT_EXPECTED_CALL(NCryptImportKey((NCRYPT_PROV_HANDLE)IGNORED_ARG, (NCRYPT_KEY_HANDLE)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NCRYPT_OVERWRITE_KEY_FLAG))
         .IgnoreArgument_hProvider()
         .IgnoreArgument_hImportKey();
-    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
-        .IgnoreArgument_hObject();
-    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
-        .IgnoreArgument_hObject();
 
     STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_ARG)); /*give the private key*/
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
@@ -601,10 +679,20 @@ static void setup_x509_schannel_create_mocks(void)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is allocating space for the decoded private key*/
     STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, IGNORED_ARG, IGNORED_ARG)); /*this is asking "how big is the decoded private key? (from binary)*/
     STRICT_EXPECTED_CALL(CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, IGNORED_ARG, IGNORED_ARG)); /*create a certificate context from an encoded certificate*/
+#if _MSC_VER > 1500
+    STRICT_EXPECTED_CALL(CertGetCertificateContextProperty(IGNORED_ARG, CERT_SHA1_HASH_PROP_ID, IGNORED_ARG, IGNORED_ARG)); /*the key container is named after the certificate thumbprint*/
+    STRICT_EXPECTED_CALL(NCryptOpenStorageProvider(IGNORED_ARG, MS_KEY_STORAGE_PROVIDER, 0)) /*this is opening the CNG key storage provider that will hold the private key*/
+        .IgnoreArgument_pszProviderName();
+    STRICT_EXPECTED_CALL(NCryptImportKey((NCRYPT_PROV_HANDLE)IGNORED_ARG, (NCRYPT_KEY_HANDLE)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NCRYPT_OVERWRITE_KEY_FLAG)) /*tranferring the key from the blob to the key storage provider*/
+        .IgnoreArgument_hProvider()
+        .IgnoreArgument_hImportKey();
+    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_ARG)); /*give the private key*/
+#else
     STRICT_EXPECTED_CALL(CryptAcquireContextA(IGNORED_ARG, NULL, MS_ENH_RSA_AES_PROV_A, PROV_RSA_AES, CRYPT_VERIFYCONTEXT)); /*this is acquire a handle to a key container within a cryptographic service provider*/
     STRICT_EXPECTED_CALL(CryptImportKey((HCRYPTPROV)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, (HCRYPTKEY)NULL, 0, IGNORED_ARG)) /*tranferring the key from the blob to the cryptrographic key provider*/
         .IgnoreArgument_hProv();
     STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_HANDLE_PROP_ID, 0, IGNORED_ARG)); /*give the private key*/
+#endif
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
@@ -669,6 +757,15 @@ TEST_FUNCTION(x509_schannel_negative_test_cases)
 {
     ///arrange
     size_t i;
+#if _MSC_VER > 1500
+    size_t calls_that_cannot_fail[] = {
+        7,
+        15, /*gballoc_free*/
+        16, /*gballoc_free*/
+        17, /*gballoc_free*/
+
+    };
+#else
     size_t calls_that_cannot_fail[] = {
         7,
         14, /*gballoc_free*/
@@ -676,6 +773,7 @@ TEST_FUNCTION(x509_schannel_negative_test_cases)
         16, /*gballoc_free*/
 
     };
+#endif
     int negativeTestsInitResult = umock_c_negative_tests_init();
     ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
 
@@ -734,6 +832,61 @@ TEST_FUNCTION(x509_schannel_create_ecc_succeeds)
     ///cleanup
     x509_schannel_destroy(h);
 }
+
+/*Tests_SRS_X509_SCHANNEL_02_015: [ When compiled with _MSC_VER > 1500, x509_schannel_create shall name the key container after the certificate thumbprint. ]*/
+TEST_FUNCTION(x509_schannel_create_gives_different_certificates_different_key_containers)
+{
+    ///arrange
+    X509_SCHANNEL_HANDLE first;
+    X509_SCHANNEL_HANDLE second;
+    wchar_t first_key_name[TEST_CAPTURED_KEY_NAME_SIZE];
+
+    g_thumbprint_fill = 0x11;
+    first = x509_schannel_create("certificate", "private key");
+    ASSERT_IS_NOT_NULL(first);
+    ASSERT_IS_TRUE(g_captured_key_name_is_valid, "the container name must reach NCryptImportKey as a NUL terminated NCRYPTBUFFER_PKCS_KEY_NAME");
+    (void)wcscpy_s(first_key_name, TEST_CAPTURED_KEY_NAME_SIZE, g_captured_key_name);
+
+    ///act
+    g_thumbprint_fill = 0x22;
+    second = x509_schannel_create("certificate", "private key");
+
+    ///assert
+    ASSERT_IS_NOT_NULL(second);
+    ASSERT_IS_TRUE(g_captured_key_name_is_valid);
+    ASSERT_ARE_NOT_EQUAL(int, 0, wcscmp(first_key_name, g_captured_key_name), "two certificates must not share a key container, or one client overwrites the other's private key");
+
+    ///cleanup
+    x509_schannel_destroy(first);
+    x509_schannel_destroy(second);
+}
+
+/*Tests_SRS_X509_SCHANNEL_02_015: [ When compiled with _MSC_VER > 1500, x509_schannel_create shall name the key container after the certificate thumbprint. ]*/
+TEST_FUNCTION(x509_schannel_create_reuses_the_key_container_of_the_same_certificate)
+{
+    ///arrange
+    X509_SCHANNEL_HANDLE first;
+    X509_SCHANNEL_HANDLE second;
+    wchar_t first_key_name[TEST_CAPTURED_KEY_NAME_SIZE];
+
+    g_thumbprint_fill = 0x33;
+    first = x509_schannel_create("certificate", "private key");
+    ASSERT_IS_NOT_NULL(first);
+    ASSERT_IS_TRUE(g_captured_key_name_is_valid);
+    (void)wcscpy_s(first_key_name, TEST_CAPTURED_KEY_NAME_SIZE, g_captured_key_name);
+
+    ///act
+    second = x509_schannel_create("certificate", "private key");
+
+    ///assert
+    ASSERT_IS_NOT_NULL(second);
+    ASSERT_IS_TRUE(g_captured_key_name_is_valid);
+    ASSERT_ARE_EQUAL(int, 0, wcscmp(first_key_name, g_captured_key_name), "the same certificate must reuse its container, otherwise an ungraceful exit orphans a new one every run");
+
+    ///cleanup
+    x509_schannel_destroy(first);
+    x509_schannel_destroy(second);
+}
 #endif
 
 /*Tests_SRS_X509_SCHANNEL_02_011: [ If parameter x509_schannel_handle is NULL then x509_schannel_destroy shall do nothing. ]*/
@@ -757,10 +910,17 @@ TEST_FUNCTION(x509_schannel_destroy_succeeds)
     X509_SCHANNEL_HANDLE h = x509_schannel_create("certificate", "private key");
     umock_c_reset_all_calls();
 
+#if _MSC_VER > 1500
+    STRICT_EXPECTED_CALL(NCryptFreeObject((NCRYPT_HANDLE)IGNORED_ARG))
+        .IgnoreArgument_hObject();
+    STRICT_EXPECTED_CALL(NCryptFreeObject((NCRYPT_HANDLE)IGNORED_ARG))
+        .IgnoreArgument_hObject();
+#else
     STRICT_EXPECTED_CALL(CryptDestroyKey((HCRYPTKEY)IGNORED_ARG))
         .IgnoreArgument_hKey();
     STRICT_EXPECTED_CALL(CryptReleaseContext((HCRYPTPROV)IGNORED_ARG, 0))
         .IgnoreArgument_hProv();
+#endif
     STRICT_EXPECTED_CALL(CertFreeCertificateContext(IGNORED_ARG))
         .IgnoreArgument_pCertContext();
     STRICT_EXPECTED_CALL(gballoc_free(h));

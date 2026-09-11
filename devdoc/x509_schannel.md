@@ -36,9 +36,19 @@ x509_schannel_create creates a handle wrapping a PCCERT_CONTEXT and other inform
 
 **SRS_X509_SCHANNEL_07_001: [** `x509_schannel_create` shall determine whether the certificate is of type RSA or ECC. **]** 
 
-**SRS_X509_SCHANNEL_02_005: [** `x509_schannel_create` shall call `CryptAcquireContext`. **]**
+**SRS_X509_SCHANNEL_02_005: [** When compiled with `_MSC_VER > 1500`, `x509_schannel_create` shall open a CNG key storage provider by calling `NCryptOpenStorageProvider`, otherwise it shall call `CryptAcquireContext`. **]**
 
-**SRS_X509_SCHANNEL_02_006: [** `x509_schannel_create` shall import the private key by calling `CryptImportKey`. **]**
+**SRS_X509_SCHANNEL_02_006: [** When compiled with `_MSC_VER > 1500`, `x509_schannel_create` shall import the private key by calling `NCryptImportKey`, otherwise it shall call `CryptImportKey`. **]**
+
+**SRS_X509_SCHANNEL_02_015: [** When compiled with `_MSC_VER > 1500`, `x509_schannel_create` shall name the key container after the certificate thumbprint. **]**
+
+Schannel can only use a client certificate for TLS 1.2 client authentication when the private key
+belongs to a named CNG key container: a key published as a legacy CryptoAPI provider handle
+(`CERT_KEY_PROV_HANDLE_PROP_ID`) restricts Schannel to `rsa_pkcs1_sha1` signatures, and an ephemeral
+CNG key is rejected by `AcquireCredentialsHandle` with `SEC_E_UNKNOWN_CREDENTIALS`. Naming the
+container after the certificate thumbprint keeps clients that use different certificates from
+overwriting one another's key, while letting a process that terminated without calling
+`x509_schannel_destroy` reuse its previous container rather than leaving a new one behind.
 
 **SRS_X509_SCHANNEL_02_007: [** `x509_schannel_create` shall create a cerficate context by calling `CertCreateCertificateContext`. **]**
 

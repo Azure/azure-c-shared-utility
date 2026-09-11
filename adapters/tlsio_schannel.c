@@ -300,6 +300,8 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
     SECURITY_STATUS status;
     SCHANNEL_CRED auth_data;
     PCCERT_CONTEXT certContext;
+    /* cMappers/aphMappers are not set below, so the whole structure has to start out zeroed */
+    (void)memset(&auth_data, 0, sizeof(auth_data));
     auth_data.dwVersion = SCHANNEL_CRED_VERSION;
     if (tls_io_instance->x509_schannel_handle != NULL)
     {
