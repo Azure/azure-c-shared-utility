@@ -73,6 +73,7 @@ MOCKABLE_FUNCTION(, int, ares_init, ares_channel*, channelptr);
 MOCKABLE_FUNCTION(, void, ares_gethostbyname, ares_channel, channel, const char*, name, int, family, ares_host_callback, callback, void*, arg);
 MOCKABLE_FUNCTION(, int, ares_getsock, ares_channel, channel, ares_socket_t*, socks, int, numsocks);
 MOCKABLE_FUNCTION(, void, ares_process_fd, ares_channel, channel, ares_socket_t, read_fd, ares_socket_t, write_fd);
+MOCKABLE_FUNCTION(, int, select, int, nfds, fd_set*, readfds, fd_set*, writefds, fd_set*, exceptfds, struct timeval*, timeout);
 
 #ifdef __cplusplus
 }
@@ -119,6 +120,11 @@ static int g_process_fd_call_count;
 
 // What the mocked ares_getsock reports on the next call.
 static int g_getsock_bitmask;
+// Which sockets the mocked select reports as ready.
+static bool g_socket_0_readable;
+static bool g_socket_2_writable;
+static int g_select_call_count;
+static int g_select_result_override;
 
 static void my_ares_gethostbyname(ares_channel channel, const char* name, int family, ares_host_callback callback, void* arg)
 {
@@ -162,6 +168,47 @@ static void my_ares_process_fd(ares_channel channel, ares_socket_t read_fd, ares
         g_process_fd_calls[g_process_fd_call_count].write_fd = write_fd;
     }
     g_process_fd_call_count++;
+}
+
+// Reports readiness for the sockets the test marked ready, and clears the rest,
+// which is what select does to the caller's sets.
+static int my_select(int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, struct timeval* timeout)
+{
+    int ready = 0;
+    (void)nfds;
+    (void)exceptfds;
+    (void)timeout;
+
+    g_select_call_count++;
+
+    if (g_select_result_override != 0)
+    {
+        return g_select_result_override;
+    }
+
+    if (readfds != NULL)
+    {
+        bool keep = g_socket_0_readable && FD_ISSET(TEST_SOCKET_0, readfds);
+        FD_ZERO(readfds);
+        if (keep)
+        {
+            FD_SET(TEST_SOCKET_0, readfds);
+            ready++;
+        }
+    }
+
+    if (writefds != NULL)
+    {
+        bool keep = g_socket_2_writable && FD_ISSET(TEST_SOCKET_2, writefds);
+        FD_ZERO(writefds);
+        if (keep)
+        {
+            FD_SET(TEST_SOCKET_2, writefds);
+            ready++;
+        }
+    }
+
+    return ready;
 }
 
 #include "testrunnerswitcher.h"
@@ -262,6 +309,7 @@ BEGIN_TEST_SUITE(dns_resolver_ares_ut)
         REGISTER_GLOBAL_MOCK_HOOK(ares_gethostbyname, my_ares_gethostbyname);
         REGISTER_GLOBAL_MOCK_HOOK(ares_getsock, my_ares_getsock);
         REGISTER_GLOBAL_MOCK_HOOK(ares_process_fd, my_ares_process_fd);
+        REGISTER_GLOBAL_MOCK_HOOK(select, my_select);
     }
 
     TEST_SUITE_CLEANUP(suite_cleanup)
@@ -282,6 +330,10 @@ BEGIN_TEST_SUITE(dns_resolver_ares_ut)
         g_query_arg = NULL;
         g_process_fd_call_count = 0;
         g_getsock_bitmask = 0;
+        g_socket_0_readable = false;
+        g_socket_2_writable = false;
+        g_select_call_count = 0;
+        g_select_result_override = 0;
         g_live_allocations = 0;
         memset(g_process_fd_calls, 0, sizeof(g_process_fd_calls));
     }
@@ -550,13 +602,57 @@ BEGIN_TEST_SUITE(dns_resolver_ares_ut)
 #endif // IPV6_ENABLED
 
     /* Tests_SRS_dns_resolver_30_021: [ dns_resolver_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
-    TEST_FUNCTION(dns_resolver_ares__poll_with_no_ready_socket__never_derives_a_socket)
+    TEST_FUNCTION(dns_resolver_ares__poll_with_no_socket_to_watch__never_derives_a_socket)
     {
         // ares_getsock only writes the entries its bitmask reports, so an empty bitmask
         // must not produce a socket; c-ares is still driven so it can time the query out.
         ///arrange
         DNSRESOLVER_HANDLE dns = start_lookup();
         g_getsock_bitmask = 0;
+
+        ///act
+        ASSERT_IS_FALSE(dns_resolver_is_lookup_complete(dns));
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, 0, g_select_call_count, "readiness was tested with nothing to watch");
+        ASSERT_ARE_EQUAL(int, 1, g_process_fd_call_count);
+        ASSERT_ARE_EQUAL(int, (int)ARES_SOCKET_BAD, (int)g_process_fd_calls[0].read_fd);
+        ASSERT_ARE_EQUAL(int, (int)ARES_SOCKET_BAD, (int)g_process_fd_calls[0].write_fd);
+
+        ///cleanup
+        dns_resolver_destroy(dns);
+    }
+
+    /* Tests_SRS_dns_resolver_30_021: [ dns_resolver_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
+    TEST_FUNCTION(dns_resolver_ares__poll_when_no_watched_socket_is_ready__only_drives_timeouts)
+    {
+        // The ares_getsock bitmask is the direction c-ares wants to wait on, not readiness,
+        // so a socket that has not fired must not be handed to ares_process_fd.
+        ///arrange
+        DNSRESOLVER_HANDLE dns = start_lookup();
+        g_getsock_bitmask = ARES_GETSOCK_READABLE(0xFFFFFFFF, 0);
+        g_socket_0_readable = false;
+
+        ///act
+        ASSERT_IS_FALSE(dns_resolver_is_lookup_complete(dns));
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, 1, g_select_call_count);
+        ASSERT_ARE_EQUAL(int, 1, g_process_fd_call_count);
+        ASSERT_ARE_EQUAL(int, (int)ARES_SOCKET_BAD, (int)g_process_fd_calls[0].read_fd);
+        ASSERT_ARE_EQUAL(int, (int)ARES_SOCKET_BAD, (int)g_process_fd_calls[0].write_fd);
+
+        ///cleanup
+        dns_resolver_destroy(dns);
+    }
+
+    /* Tests_SRS_dns_resolver_30_021: [ dns_resolver_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
+    TEST_FUNCTION(dns_resolver_ares__poll_when_select_fails__only_drives_timeouts)
+    {
+        ///arrange
+        DNSRESOLVER_HANDLE dns = start_lookup();
+        g_getsock_bitmask = ARES_GETSOCK_READABLE(0xFFFFFFFF, 0);
+        g_select_result_override = -1;
 
         ///act
         ASSERT_IS_FALSE(dns_resolver_is_lookup_complete(dns));
@@ -576,6 +672,7 @@ BEGIN_TEST_SUITE(dns_resolver_ares_ut)
         ///arrange
         DNSRESOLVER_HANDLE dns = start_lookup();
         g_getsock_bitmask = ARES_GETSOCK_READABLE(0xFFFFFFFF, 0);
+        g_socket_0_readable = true;
 
         ///act
         ASSERT_IS_FALSE(dns_resolver_is_lookup_complete(dns));
@@ -597,6 +694,8 @@ BEGIN_TEST_SUITE(dns_resolver_ares_ut)
         ///arrange
         DNSRESOLVER_HANDLE dns = start_lookup();
         g_getsock_bitmask = ARES_GETSOCK_READABLE(0xFFFFFFFF, 0) | ARES_GETSOCK_WRITABLE(0xFFFFFFFF, 2);
+        g_socket_0_readable = true;
+        g_socket_2_writable = true;
 
         ///act
         ASSERT_IS_FALSE(dns_resolver_is_lookup_complete(dns));
@@ -607,6 +706,27 @@ BEGIN_TEST_SUITE(dns_resolver_ares_ut)
         ASSERT_ARE_EQUAL(int, (int)ARES_SOCKET_BAD, (int)g_process_fd_calls[0].write_fd);
         ASSERT_ARE_EQUAL(int, (int)ARES_SOCKET_BAD, (int)g_process_fd_calls[1].read_fd);
         ASSERT_ARE_EQUAL(int, (int)TEST_SOCKET_2, (int)g_process_fd_calls[1].write_fd);
+
+        ///cleanup
+        dns_resolver_destroy(dns);
+    }
+
+    /* Tests_SRS_dns_resolver_30_021: [ dns_resolver_is_create_complete shall perform the asynchronous work of DNS lookup and log any errors. ]*/
+    TEST_FUNCTION(dns_resolver_ares__poll_with_only_one_of_two_watched_sockets_ready__processes_only_that_one)
+    {
+        ///arrange
+        DNSRESOLVER_HANDLE dns = start_lookup();
+        g_getsock_bitmask = ARES_GETSOCK_READABLE(0xFFFFFFFF, 0) | ARES_GETSOCK_WRITABLE(0xFFFFFFFF, 2);
+        g_socket_0_readable = false;
+        g_socket_2_writable = true;
+
+        ///act
+        ASSERT_IS_FALSE(dns_resolver_is_lookup_complete(dns));
+
+        ///assert
+        ASSERT_ARE_EQUAL(int, 1, g_process_fd_call_count);
+        ASSERT_ARE_EQUAL(int, (int)ARES_SOCKET_BAD, (int)g_process_fd_calls[0].read_fd);
+        ASSERT_ARE_EQUAL(int, (int)TEST_SOCKET_2, (int)g_process_fd_calls[0].write_fd);
 
         ///cleanup
         dns_resolver_destroy(dns);

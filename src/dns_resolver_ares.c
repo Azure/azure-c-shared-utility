@@ -244,34 +244,93 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
     }
 }
 
-// ares_getsock reports which of the channel's sockets are ready, and only writes
-// the entries it reports. A zero bitmask leaves socks untouched, so no socket may
-// be derived from it; ares_process_fd is still called with ARES_SOCKET_BAD so that
-// c-ares can time the outstanding query out.
+// ares_getsock reports the sockets c-ares wants to wait on and the direction it is
+// interested in; it does not report readiness, and it only writes the entries its
+// bitmask covers. Readiness is established with a non-blocking select so that only
+// the directions that actually fired are handed back. When nothing fired,
+// ares_process_fd still runs with ARES_SOCKET_BAD so c-ares can time the query out.
 static void process_ares_sockets(DNSRESOLVER_INSTANCE* dns)
 {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
+    fd_set read_fds;
+    fd_set write_fds;
+    struct timeval no_wait;
     int bitmask;
     int i;
-    bool any_socket_ready = false;
+    int nfds = 0;
+    bool any_socket_watched = false;
+    bool any_socket_processed = false;
 
     bitmask = ares_getsock(dns->ares_resolver, socks, ARES_GETSOCK_MAXNUM);
+
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
 
     for (i = 0; i < ARES_GETSOCK_MAXNUM; i++)
     {
         bool readable = ARES_GETSOCK_READABLE(bitmask, i) != 0;
         bool writable = ARES_GETSOCK_WRITABLE(bitmask, i) != 0;
 
-        if (readable || writable)
+        if (!readable && !writable)
         {
-            any_socket_ready = true;
+            continue;
+        }
+
+        if (socks[i] < 0 || socks[i] >= FD_SETSIZE)
+        {
+            // Out of range for an fd_set, so readiness cannot be tested. Hand the socket
+            // to c-ares directly rather than dropping the event.
+            any_socket_processed = true;
             ares_process_fd(dns->ares_resolver,
                 readable ? socks[i] : ARES_SOCKET_BAD,
                 writable ? socks[i] : ARES_SOCKET_BAD);
+            continue;
+        }
+
+        if (readable)
+        {
+            FD_SET(socks[i], &read_fds);
+        }
+        if (writable)
+        {
+            FD_SET(socks[i], &write_fds);
+        }
+        if ((int)socks[i] >= nfds)
+        {
+            nfds = (int)socks[i] + 1;
+        }
+        any_socket_watched = true;
+    }
+
+    no_wait.tv_sec = 0;
+    no_wait.tv_usec = 0;
+
+    if (any_socket_watched && select(nfds, &read_fds, &write_fds, NULL, &no_wait) > 0)
+    {
+        for (i = 0; i < ARES_GETSOCK_MAXNUM; i++)
+        {
+            bool readable;
+            bool writable;
+
+            if (socks[i] < 0 || socks[i] >= FD_SETSIZE)
+            {
+                continue;
+            }
+
+            readable = FD_ISSET(socks[i], &read_fds) != 0;
+            writable = FD_ISSET(socks[i], &write_fds) != 0;
+
+            if (readable || writable)
+            {
+                any_socket_processed = true;
+                ares_process_fd(dns->ares_resolver,
+                    readable ? socks[i] : ARES_SOCKET_BAD,
+                    writable ? socks[i] : ARES_SOCKET_BAD);
+            }
         }
     }
 
-    if (!any_socket_ready)
+    if (!any_socket_processed)
     {
         ares_process_fd(dns->ares_resolver, ARES_SOCKET_BAD, ARES_SOCKET_BAD);
     }
