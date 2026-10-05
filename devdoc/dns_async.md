@@ -5,9 +5,9 @@ dns_resolver
 
 **dns_resolver** performs an asynchronous lookup of a TCP IPv4 address given a host name.
 
-This module is intended to locate IP addresses for an Azure server, and more flexible behavior is deliberately out-of-scope at this time. IPv6 address lookup is currently out-of-scope, although support for it may be added in the future via addition of a `dns_resolver_get_ipv6` call.
+This module is intended to locate IP addresses for an Azure server, and more flexible behavior is deliberately out-of-scope at this time. IPv6 address lookup is performed when the build enables it (`enable_ipv6`).
 
-The present implementation will not actually provide asynchronous behavior, which is a feature to be added in the future.
+Two implementations exist. `dns_resolver_sync.c` is the default and resolves with a blocking `getaddrinfo` call, so its lookup is already complete the first time it is polled. `dns_resolver_ares.c` is selected by `use_c_ares` and is genuinely asynchronous: each poll advances the c-ares channel and the lookup completes only once c-ares reports an answer, an error or a timeout. Either way the caller polls `dns_resolver_is_lookup_complete` until it returns `true`, and a completed lookup may have succeeded or failed.
 ## References
 
 [dns_resolver.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/dns_resolver.h)  
@@ -27,8 +27,9 @@ typedef void DNSRESOLVER_OPTIONS;
 **SRS_dns_resolver_30_002: [** The dns_resolver shall implement the methods defined in `dns_resolver.h`.
 ```c
 DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNSRESOLVER_OPTIONS* options);
-int dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns, bool* is_complete);
+bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns);
 uint32_t dns_resolver_get_ipv4(DNSRESOLVER_HANDLE dns);
+struct addrinfo* dns_resolver_get_addrInfo(DNSRESOLVER_HANDLE dns);
 void dns_resolver_destroy(DNSRESOLVER_HANDLE dns);
 ```
  **]**
@@ -55,7 +56,7 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNS
 `dns_resolver_is_lookup_complete` tests whether `dns_resolver_create`'s single attempt at DNS lookup has been completed. To complete the lookup process, this method must be called repeatedly until it returns `true`.
 
 ```c
-bool dns_resolver_is_create_complete(DNSRESOLVER_HANDLE dns);
+bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns);
 ```
 
 **SRS_dns_resolver_30_020: [** If the `dns` parameter is NULL, `dns_resolver_is_create_complete` shall log an error and return `false`. **]**

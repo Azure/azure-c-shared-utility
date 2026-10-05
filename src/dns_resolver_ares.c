@@ -84,10 +84,11 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNS
             }
             else
             {
-                status = ares_library_init(ARES_LIB_INIT_WIN32);
+                status = ares_library_init(ARES_LIB_INIT_ALL);
                 if (status != ARES_SUCCESS)
                 {
-                    LogError("ares_library_init failed: %s\n", ares_strerror(status));
+                    LogError("ares_library_init failed: %s", ares_strerror(status));
+                    free(result->hostname);
                     free(result);
                     result = NULL;
                 }
@@ -96,8 +97,9 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNS
                     status = ares_init(&(result->ares_resolver));
                     if(status != ARES_SUCCESS)
                     {
-                        LogError("ares_init failed: %s\n", ares_strerror(status));
+                        LogError("ares_init failed: %s", ares_strerror(status));
                         ares_library_cleanup();
+                        free(result->hostname);
                         free(result);
                         result = NULL;
                     }
@@ -114,109 +116,223 @@ DNSRESOLVER_HANDLE dns_resolver_create(const char* hostname, int port, const DNS
     return result;
 }
 
+// Every exit path out of the query callback must end the lookup, otherwise
+// dns_resolver_is_lookup_complete never returns true and the caller polls forever.
+static void complete_lookup(DNSRESOLVER_INSTANCE* dns, bool failed)
+{
+    dns->is_failed = failed;
+    dns->is_complete = true;
+    dns->in_progress = false;
+}
+
+static void release_addrinfo(DNSRESOLVER_INSTANCE* dns)
+{
+    if (dns->addrInfo != NULL)
+    {
+        if (dns->addrInfo->ai_addr != NULL)
+        {
+            free(dns->addrInfo->ai_addr);
+        }
+        free(dns->addrInfo);
+        dns->addrInfo = NULL;
+    }
+}
+
 static void query_completed_cb(void *arg, int status, int timeouts, struct hostent *he)
 {
-    int i;
     struct addrinfo *ptr = NULL;
     struct sockaddr_in *addr;
 #ifdef IPV6_ENABLED
     struct sockaddr_in6 *addr6;
+    const uint8_t zero_ip_v6[16] = { 0 };
 #endif // IPV6_ENABLED
 
     DNSRESOLVER_INSTANCE *dns = (DNSRESOLVER_INSTANCE *)arg;
     (void)timeouts;
 
-    if(status != ARES_SUCCESS)
+    /* Codes_SRS_dns_resolver_30_022: [ If the DNS lookup process has completed, dns_resolver_is_create_complete shall return true. ]*/
+    if (status != ARES_SUCCESS)
     {
-        LogError("ARES error: %d", status);
+        LogError("Failed DNS lookup for %s: %d (%s)", dns->hostname, status, ares_strerror(status));
+        complete_lookup(dns, true);
     }
-    else
+    else if (he == NULL || he->h_addr_list == NULL || he->h_addr_list[0] == NULL)
     {
-        dns->addrInfo = calloc(1, sizeof(struct addrinfo));
-        if(dns->addrInfo == NULL)
+        LogError("Failed DNS lookup for %s: no address returned", dns->hostname);
+        complete_lookup(dns, true);
+    }
+#ifdef IPV6_ENABLED
+    else if (he->h_addrtype == AF_INET6)
+    {
+        if (he->h_length != (int)sizeof(struct in6_addr))
+        {
+            LogError("Failed DNS lookup for %s: unexpected IPv6 address length %d", dns->hostname, he->h_length);
+            complete_lookup(dns, true);
+        }
+        else if ((dns->addrInfo = calloc(1, sizeof(struct addrinfo))) == NULL)
         {
             LogError("dns addrInfo: allocation failed");
-            dns->is_failed = true;
-            dns->is_complete = true;
-            dns->in_progress = false;
+            complete_lookup(dns, true);
         }
-#ifdef IPV6_ENABLED
-        else if (he->h_addrtype == AF_INET6)
+        else if ((dns->addrInfo->ai_addr = calloc(1, sizeof(struct sockaddr_in6))) == NULL)
         {
-            ptr = dns->addrInfo;
-
-            ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in6));
-
-            if(ptr->ai_addr == NULL)
-            {
-                LogError("dns addrinfo ai_addr: allocation failed");
-                free(dns->addrInfo);
-                dns->addrInfo = NULL;
-                dns->is_failed = true;
-                dns->is_complete = true;
-                dns->in_progress = false;
-            } 
-            else 
-            {
-                addr6 = (void *)ptr->ai_addr;
-
-                memcpy(&addr6->sin6_addr, he->h_addr_list[0], sizeof(struct in6_addr));
-                addr6->sin6_family = AF_INET6;
-                addr6->sin6_port = htons((unsigned short)dns->port);
-
-                /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-                memcpy(dns->ip_v6, EXTRACT_IPV6(ptr), 16); // IPv6 address is 16 bytes
-                dns->addrInfo->ai_addrlen = sizeof(struct sockaddr_in6);
-                dns->addrInfo->ai_family = AF_INET6;
-                dns->addrInfo->ai_socktype = SOCK_STREAM;
-                dns->addrInfo->ai_protocol = IPPROTO_TCP;
-
-                dns->is_failed = (dns->ip_v6 == 0);
-                dns->is_complete = true;
-                dns->in_progress = false;
-            }
+            LogError("dns addrinfo ai_addr: allocation failed");
+            release_addrinfo(dns);
+            complete_lookup(dns, true);
         }
-#endif // IPV6_ENABLED
         else
         {
             ptr = dns->addrInfo;
+            addr6 = (void *)ptr->ai_addr;
 
-            ptr->ai_addr = calloc(1, sizeof(struct sockaddr_in));
+            memcpy(&addr6->sin6_addr, he->h_addr_list[0], sizeof(struct in6_addr));
+            addr6->sin6_family = AF_INET6;
+            addr6->sin6_port = htons((unsigned short)dns->port);
 
-            if(ptr->ai_addr == NULL)
+            memcpy(dns->ip_v6, EXTRACT_IPV6(ptr), 16); // IPv6 address is 16 bytes
+            dns->addrInfo->ai_addrlen = sizeof(struct sockaddr_in6);
+            dns->addrInfo->ai_family = AF_INET6;
+            dns->addrInfo->ai_socktype = SOCK_STREAM;
+            dns->addrInfo->ai_protocol = IPPROTO_TCP;
+
+            /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
+            complete_lookup(dns, memcmp(dns->ip_v6, zero_ip_v6, sizeof(zero_ip_v6)) == 0);
+        }
+    }
+#endif // IPV6_ENABLED
+    else if (he->h_addrtype == AF_INET)
+    {
+        if (he->h_length != (int)sizeof(struct in_addr))
+        {
+            LogError("Failed DNS lookup for %s: unexpected IPv4 address length %d", dns->hostname, he->h_length);
+            complete_lookup(dns, true);
+        }
+        else if ((dns->addrInfo = calloc(1, sizeof(struct addrinfo))) == NULL)
+        {
+            LogError("dns addrInfo: allocation failed");
+            complete_lookup(dns, true);
+        }
+        else if ((dns->addrInfo->ai_addr = calloc(1, sizeof(struct sockaddr_in))) == NULL)
+        {
+            LogError("dns addrinfo ai_addr: allocation failed");
+            release_addrinfo(dns);
+            complete_lookup(dns, true);
+        }
+        else
+        {
+            ptr = dns->addrInfo;
+            addr = (void *)ptr->ai_addr;
+
+            memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
+            addr->sin_family = he->h_addrtype;
+            addr->sin_port = htons((unsigned short)dns->port);
+
+            dns->ip_v4 = EXTRACT_IPV4(ptr);
+            dns->addrInfo->ai_addrlen = sizeof(struct sockaddr_in);
+            dns->addrInfo->ai_family = AF_INET;
+            dns->addrInfo->ai_socktype = SOCK_STREAM;
+            dns->addrInfo->ai_protocol = IPPROTO_TCP;
+
+            /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
+            complete_lookup(dns, dns->ip_v4 == 0);
+        }
+    }
+    else
+    {
+        LogError("Failed DNS lookup for %s: unexpected address family %d", dns->hostname, he->h_addrtype);
+        complete_lookup(dns, true);
+    }
+}
+
+// ares_getsock reports the sockets c-ares wants to wait on and the direction it is
+// interested in; it does not report readiness, and it only writes the entries its
+// bitmask covers. Readiness is established with a non-blocking select so that only
+// the directions that actually fired are handed back. When nothing fired,
+// ares_process_fd still runs with ARES_SOCKET_BAD so c-ares can time the query out.
+static void process_ares_sockets(DNSRESOLVER_INSTANCE* dns)
+{
+    ares_socket_t socks[ARES_GETSOCK_MAXNUM];
+    fd_set read_fds;
+    fd_set write_fds;
+    struct timeval no_wait;
+    int bitmask;
+    int i;
+    int nfds = 0;
+    bool any_socket_watched = false;
+    bool any_socket_processed = false;
+
+    bitmask = ares_getsock(dns->ares_resolver, socks, ARES_GETSOCK_MAXNUM);
+
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+
+    for (i = 0; i < ARES_GETSOCK_MAXNUM; i++)
+    {
+        bool readable = ARES_GETSOCK_READABLE(bitmask, i) != 0;
+        bool writable = ARES_GETSOCK_WRITABLE(bitmask, i) != 0;
+
+        if (!readable && !writable)
+        {
+            continue;
+        }
+
+        if (socks[i] < 0 || socks[i] >= FD_SETSIZE)
+        {
+            // Out of range for an fd_set, so readiness cannot be tested. Hand the socket
+            // to c-ares directly rather than dropping the event.
+            any_socket_processed = true;
+            ares_process_fd(dns->ares_resolver,
+                readable ? socks[i] : ARES_SOCKET_BAD,
+                writable ? socks[i] : ARES_SOCKET_BAD);
+            continue;
+        }
+
+        if (readable)
+        {
+            FD_SET(socks[i], &read_fds);
+        }
+        if (writable)
+        {
+            FD_SET(socks[i], &write_fds);
+        }
+        if ((int)socks[i] >= nfds)
+        {
+            nfds = (int)socks[i] + 1;
+        }
+        any_socket_watched = true;
+    }
+
+    no_wait.tv_sec = 0;
+    no_wait.tv_usec = 0;
+
+    if (any_socket_watched && select(nfds, &read_fds, &write_fds, NULL, &no_wait) > 0)
+    {
+        for (i = 0; i < ARES_GETSOCK_MAXNUM; i++)
+        {
+            bool readable;
+            bool writable;
+
+            if (socks[i] < 0 || socks[i] >= FD_SETSIZE)
             {
-                LogError("dns addrinfo ai_addr: allocation failed");
-                free(dns->addrInfo);
-                dns->addrInfo = NULL;
-                dns->is_failed = true;
-                dns->is_complete = true;
-                dns->in_progress = false;
-            } 
-            else 
+                continue;
+            }
+
+            readable = FD_ISSET(socks[i], &read_fds) != 0;
+            writable = FD_ISSET(socks[i], &write_fds) != 0;
+
+            if (readable || writable)
             {
-                addr = (void *)ptr->ai_addr;
-
-                if (he->h_addrtype == AF_INET)
-                {
-                    memcpy(&addr->sin_addr, he->h_addr_list[0], sizeof(struct in_addr));
-                    addr->sin_family = he->h_addrtype;
-                    addr->sin_port = htons((unsigned short)dns->port);
-
-                    /* Codes_SRS_dns_resolver_30_033: [ If dns_resolver_is_create_complete has returned true and the lookup process has failed, dns_resolver_get_ipv4 shall return 0. ]*/
-                    dns->ip_v4 = EXTRACT_IPV4(ptr);
-                    dns->addrInfo->ai_addrlen = sizeof(struct sockaddr_in);
-                    dns->addrInfo->ai_family = AF_INET;
-                    dns->addrInfo->ai_socktype = SOCK_STREAM;
-                    dns->addrInfo->ai_protocol = IPPROTO_TCP;
-
-                    dns->is_failed = (dns->ip_v4 == 0);
-                    dns->is_complete = true;
-                    dns->in_progress = false;
-                }
-
-
+                any_socket_processed = true;
+                ares_process_fd(dns->ares_resolver,
+                    readable ? socks[i] : ARES_SOCKET_BAD,
+                    writable ? socks[i] : ARES_SOCKET_BAD);
             }
         }
+    }
+
+    if (!any_socket_processed)
+    {
+        ares_process_fd(dns->ares_resolver, ARES_SOCKET_BAD, ARES_SOCKET_BAD);
     }
 }
 
@@ -224,7 +340,6 @@ static void query_completed_cb(void *arg, int status, int timeouts, struct hoste
 bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
 {
     DNSRESOLVER_INSTANCE* dns = (DNSRESOLVER_INSTANCE*)dns_in;
-    ares_socket_t socket;
 
     bool result;
     if (dns == NULL)
@@ -233,37 +348,32 @@ bool dns_resolver_is_lookup_complete(DNSRESOLVER_HANDLE dns_in)
         LogError("NULL dns");
         result = false;
     }
+    else if (dns->is_complete)
+    {
+        /* Codes_SRS_dns_resolver_30_024: [ If dns_resolver_is_create_complete has previously returned true, dns_resolver_is_create_complete shall do nothing and return true. ]*/
+        result = true;
+    }
     else
     {
-        if (dns->is_complete)
+        if (!dns->in_progress)
         {
-            /* Codes_SRS_dns_resolver_30_024: [ If dns_resolver_is_create_complete has previously returned true, dns_resolver_is_create_complete shall do nothing and return true. ]*/
-            result = true;
-        }
-        else if(dns->is_failed)
-        {
-            dns->in_progress = false;
-            result = false;
-        }
-        else if(!dns->in_progress)
-        {
+            // Set before the call because c-ares may invoke the callback synchronously,
+            // for instance when the name is served from the hosts file.
+            dns->in_progress = true;
 #ifdef IPV6_ENABLED
             ares_gethostbyname(dns->ares_resolver, dns->hostname, AF_UNSPEC, query_completed_cb, (void*)dns);
 #else
             ares_gethostbyname(dns->ares_resolver, dns->hostname, AF_INET, query_completed_cb, (void*)dns);
 #endif // IPV6_ENABLED
-            dns->in_progress = true;
-            // This synchronous implementation is incapable of being incomplete, so SRS_dns_resolver_30_023 does not ever happen
-            /* Codes_SRS_dns_resolver_30_023: [ If the DNS lookup process is not yet complete, dns_resolver_is_create_complete shall return false. ]*/
-            /* Codes_SRS_dns_resolver_30_022: [ If the DNS lookup process has completed, dns_resolver_is_create_complete shall return true. ]*/
-            result = false;
         }
         else
         {
-            ares_getsock((ares_channel)dns->ares_resolver, &socket, 1);
-            ares_process_fd((ares_channel)dns->ares_resolver, socket, socket);
-            result = false;
+            process_ares_sockets(dns);
         }
+
+        /* Codes_SRS_dns_resolver_30_023: [ If the DNS lookup process is not yet complete, dns_resolver_is_create_complete shall return false. ]*/
+        /* Codes_SRS_dns_resolver_30_022: [ If the DNS lookup process has completed, dns_resolver_is_create_complete shall return true. ]*/
+        result = dns->is_complete;
     }
 
     return result;
@@ -284,17 +394,9 @@ void dns_resolver_destroy(DNSRESOLVER_HANDLE dns_in)
         ares_destroy(dns->ares_resolver);
         ares_library_cleanup();
 
-        if(dns->addrInfo != NULL)
-        {
-            if(dns->addrInfo->ai_addr != NULL)
-            {
-                free(dns->addrInfo->ai_addr);
-            }
-            free(dns->addrInfo);
-        }
+        release_addrinfo(dns);
         free(dns->hostname);
         free(dns);
-        dns = NULL;
     }
 }
 
