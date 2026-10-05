@@ -104,16 +104,21 @@ static unsigned char* convert_cert_to_binary(const char* crypt_value, DWORD cryp
 
 /* Decodes a DER encoded private key of a known structure type (PKCS_RSA_PRIVATE_KEY or
    X509_ECC_PRIVATE_KEY) into the key blob consumed further down by CryptImportKey/NCryptImportKey.
-   The size of the resulting blob is returned in blob_size (when not NULL). */
-static unsigned char* decode_private_key_blob(LPCSTR key_type, const unsigned char* private_key, DWORD key_length, DWORD* blob_size)
+   The size of the resulting blob is returned in blob_size (when not NULL).
+   On failure, is_format_mismatch tells the caller whether the blob simply is not of key_type - the
+   only case worth reporting or retrying with another encoding, and the only one left unlogged. */
+static unsigned char* decode_private_key_blob(LPCSTR key_type, const unsigned char* private_key, DWORD key_length, DWORD* blob_size, BOOL* is_format_mismatch)
 {
     unsigned char* result;
     DWORD private_key_blob_size = 0;
+
+    *is_format_mismatch = FALSE;
 
     /*Codes_SRS_X509_SCHANNEL_02_004: [ x509_schannel_create shall decode the private key by calling CryptDecodeObjectEx. ]*/
     if (!CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, key_type, private_key, key_length, 0, NULL, NULL, &private_key_blob_size))
     {
         /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+        *is_format_mismatch = TRUE;
         result = NULL;
     }
     else if ((result = (unsigned char*)malloc(private_key_blob_size)) == NULL)
@@ -244,12 +249,15 @@ static unsigned char* decode_pkcs8_private_key(const unsigned char* private_key,
         }
         else if (strcmp(key_info->Algorithm.pszObjId, szOID_RSA_RSA) == 0)
         {
-            if ((result = decode_private_key_blob(pkcs1_rsa_private_key_type, key_info->PrivateKey.pbData, key_info->PrivateKey.cbData, blob_size)) == NULL)
+            BOOL is_format_mismatch = FALSE;
+
+            if (((result = decode_private_key_blob(pkcs1_rsa_private_key_type, key_info->PrivateKey.pbData, key_info->PrivateKey.cbData, blob_size, &is_format_mismatch)) == NULL) &&
+                is_format_mismatch)
             {
                 /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
                 LogErrorWinHTTPWithGetLastErrorAsString("Failed to decode the RSA private key wrapped in the PKCS#8 private key info");
             }
-            else
+            else if (result != NULL)
             {
                 *cert_type = x509_TYPE_RSA;
             }
@@ -257,17 +265,16 @@ static unsigned char* decode_pkcs8_private_key(const unsigned char* private_key,
 #if _MSC_VER > 1500
         else if (strcmp(key_info->Algorithm.pszObjId, szOID_ECC_PUBLIC_KEY) == 0)
         {
-            if ((result = decode_private_key_blob(sec1_ecc_private_key_type, key_info->PrivateKey.pbData, key_info->PrivateKey.cbData, blob_size)) == NULL)
+            BOOL is_format_mismatch = FALSE;
+
+            if (((result = decode_private_key_blob(sec1_ecc_private_key_type, key_info->PrivateKey.pbData, key_info->PrivateKey.cbData, blob_size, &is_format_mismatch)) == NULL) &&
+                is_format_mismatch)
             {
-                /*the ECPrivateKey carried by a PKCS#8 private key info has no curve OID of its own*/
+                /*the ECPrivateKey carried by a PKCS#8 private key info has no curve OID of its own.
+                  Only a format mismatch can mean that; any other failure has already been reported*/
                 result = decode_ecc_private_key_without_curve_oid(key_info->PrivateKey.pbData, key_info->PrivateKey.cbData, blob_size);
             }
-            if (result == NULL)
-            {
-                /*Codes_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
-                LogError("Failed to decode the ECC private key wrapped in the PKCS#8 private key info");
-            }
-            else
+            if (result != NULL)
             {
                 *cert_type = x509_TYPE_ECC;
             }

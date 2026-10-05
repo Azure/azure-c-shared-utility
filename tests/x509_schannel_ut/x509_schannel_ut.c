@@ -1113,6 +1113,39 @@ TEST_FUNCTION(x509_schannel_create_with_pkcs8_private_key_of_unsupported_algorit
 }
 
 /*Tests_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
+TEST_FUNCTION(x509_schannel_create_with_an_encrypted_pkcs8_private_key_fails)
+{
+    ///arrange
+    X509_SCHANNEL_HANDLE h;
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is creating the handle storage space*/
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("certificate", 0, CRYPT_STRING_ANY, NULL, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("certificate", 0, CRYPT_STRING_ANY, IGNORED_ARG, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("private key", 0, CRYPT_STRING_ANY, NULL, IGNORED_ARG, NULL, NULL));
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CryptStringToBinaryA("private key", 0, CRYPT_STRING_ANY, IGNORED_ARG, IGNORED_ARG, NULL, NULL));
+    /*an encrypted PKCS#8 private key is none of the supported encodings ...*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG)).SetReturn(FALSE);
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_ECC_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG)).SetReturn(FALSE);
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_PRIVATE_KEY_INFO, IGNORED_ARG, IGNORED_ARG, CRYPT_DECODE_ALLOC_FLAG, NULL, IGNORED_ARG, IGNORED_ARG)).SetReturn(FALSE);
+    /*... but it is recognised as an EncryptedPrivateKeyInfo, so the error can say so*/
+    STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_ENCRYPTED_PRIVATE_KEY_INFO, IGNORED_ARG, IGNORED_ARG, CRYPT_DECODE_ALLOC_FLAG, NULL, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+
+    ///act
+    h = x509_schannel_create("certificate", "private key");
+
+    ///assert
+    ASSERT_IS_NULL(h);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    ///cleanup
+}
+
+/*Tests_SRS_X509_SCHANNEL_02_010: [ Otherwise, x509_schannel_create shall fail and return a NULL X509_SCHANNEL_HANDLE. ]*/
 TEST_FUNCTION(x509_schannel_create_with_a_private_key_that_cannot_be_decoded_fails)
 {
     ///arrange

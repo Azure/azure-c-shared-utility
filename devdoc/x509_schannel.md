@@ -45,8 +45,11 @@ The private key is accepted in any of the following PEM/DER encodings:
 RFC 5915 requires the `parameters [0]` (curve OID) field of `ECPrivateKey` to be omitted when the key is
 carried inside a PKCS#8 `PrivateKeyInfo`. If `X509_ECC_PRIVATE_KEY` rejects that encoding, the private key
 scalar is recovered from the raw `ECPrivateKey` `SEQUENCE` instead (`X509_SEQUENCE_OF_ANY` followed by
-`X509_OCTET_STRING`); the public point comes from the certificate and the curve from the scalar length, so
-the curve OID is not needed.
+`X509_OCTET_STRING`) and the public point comes from the certificate.
+
+The curve is then selected from the scalar length, which only distinguishes the three curves the adapter
+supports: 32 bytes is treated as P-256, 48 as P-384, and any other length as P-521. A key on any other
+curve is not detected here and is rejected later by `NCryptImportKey`.
 
 `-----BEGIN ENCRYPTED PRIVATE KEY-----` (PKCS#8 `EncryptedPrivateKeyInfo`) is not supported. It is detected
 so that the failure is reported with an actionable message rather than as a generic decode error.
