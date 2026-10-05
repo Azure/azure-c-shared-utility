@@ -42,10 +42,11 @@ The private key is accepted in any of the following PEM/DER encodings:
 | `-----BEGIN EC PRIVATE KEY-----` | RFC 5915 / SEC1 `ECPrivateKey` | `CryptDecodeObjectEx` with `X509_ECC_PRIVATE_KEY` |
 | `-----BEGIN PRIVATE KEY-----` | PKCS#8 `PrivateKeyInfo` | `CryptDecodeObjectEx` with `PKCS_PRIVATE_KEY_INFO`, then the wrapped key is decoded as PKCS#1 (`szOID_RSA_RSA`) or RFC 5915 (`szOID_ECC_PUBLIC_KEY`) according to the algorithm identifier |
 
-RFC 5915 requires the `parameters [0]` (curve OID) field of `ECPrivateKey` to be omitted when the key is
-carried inside a PKCS#8 `PrivateKeyInfo`. If `X509_ECC_PRIVATE_KEY` rejects that encoding, the private key
-scalar is recovered from the raw `ECPrivateKey` `SEQUENCE` instead (`X509_SEQUENCE_OF_ANY` followed by
-`X509_OCTET_STRING`) and the public point comes from the certificate.
+RFC 5915 says the `parameters [0]` (curve OID) field of `ECPrivateKey` SHOULD be omitted when the key is
+carried inside a PKCS#8 `PrivateKeyInfo`; a conforming key may still carry it, and is then decoded directly
+by `X509_ECC_PRIVATE_KEY`. If that decoder rejects the encoding, the private key scalar is recovered from
+the raw `ECPrivateKey` `SEQUENCE` instead (`X509_SEQUENCE_OF_ANY` followed by `X509_OCTET_STRING`) and the
+public point comes from the certificate.
 
 The curve is then selected from the scalar length, which only distinguishes the three curves the adapter
 supports: 32 bytes is treated as P-256, 48 as P-384, and any other length as P-521. A key on any other

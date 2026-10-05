@@ -142,12 +142,12 @@ static unsigned char* decode_private_key_blob(LPCSTR key_type, const unsigned ch
 }
 
 #if _MSC_VER > 1500
-/* RFC 5915 says the ECPrivateKey "parameters [0]" field MUST be omitted when the key is carried
+/* RFC 5915 says the ECPrivateKey "parameters [0]" field SHOULD be omitted when the key is carried
    inside a PKCS#8 PrivateKeyInfo (the curve lives in the outer AlgorithmIdentifier), and that is
-   what OpenSSL emits. Should the ASN.1 decoder reject that shape, rebuild the
-   CRYPT_ECC_PRIVATE_KEY_INFO from the raw ECPrivateKey SEQUENCE instead: only the private key
-   scalar is consumed downstream, the public point is taken from the certificate and the curve is
-   derived from the scalar length. */
+   what OpenSSL emits. A conforming key may still carry it, in which case the decoder accepts the
+   key directly and this is not reached. Otherwise rebuild the CRYPT_ECC_PRIVATE_KEY_INFO from the
+   raw ECPrivateKey SEQUENCE: only the private key scalar is consumed downstream, the public point
+   is taken from the certificate and the curve is derived from the scalar length. */
 static unsigned char* decode_ecc_private_key_without_curve_oid(const unsigned char* ecc_private_key, DWORD ecc_private_key_length, DWORD* blob_size)
 {
     unsigned char* result;

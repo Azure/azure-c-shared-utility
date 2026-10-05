@@ -986,10 +986,13 @@ TEST_FUNCTION(x509_schannel_create_with_pkcs8_rsa_private_key_succeeds)
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is allocating space for the decoded private key*/
     STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, PKCS_RSA_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, IGNORED_ARG, IGNORED_ARG));
-    STRICT_EXPECTED_CALL(CryptAcquireContextA(IGNORED_ARG, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT));
-    STRICT_EXPECTED_CALL(CryptImportKey((HCRYPTPROV)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, (HCRYPTKEY)NULL, 0, IGNORED_ARG))
-        .IgnoreArgument_hProv();
-    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_HANDLE_PROP_ID, 0, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CertGetCertificateContextProperty(IGNORED_ARG, CERT_SHA1_HASH_PROP_ID, IGNORED_ARG, IGNORED_ARG)); /*the key container is named after the certificate thumbprint*/
+    STRICT_EXPECTED_CALL(NCryptOpenStorageProvider(IGNORED_ARG, MS_KEY_STORAGE_PROVIDER, 0))
+        .IgnoreArgument_pszProviderName();
+    STRICT_EXPECTED_CALL(NCryptImportKey((NCRYPT_PROV_HANDLE)IGNORED_ARG, (NCRYPT_KEY_HANDLE)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NCRYPT_OVERWRITE_KEY_FLAG))
+        .IgnoreArgument_hProvider()
+        .IgnoreArgument_hImportKey();
+    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_ARG)); /*give the private key*/
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
@@ -1019,16 +1022,13 @@ TEST_FUNCTION(x509_schannel_create_with_pkcs8_ecc_private_key_succeeds)
     STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_ECC_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CertGetCertificateContextProperty(IGNORED_ARG, CERT_SHA1_HASH_PROP_ID, IGNORED_ARG, IGNORED_ARG)); /*the key container is named after the certificate thumbprint*/
     STRICT_EXPECTED_CALL(NCryptOpenStorageProvider(IGNORED_ARG, MS_KEY_STORAGE_PROVIDER, 0))
         .IgnoreArgument_pszProviderName();
     STRICT_EXPECTED_CALL(NCryptImportKey((NCRYPT_PROV_HANDLE)IGNORED_ARG, (NCRYPT_KEY_HANDLE)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NCRYPT_OVERWRITE_KEY_FLAG))
         .IgnoreArgument_hProvider()
         .IgnoreArgument_hImportKey();
-    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
-        .IgnoreArgument_hObject();
-    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
-        .IgnoreArgument_hObject();
-    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_ARG)); /*give the private key*/
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
@@ -1053,7 +1053,7 @@ TEST_FUNCTION(x509_schannel_create_with_pkcs8_ecc_private_key_without_curve_oid_
 
     g_pkcs8_algorithm_oid = szOID_ECC_PUBLIC_KEY;
     setup_x509_schannel_create_pkcs8_common_mocks();
-    /*RFC 5915 requires the curve OID to be omitted inside a PKCS#8 private key info, so the
+    /*RFC 5915 says the curve OID SHOULD be omitted inside a PKCS#8 private key info, so the
       ECC private key decoder can reject the wrapped key ...*/
     STRICT_EXPECTED_CALL(CryptDecodeObjectEx(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, X509_ECC_PRIVATE_KEY, IGNORED_ARG, IGNORED_ARG, 0, NULL, NULL, IGNORED_ARG)).SetReturn(FALSE);
     /*... in which case the private key scalar is recovered from the raw ECPrivateKey sequence*/
@@ -1062,16 +1062,13 @@ TEST_FUNCTION(x509_schannel_create_with_pkcs8_ecc_private_key_without_curve_oid_
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); /*this is allocating the rebuilt ECC private key info*/
     STRICT_EXPECTED_CALL(CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CertGetCertificateContextProperty(IGNORED_ARG, CERT_SHA1_HASH_PROP_ID, IGNORED_ARG, IGNORED_ARG)); /*the key container is named after the certificate thumbprint*/
     STRICT_EXPECTED_CALL(NCryptOpenStorageProvider(IGNORED_ARG, MS_KEY_STORAGE_PROVIDER, 0))
         .IgnoreArgument_pszProviderName();
     STRICT_EXPECTED_CALL(NCryptImportKey((NCRYPT_PROV_HANDLE)IGNORED_ARG, (NCRYPT_KEY_HANDLE)IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NCRYPT_OVERWRITE_KEY_FLAG))
         .IgnoreArgument_hProvider()
         .IgnoreArgument_hImportKey();
-    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
-        .IgnoreArgument_hObject();
-    STRICT_EXPECTED_CALL(NCryptFreeObject((HCRYPTKEY)IGNORED_ARG))
-        .IgnoreArgument_hObject();
-    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_ARG)); /*give the private key*/
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
