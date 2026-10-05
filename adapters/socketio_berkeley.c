@@ -67,6 +67,12 @@
 // connect timeout in seconds
 #define CONNECT_TIMEOUT         10
 
+// Bounds the DNS lookup phase of an open, which an asynchronous resolver can
+// otherwise leave outstanding indefinitely.
+#ifndef DNS_LOOKUP_TIMEOUT
+#define DNS_LOOKUP_TIMEOUT      30
+#endif
+
 typedef enum IO_STATE_TAG
 {
     IO_STATE_CLOSED,
@@ -102,6 +108,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     unsigned char recv_bytes[XIO_RECEIVE_BUFFER_SIZE];
     DNSRESOLVER_HANDLE dns_resolver;
+    struct timeval dns_deadline;
 } SOCKET_IO_INSTANCE;
 
 typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
@@ -312,6 +319,45 @@ static STATIC_VAR_UNUSED void signal_callback(int signum)
     LogError("Socket received signal %d.", signum);
 }
 
+// Computes the time left until deadline. Returns false, leaving remaining
+// zeroed, once the deadline has passed.
+static bool get_time_remaining(const struct timeval* deadline, struct timeval* remaining)
+{
+    bool result;
+    struct timeval now;
+
+    (void)gettimeofday(&now, NULL);
+
+    remaining->tv_sec = deadline->tv_sec - now.tv_sec;
+    remaining->tv_usec = deadline->tv_usec - now.tv_usec;
+
+    if (remaining->tv_usec < 0)
+    {
+        remaining->tv_usec += 1000000;
+        remaining->tv_sec--;
+    }
+
+    if (remaining->tv_sec < 0 || (remaining->tv_sec == 0 && remaining->tv_usec == 0))
+    {
+        remaining->tv_sec = 0;
+        remaining->tv_usec = 0;
+        result = false;
+    }
+    else
+    {
+        result = true;
+    }
+
+    return result;
+}
+
+// Starts the window in which the DNS lookup for an open must complete.
+static void start_dns_deadline(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    (void)gettimeofday(&socket_io_instance->dns_deadline, NULL);
+    socket_io_instance->dns_deadline.tv_sec += DNS_LOOKUP_TIMEOUT;
+}
+
 static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result = 0;
@@ -325,7 +371,19 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
         }
         else if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
         {
-            socket_io_instance->io_state = IO_STATE_OPENING;
+            struct timeval remaining;
+
+            // An asynchronous resolver reports completion only once it has an answer,
+            // an error or a timeout of its own, so the wait has to be bounded here.
+            if (!get_time_remaining(&socket_io_instance->dns_deadline, &remaining))
+            {
+                LogError("DNS resolution did not complete within %d seconds. Hostname:%s", DNS_LOOKUP_TIMEOUT, socket_io_instance->hostname);
+                result = MU_FAILURE;
+            }
+            else
+            {
+                socket_io_instance->io_state = IO_STATE_OPENING;
+            }
         }
         else if (dns_resolver_get_addrInfo(socket_io_instance->dns_resolver) == NULL)
         {
@@ -703,38 +761,6 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     return result;
 }
 
-// Computes the time left until deadline. Returns false, leaving remaining
-// zeroed, once the deadline has passed.
-static bool get_time_remaining(const struct timeval* deadline, struct timeval* remaining)
-{
-    bool result;
-    struct timeval now;
-
-    (void)gettimeofday(&now, NULL);
-
-    remaining->tv_sec = deadline->tv_sec - now.tv_sec;
-    remaining->tv_usec = deadline->tv_usec - now.tv_usec;
-
-    if (remaining->tv_usec < 0)
-    {
-        remaining->tv_usec += 1000000;
-        remaining->tv_sec--;
-    }
-
-    if (remaining->tv_sec < 0 || (remaining->tv_sec == 0 && remaining->tv_usec == 0))
-    {
-        remaining->tv_sec = 0;
-        remaining->tv_usec = 0;
-        result = false;
-    }
-    else
-    {
-        result = true;
-    }
-
-    return result;
-}
-
 static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result;
@@ -980,24 +1006,29 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             {
                 LogError("refresh_dns_resolver failed");
             }
-            else if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
-            {
-                LogError("lookup_address_and_connect_socket failed");
-            }
-            else if ((socket_io_instance->io_state == IO_STATE_OPEN) && (result = wait_for_socket_connection(socket_io_instance)) != 0)
-            {
-                LogError("wait_for_socket_connection failed");
-            }
             else
             {
-                socket_io_instance->on_bytes_received = on_bytes_received;
-                socket_io_instance->on_bytes_received_context = on_bytes_received_context;
+                start_dns_deadline(socket_io_instance);
 
-                socket_io_instance->on_io_error = on_io_error;
-                socket_io_instance->on_io_error_context = on_io_error_context;
+                if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
+                {
+                    LogError("lookup_address_and_connect_socket failed");
+                }
+                else if ((socket_io_instance->io_state == IO_STATE_OPEN) && (result = wait_for_socket_connection(socket_io_instance)) != 0)
+                {
+                    LogError("wait_for_socket_connection failed");
+                }
+                else
+                {
+                    socket_io_instance->on_bytes_received = on_bytes_received;
+                    socket_io_instance->on_bytes_received_context = on_bytes_received_context;
 
-                socket_io_instance->on_io_open_complete = on_io_open_complete;
-                socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
+                    socket_io_instance->on_io_error = on_io_error;
+                    socket_io_instance->on_io_error_context = on_io_error_context;
+
+                    socket_io_instance->on_io_open_complete = on_io_open_complete;
+                    socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
+                }
             }
 
             if (result != 0)
