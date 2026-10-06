@@ -338,22 +338,32 @@ static void test_VerifyCertificateChain(const char* trustedCertificate, const ch
     }
 }
 
+// Everything the running test created, so that function cleanup releases it even when an
+// assertion aborts the test body.
+static X509_SCHANNEL_HANDLE g_x509Handle;
+static BCRYPT_KEY_HANDLE g_publicKeyHandle;
+static NCRYPT_KEY_HANDLE g_privateKeyHandle;
+static wchar_t g_keyContainerName[256];
+
 // Deletes the CNG key x509_schannel_create persisted, so the test leaves no key behind.
-static void test_DeletePersistedKey(const wchar_t* containerName)
+static SECURITY_STATUS test_DeletePersistedKey(const wchar_t* containerName)
 {
     NCRYPT_PROV_HANDLE provider = 0;
+    SECURITY_STATUS status = NCryptOpenStorageProvider(&provider, MS_KEY_STORAGE_PROVIDER, 0);
 
-    if ((containerName[0] != L'\0') && (NCryptOpenStorageProvider(&provider, MS_KEY_STORAGE_PROVIDER, 0) == ERROR_SUCCESS))
+    if (status == ERROR_SUCCESS)
     {
         NCRYPT_KEY_HANDLE key = 0;
 
-        if (NCryptOpenKey(provider, &key, containerName, 0, 0) == ERROR_SUCCESS)
+        status = NCryptOpenKey(provider, &key, containerName, 0, 0);
+        if (status == ERROR_SUCCESS)
         {
             // NCryptDeleteKey frees the key handle as well.
-            (void)NCryptDeleteKey(key, 0);
+            status = NCryptDeleteKey(key, 0);
         }
         (void)NCryptFreeObject(provider);
     }
+    return status;
 }
 
 // Copies the name of the key container x509_schannel_create bound to the certificate. The
@@ -393,41 +403,37 @@ static void test_PrivateKeySignsForCertificate(const char* certificate, const ch
     HCRYPTPROV_OR_NCRYPT_KEY_HANDLE privateKeyHandle = 0;
     DWORD keySpec = 0;
     BOOL callerFreeKey = FALSE;
-    BCRYPT_KEY_HANDLE publicKeyHandle = NULL;
     BYTE signature[512];
     DWORD signatureLength = 0;
     SECURITY_STATUS status;
-    wchar_t containerName[256];
     PCCERT_CONTEXT certificateContext;
 
-    X509_SCHANNEL_HANDLE handle = x509_schannel_create(certificate, privateKey);
-    ASSERT_IS_NOT_NULL(handle, "x509_schannel_create failed, GetLastError=0x%08x", GetLastError());
+    g_x509Handle = x509_schannel_create(certificate, privateKey);
+    ASSERT_IS_NOT_NULL(g_x509Handle, "x509_schannel_create failed, GetLastError=0x%08x", GetLastError());
 
-    certificateContext = x509_schannel_get_certificate_context(handle);
+    certificateContext = x509_schannel_get_certificate_context(g_x509Handle);
     ASSERT_IS_NOT_NULL(certificateContext, "x509_schannel_get_certificate_context returned NULL");
 
-    test_GetKeyContainerName(certificateContext, containerName, sizeof(containerName) / sizeof(containerName[0]));
+    // Taken before anything can fail, so cleanup can delete the key whatever happens next.
+    test_GetKeyContainerName(certificateContext, g_keyContainerName, sizeof(g_keyContainerName) / sizeof(g_keyContainerName[0]));
+    ASSERT_IS_TRUE(g_keyContainerName[0] != L'\0', "the certificate carries no key container name");
 
     ASSERT_IS_TRUE(CryptAcquireCertificatePrivateKey(certificateContext, CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG | CRYPT_ACQUIRE_SILENT_FLAG, NULL, &privateKeyHandle, &keySpec, &callerFreeKey) == TRUE,
         "the private key is not usable through the certificate, GetLastError=0x%08x", GetLastError());
+    if (callerFreeKey)
+    {
+        g_privateKeyHandle = (NCRYPT_KEY_HANDLE)privateKeyHandle;
+    }
     ASSERT_IS_TRUE(keySpec == CERT_NCRYPT_KEY_SPEC, "the certificate is not bound to a CNG key, keySpec=0x%08x", (unsigned int)keySpec);
 
     status = NCryptSignHash((NCRYPT_KEY_HANDLE)privateKeyHandle, signPadding, (PBYTE)digest, sizeof(digest), signature, sizeof(signature), &signatureLength, signFlags);
     ASSERT_ARE_EQUAL(int, 0, (int)status, "NCryptSignHash failed with 0x%08x", (unsigned int)status);
 
-    ASSERT_IS_TRUE(CryptImportPublicKeyInfoEx2(X509_ASN_ENCODING, &certificateContext->pCertInfo->SubjectPublicKeyInfo, 0, NULL, &publicKeyHandle) == TRUE,
+    ASSERT_IS_TRUE(CryptImportPublicKeyInfoEx2(X509_ASN_ENCODING, &certificateContext->pCertInfo->SubjectPublicKeyInfo, 0, NULL, &g_publicKeyHandle) == TRUE,
         "could not import the public key of the certificate, GetLastError=0x%08x", GetLastError());
 
-    status = (SECURITY_STATUS)BCryptVerifySignature(publicKeyHandle, signPadding, (PUCHAR)digest, sizeof(digest), signature, signatureLength, signFlags);
+    status = (SECURITY_STATUS)BCryptVerifySignature(g_publicKeyHandle, signPadding, (PUCHAR)digest, sizeof(digest), signature, signatureLength, signFlags);
     ASSERT_ARE_EQUAL(int, 0, (int)status, "the signature does not verify against the certificate, status=0x%08x", (unsigned int)status);
-
-    (void)BCryptDestroyKey(publicKeyHandle);
-    if (callerFreeKey)
-    {
-        (void)NCryptFreeObject((NCRYPT_KEY_HANDLE)privateKeyHandle);
-    }
-    x509_schannel_destroy(handle);
-    test_DeletePersistedKey(containerName);
 }
 
 BEGIN_TEST_SUITE(x509_schannel_int)
@@ -444,12 +450,36 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(function_init)
 {
-    ;
+    g_x509Handle = NULL;
+    g_publicKeyHandle = NULL;
+    g_privateKeyHandle = 0;
+    g_keyContainerName[0] = L'\0';
 }
 
 TEST_FUNCTION_CLEANUP(function_cleanup)
 {
-    ;
+    // Runs even when an assertion aborted the test, so nothing is left open or persisted.
+    if (g_publicKeyHandle != NULL)
+    {
+        (void)BCryptDestroyKey(g_publicKeyHandle);
+        g_publicKeyHandle = NULL;
+    }
+    if (g_privateKeyHandle != 0)
+    {
+        (void)NCryptFreeObject(g_privateKeyHandle);
+        g_privateKeyHandle = 0;
+    }
+    if (g_x509Handle != NULL)
+    {
+        x509_schannel_destroy(g_x509Handle);
+        g_x509Handle = NULL;
+    }
+    if (g_keyContainerName[0] != L'\0')
+    {
+        SECURITY_STATUS status = test_DeletePersistedKey(g_keyContainerName);
+        g_keyContainerName[0] = L'\0';
+        ASSERT_ARE_EQUAL(int, 0, (int)status, "the key container the test created could not be deleted, status=0x%08x", (unsigned int)status);
+    }
 }
 
 
