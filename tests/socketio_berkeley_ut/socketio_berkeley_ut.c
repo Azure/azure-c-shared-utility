@@ -199,8 +199,8 @@ int gettimeofday(struct timeval* tv, void* tz)
     struct timespec now;
     (void)tz;
     (void)clock_gettime(CLOCK_REALTIME, &now);
-    tv->tv_sec = now.tv_sec + g_clock_offset_seconds;
-    tv->tv_usec = now.tv_nsec / 1000;
+    tv->tv_sec = (time_t)(now.tv_sec + g_clock_offset_seconds);
+    tv->tv_usec = (suseconds_t)(now.tv_nsec / 1000);
     return 0;
 }
 
@@ -805,6 +805,29 @@ TEST_FUNCTION(socketio_open_restarts_the_lookup_deadline)
     ASSERT_ARE_EQUAL(int, 0, g_error_callback_count);
     ASSERT_ARE_EQUAL(int, 1, g_open_callback_count);
     ASSERT_ARE_EQUAL(int, (int)IO_OPEN_OK, (int)g_last_open_result);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_dowork_lookup_completing_only_after_the_deadline_fails)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    // The answer is ready, but only on a poll that happens past the deadline, so the
+    // open must still fail rather than succeed beyond its bound.
+    g_resolver_pending = 1;
+
+    result = open_socketio(socket_io, socket_io);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    g_clock_offset_seconds = DNS_LOOKUP_TIMEOUT;
+
+    socketio_dowork(socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_error_callback_count);
+    ASSERT_ARE_EQUAL(int, 0, g_open_callback_count);
+    ASSERT_ARE_EQUAL(int, 0, g_socket_call_count);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
 
     socketio_destroy(socket_io);
 }

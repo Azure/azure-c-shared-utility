@@ -364,26 +364,25 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
 
     if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {
+        struct timeval remaining;
+
         if (socket_io_instance->dns_resolver == NULL)
         {
             LogError("DNS resolver is NULL.");
             result = MU_FAILURE;
         }
+        // An asynchronous resolver reports completion only once it has an answer, an
+        // error or a timeout of its own, so the lookup is bounded here. The deadline is
+        // tested before the resolver so that a result first seen after it does not
+        // extend the open past the bound.
+        else if (!get_time_remaining(&socket_io_instance->dns_deadline, &remaining))
+        {
+            LogError("DNS resolution did not complete within %d seconds. Hostname:%s", DNS_LOOKUP_TIMEOUT, socket_io_instance->hostname);
+            result = MU_FAILURE;
+        }
         else if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
         {
-            struct timeval remaining;
-
-            // An asynchronous resolver reports completion only once it has an answer,
-            // an error or a timeout of its own, so the wait has to be bounded here.
-            if (!get_time_remaining(&socket_io_instance->dns_deadline, &remaining))
-            {
-                LogError("DNS resolution did not complete within %d seconds. Hostname:%s", DNS_LOOKUP_TIMEOUT, socket_io_instance->hostname);
-                result = MU_FAILURE;
-            }
-            else
-            {
-                socket_io_instance->io_state = IO_STATE_OPENING;
-            }
+            socket_io_instance->io_state = IO_STATE_OPENING;
         }
         else if (dns_resolver_get_addrInfo(socket_io_instance->dns_resolver) == NULL)
         {
