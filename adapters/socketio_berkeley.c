@@ -31,6 +31,8 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/time.h>
+#include <time.h>
+#include <stdint.h>
 #ifdef TIZENRT
 #include <net/lwip/tcp.h>
 #else
@@ -108,7 +110,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     unsigned char recv_bytes[XIO_RECEIVE_BUFFER_SIZE];
     DNSRESOLVER_HANDLE dns_resolver;
-    struct timeval dns_deadline;
+    int64_t dns_deadline_ms;
 } SOCKET_IO_INSTANCE;
 
 typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
@@ -319,25 +321,40 @@ static STATIC_VAR_UNUSED void signal_callback(int signum)
     LogError("Socket received signal %d.", signum);
 }
 
-// Computes the time left until deadline. Returns false, leaving remaining
-// zeroed, once the deadline has passed.
-static bool get_time_remaining(const struct timeval* deadline, struct timeval* remaining)
+// Deadlines are measured against a monotonic clock where one is available, so that
+// a wall-clock correction cannot extend them. Falls back to the wall clock only on
+// platforms without CLOCK_MONOTONIC.
+static int64_t get_now_ms(void)
 {
-    bool result;
-    struct timeval now;
+    int64_t result;
+#if defined(CLOCK_MONOTONIC)
+    struct timespec now;
+#endif
+    struct timeval now_tv;
 
-    (void)gettimeofday(&now, NULL);
-
-    remaining->tv_sec = deadline->tv_sec - now.tv_sec;
-    remaining->tv_usec = deadline->tv_usec - now.tv_usec;
-
-    if (remaining->tv_usec < 0)
+#if defined(CLOCK_MONOTONIC)
+    if (clock_gettime(CLOCK_MONOTONIC, &now) == 0)
     {
-        remaining->tv_usec += 1000000;
-        remaining->tv_sec--;
+        result = (int64_t)now.tv_sec * 1000 + (int64_t)now.tv_nsec / 1000000;
+    }
+    else
+#endif
+    {
+        (void)gettimeofday(&now_tv, NULL);
+        result = (int64_t)now_tv.tv_sec * 1000 + (int64_t)now_tv.tv_usec / 1000;
     }
 
-    if (remaining->tv_sec < 0 || (remaining->tv_sec == 0 && remaining->tv_usec == 0))
+    return result;
+}
+
+// Computes the time left until deadline_ms. Returns false, leaving remaining
+// zeroed, once the deadline has passed.
+static bool get_time_remaining(int64_t deadline_ms, struct timeval* remaining)
+{
+    bool result;
+    int64_t left_ms = deadline_ms - get_now_ms();
+
+    if (left_ms <= 0)
     {
         remaining->tv_sec = 0;
         remaining->tv_usec = 0;
@@ -345,6 +362,8 @@ static bool get_time_remaining(const struct timeval* deadline, struct timeval* r
     }
     else
     {
+        remaining->tv_sec = (time_t)(left_ms / 1000);
+        remaining->tv_usec = (suseconds_t)((left_ms % 1000) * 1000);
         result = true;
     }
 
@@ -354,8 +373,7 @@ static bool get_time_remaining(const struct timeval* deadline, struct timeval* r
 // Starts the window in which the DNS lookup for an open must complete.
 static void start_dns_deadline(SOCKET_IO_INSTANCE* socket_io_instance)
 {
-    (void)gettimeofday(&socket_io_instance->dns_deadline, NULL);
-    socket_io_instance->dns_deadline.tv_sec += DNS_LOOKUP_TIMEOUT;
+    socket_io_instance->dns_deadline_ms = get_now_ms() + (int64_t)DNS_LOOKUP_TIMEOUT * 1000;
 }
 
 static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
@@ -375,7 +393,7 @@ static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
         // error or a timeout of its own, so the lookup is bounded here. The deadline is
         // tested before the resolver so that a result first seen after it does not
         // extend the open past the bound.
-        else if (!get_time_remaining(&socket_io_instance->dns_deadline, &remaining))
+        else if (!get_time_remaining(socket_io_instance->dns_deadline_ms, &remaining))
         {
             LogError("DNS resolution did not complete within %d seconds. Hostname:%s", DNS_LOOKUP_TIMEOUT, socket_io_instance->hostname);
             result = MU_FAILURE;
@@ -779,17 +797,14 @@ static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     }
     else
     {
-        struct timeval deadline;
-
-        (void)gettimeofday(&deadline, NULL);
-        deadline.tv_sec += CONNECT_TIMEOUT;
+        int64_t deadline_ms = get_now_ms() + (int64_t)CONNECT_TIMEOUT * 1000;
 
         // select() may report EINTR before the connection is decided. Retrying
         // against a fixed deadline bounds the total wait: platforms that leave
         // the timeout untouched would otherwise restart it on every signal.
         do
         {
-            if (!get_time_remaining(&deadline, &tv))
+            if (!get_time_remaining(deadline_ms, &tv))
             {
                 // Deadline reached; report it the same way select() reports a timeout.
                 retval = 0;

@@ -193,14 +193,15 @@ int socket(int domain, int type, int protocol)
 }
 
 // Keeps real time advancing, so loops that wait on a deadline still terminate,
-// while letting a test jump forward to reach one.
-int gettimeofday(struct timeval* tv, void* tz)
+// while letting a test jump forward to reach one. gettimeofday supplies the real
+// base because the adapter reads the clock through clock_gettime.
+int clock_gettime(clockid_t clock_id, struct timespec* ts)
 {
-    struct timespec now;
-    (void)tz;
-    (void)clock_gettime(CLOCK_REALTIME, &now);
-    tv->tv_sec = (time_t)(now.tv_sec + g_clock_offset_seconds);
-    tv->tv_usec = (suseconds_t)(now.tv_nsec / 1000);
+    struct timeval now;
+    (void)clock_id;
+    (void)gettimeofday(&now, NULL);
+    ts->tv_sec = (time_t)(now.tv_sec + g_clock_offset_seconds);
+    ts->tv_nsec = (long)now.tv_usec * 1000;
     return 0;
 }
 
