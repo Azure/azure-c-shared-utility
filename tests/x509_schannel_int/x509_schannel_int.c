@@ -552,8 +552,13 @@ TEST_FUNCTION(x509_schannel_ecc_pkcs8_private_key_signs_for_its_certificate)
 // Encrypted PKCS#8 is not supported and must be rejected rather than half-imported.
 TEST_FUNCTION(x509_schannel_encrypted_pkcs8_private_key_is_rejected)
 {
-    X509_SCHANNEL_HANDLE handle = x509_schannel_create(X509_TEST_RSA_CERTIFICATE, X509_TEST_RSA_PRIVATE_KEY_PKCS8_ENCRYPTED);
-    ASSERT_IS_NULL(handle, "an encrypted PKCS#8 private key was accepted");
+    g_x509Handle = x509_schannel_create(X509_TEST_RSA_CERTIFICATE, X509_TEST_RSA_PRIVATE_KEY_PKCS8_ENCRYPTED);
+    if (g_x509Handle != NULL)
+    {
+        // Only on the regression this guards against; hand what it created to cleanup before failing.
+        test_GetKeyContainerName(x509_schannel_get_certificate_context(g_x509Handle), g_keyContainerName, sizeof(g_keyContainerName) / sizeof(g_keyContainerName[0]));
+    }
+    ASSERT_IS_NULL(g_x509Handle, "an encrypted PKCS#8 private key was accepted");
 }
 
 END_TEST_SUITE(x509_schannel_int)
