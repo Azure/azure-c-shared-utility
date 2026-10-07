@@ -19,6 +19,8 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/time.h>
+#include <time.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -59,6 +61,10 @@ static void real_free(void* pointer)
 #define TEST_PORT 23456
 #define TEST_SOCKET_FIRST 42
 #define TEST_MAC_ADDRESS "AA:BB:CC:DD:EE:FF"
+// Mirrors the adapter's default; both honour an externally supplied value.
+#ifndef DNS_LOOKUP_TIMEOUT
+#define DNS_LOOKUP_TIMEOUT 30
+#endif
 
 static TEST_MUTEX_HANDLE g_testByTest;
 
@@ -86,6 +92,9 @@ static int g_open_callback_count;
 static IO_OPEN_RESULT g_last_open_result;
 static int g_error_callback_count;
 static bool g_error_callback_saw_invalid_socket;
+// Virtual clock offset, in seconds, applied by the gettimeofday replacement so
+// that deadlines can be reached without the test waiting for them.
+static long g_clock_offset_seconds;
 
 static struct sockaddr_in g_test_sockaddr;
 static struct addrinfo g_test_addrinfo;
@@ -128,6 +137,7 @@ static void reset_fake_network(void)
     g_last_open_result = IO_OPEN_ERROR;
     g_error_callback_count = 0;
     g_error_callback_saw_invalid_socket = false;
+    g_clock_offset_seconds = 0;
 }
 
 static DNSRESOLVER_HANDLE fake_dns_resolver_create(const char* hostname, int port, const DNSRESOLVER_OPTIONS* options)
@@ -180,6 +190,19 @@ int socket(int domain, int type, int protocol)
         return -1;
     }
     return g_next_socket++;
+}
+
+// Keeps real time advancing, so loops that wait on a deadline still terminate,
+// while letting a test jump forward to reach one. gettimeofday supplies the real
+// base because the adapter reads the clock through clock_gettime.
+int clock_gettime(clockid_t clock_id, struct timespec* ts)
+{
+    struct timeval now;
+    (void)clock_id;
+    (void)gettimeofday(&now, NULL);
+    ts->tv_sec = (time_t)(now.tv_sec + g_clock_offset_seconds);
+    ts->tv_nsec = (long)now.tv_usec * 1000;
+    return 0;
 }
 
 int close(int descriptor)
@@ -707,6 +730,105 @@ TEST_FUNCTION(socketio_dowork_lookup_failure_is_retryable)
     ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
     ASSERT_ARE_EQUAL(int, 2, g_resolver_call_count);
     ASSERT_ARE_EQUAL(int, 1, g_socket_call_count);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_dowork_lookup_that_never_completes_fails_at_the_deadline)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    // A resolver that never reports completion must not hold the open forever.
+    g_resolver_pending = 1000;
+
+    result = open_socketio(socket_io, socket_io);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 0, g_open_callback_count);
+    ASSERT_ARE_EQUAL(int, 0, g_error_callback_count);
+
+    socketio_dowork(socket_io);
+    ASSERT_ARE_EQUAL(int, 0, g_error_callback_count, "open failed before the deadline");
+
+    g_clock_offset_seconds = DNS_LOOKUP_TIMEOUT;
+
+    socketio_dowork(socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_error_callback_count);
+    ASSERT_IS_TRUE(g_error_callback_saw_invalid_socket);
+    ASSERT_ARE_EQUAL(int, 0, g_open_callback_count);
+    ASSERT_ARE_EQUAL(int, 0, g_socket_call_count);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
+
+    // The deadline leaves the instance closed, so a later open starts a fresh lookup.
+    g_resolver_pending = 0;
+    result = open_socketio(socket_io, NULL);
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(int, 2, g_resolver_call_count);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_dowork_lookup_completing_before_the_deadline_opens)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    g_resolver_pending = 1;
+
+    result = open_socketio(socket_io, socket_io);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    g_clock_offset_seconds = DNS_LOOKUP_TIMEOUT - 1;
+
+    socketio_dowork(socket_io);
+    ASSERT_ARE_EQUAL(int, 0, g_error_callback_count);
+    ASSERT_ARE_EQUAL(int, 1, g_open_callback_count);
+    ASSERT_ARE_EQUAL(int, (int)IO_OPEN_OK, (int)g_last_open_result);
+    ASSERT_ARE_NOT_EQUAL(int, -1, *(int*)socket_io);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_open_restarts_the_lookup_deadline)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    // Time spent before an open must not count against that open's lookup.
+    g_clock_offset_seconds = 10 * DNS_LOOKUP_TIMEOUT;
+    g_resolver_pending = 1;
+
+    result = open_socketio(socket_io, socket_io);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    socketio_dowork(socket_io);
+    ASSERT_ARE_EQUAL(int, 0, g_error_callback_count);
+    ASSERT_ARE_EQUAL(int, 1, g_open_callback_count);
+    ASSERT_ARE_EQUAL(int, (int)IO_OPEN_OK, (int)g_last_open_result);
+
+    socketio_destroy(socket_io);
+}
+
+TEST_FUNCTION(socketio_dowork_lookup_completing_only_after_the_deadline_fails)
+{
+    CONCRETE_IO_HANDLE socket_io = create_socketio();
+    int result;
+
+    // The answer is ready, but only on a poll that happens past the deadline, so the
+    // open must still fail rather than succeed beyond its bound.
+    g_resolver_pending = 1;
+
+    result = open_socketio(socket_io, socket_io);
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    g_clock_offset_seconds = DNS_LOOKUP_TIMEOUT;
+
+    socketio_dowork(socket_io);
+    ASSERT_ARE_EQUAL(int, 1, g_error_callback_count);
+    ASSERT_ARE_EQUAL(int, 0, g_open_callback_count);
+    ASSERT_ARE_EQUAL(int, 0, g_socket_call_count);
+    ASSERT_ARE_EQUAL(int, -1, *(int*)socket_io);
 
     socketio_destroy(socket_io);
 }

@@ -31,6 +31,8 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <sys/time.h>
+#include <time.h>
+#include <stdint.h>
 #ifdef TIZENRT
 #include <net/lwip/tcp.h>
 #else
@@ -67,6 +69,12 @@
 // connect timeout in seconds
 #define CONNECT_TIMEOUT         10
 
+// Bounds the DNS lookup phase of an open, which an asynchronous resolver can
+// otherwise leave outstanding indefinitely.
+#ifndef DNS_LOOKUP_TIMEOUT
+#define DNS_LOOKUP_TIMEOUT      30
+#endif
+
 typedef enum IO_STATE_TAG
 {
     IO_STATE_CLOSED,
@@ -102,6 +110,7 @@ typedef struct SOCKET_IO_INSTANCE_TAG
     SINGLYLINKEDLIST_HANDLE pending_io_list;
     unsigned char recv_bytes[XIO_RECEIVE_BUFFER_SIZE];
     DNSRESOLVER_HANDLE dns_resolver;
+    int64_t dns_deadline_ms;
 } SOCKET_IO_INSTANCE;
 
 typedef struct NETWORK_INTERFACE_DESCRIPTION_TAG
@@ -312,15 +321,81 @@ static STATIC_VAR_UNUSED void signal_callback(int signum)
     LogError("Socket received signal %d.", signum);
 }
 
+// Deadlines are measured against a monotonic clock where one is available, so that
+// a wall-clock correction cannot extend them. Falls back to the wall clock only on
+// platforms without CLOCK_MONOTONIC.
+static int64_t get_now_ms(void)
+{
+    int64_t result;
+#if defined(CLOCK_MONOTONIC)
+    struct timespec now;
+#endif
+    struct timeval now_tv;
+
+#if defined(CLOCK_MONOTONIC)
+    if (clock_gettime(CLOCK_MONOTONIC, &now) == 0)
+    {
+        result = (int64_t)now.tv_sec * 1000 + (int64_t)now.tv_nsec / 1000000;
+    }
+    else
+#endif
+    {
+        (void)gettimeofday(&now_tv, NULL);
+        result = (int64_t)now_tv.tv_sec * 1000 + (int64_t)now_tv.tv_usec / 1000;
+    }
+
+    return result;
+}
+
+// Computes the time left until deadline_ms. Returns false, leaving remaining
+// zeroed, once the deadline has passed.
+static bool get_time_remaining(int64_t deadline_ms, struct timeval* remaining)
+{
+    bool result;
+    int64_t left_ms = deadline_ms - get_now_ms();
+
+    if (left_ms <= 0)
+    {
+        remaining->tv_sec = 0;
+        remaining->tv_usec = 0;
+        result = false;
+    }
+    else
+    {
+        remaining->tv_sec = (time_t)(left_ms / 1000);
+        remaining->tv_usec = (suseconds_t)((left_ms % 1000) * 1000);
+        result = true;
+    }
+
+    return result;
+}
+
+// Starts the window in which the DNS lookup for an open must complete.
+static void start_dns_deadline(SOCKET_IO_INSTANCE* socket_io_instance)
+{
+    socket_io_instance->dns_deadline_ms = get_now_ms() + (int64_t)DNS_LOOKUP_TIMEOUT * 1000;
+}
+
 static int lookup_address(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result = 0;
 
     if (socket_io_instance->address_type == ADDRESS_TYPE_IP)
     {
+        struct timeval remaining;
+
         if (socket_io_instance->dns_resolver == NULL)
         {
             LogError("DNS resolver is NULL.");
+            result = MU_FAILURE;
+        }
+        // An asynchronous resolver reports completion only once it has an answer, an
+        // error or a timeout of its own, so the lookup is bounded here. The deadline is
+        // tested before the resolver so that a result first seen after it does not
+        // extend the open past the bound.
+        else if (!get_time_remaining(socket_io_instance->dns_deadline_ms, &remaining))
+        {
+            LogError("DNS resolution did not complete within %d seconds. Hostname:%s", DNS_LOOKUP_TIMEOUT, socket_io_instance->hostname);
             result = MU_FAILURE;
         }
         else if (!dns_resolver_is_lookup_complete(socket_io_instance->dns_resolver))
@@ -703,38 +778,6 @@ static int lookup_address_and_initiate_socket_connection(SOCKET_IO_INSTANCE* soc
     return result;
 }
 
-// Computes the time left until deadline. Returns false, leaving remaining
-// zeroed, once the deadline has passed.
-static bool get_time_remaining(const struct timeval* deadline, struct timeval* remaining)
-{
-    bool result;
-    struct timeval now;
-
-    (void)gettimeofday(&now, NULL);
-
-    remaining->tv_sec = deadline->tv_sec - now.tv_sec;
-    remaining->tv_usec = deadline->tv_usec - now.tv_usec;
-
-    if (remaining->tv_usec < 0)
-    {
-        remaining->tv_usec += 1000000;
-        remaining->tv_sec--;
-    }
-
-    if (remaining->tv_sec < 0 || (remaining->tv_sec == 0 && remaining->tv_usec == 0))
-    {
-        remaining->tv_sec = 0;
-        remaining->tv_usec = 0;
-        result = false;
-    }
-    else
-    {
-        result = true;
-    }
-
-    return result;
-}
-
 static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
 {
     int result;
@@ -754,17 +797,14 @@ static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     }
     else
     {
-        struct timeval deadline;
-
-        (void)gettimeofday(&deadline, NULL);
-        deadline.tv_sec += CONNECT_TIMEOUT;
+        int64_t deadline_ms = get_now_ms() + (int64_t)CONNECT_TIMEOUT * 1000;
 
         // select() may report EINTR before the connection is decided. Retrying
         // against a fixed deadline bounds the total wait: platforms that leave
         // the timeout untouched would otherwise restart it on every signal.
         do
         {
-            if (!get_time_remaining(&deadline, &tv))
+            if (!get_time_remaining(deadline_ms, &tv))
             {
                 // Deadline reached; report it the same way select() reports a timeout.
                 retval = 0;
@@ -980,24 +1020,29 @@ int socketio_open(CONCRETE_IO_HANDLE socket_io, ON_IO_OPEN_COMPLETE on_io_open_c
             {
                 LogError("refresh_dns_resolver failed");
             }
-            else if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
-            {
-                LogError("lookup_address_and_connect_socket failed");
-            }
-            else if ((socket_io_instance->io_state == IO_STATE_OPEN) && (result = wait_for_socket_connection(socket_io_instance)) != 0)
-            {
-                LogError("wait_for_socket_connection failed");
-            }
             else
             {
-                socket_io_instance->on_bytes_received = on_bytes_received;
-                socket_io_instance->on_bytes_received_context = on_bytes_received_context;
+                start_dns_deadline(socket_io_instance);
 
-                socket_io_instance->on_io_error = on_io_error;
-                socket_io_instance->on_io_error_context = on_io_error_context;
+                if ((result = lookup_address_and_initiate_socket_connection(socket_io_instance)) != 0)
+                {
+                    LogError("lookup_address_and_connect_socket failed");
+                }
+                else if ((socket_io_instance->io_state == IO_STATE_OPEN) && (result = wait_for_socket_connection(socket_io_instance)) != 0)
+                {
+                    LogError("wait_for_socket_connection failed");
+                }
+                else
+                {
+                    socket_io_instance->on_bytes_received = on_bytes_received;
+                    socket_io_instance->on_bytes_received_context = on_bytes_received_context;
 
-                socket_io_instance->on_io_open_complete = on_io_open_complete;
-                socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
+                    socket_io_instance->on_io_error = on_io_error;
+                    socket_io_instance->on_io_error_context = on_io_error_context;
+
+                    socket_io_instance->on_io_open_complete = on_io_open_complete;
+                    socket_io_instance->on_io_open_complete_context = on_io_open_complete_context;
+                }
             }
 
             if (result != 0)
