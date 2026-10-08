@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <openssl/evp.h>
+#include <openssl/opensslv.h>
 #include <openssl/x509.h>
 #include <openssl/pem.h>
 #include <openssl/bio.h>
@@ -19,6 +20,71 @@
 #include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "macro_utils/macro_utils.h"
+
+// EVP_EC_gen() was only added in OpenSSL 3.0. OpenSSL 1.0.2/1.1.1, LibreSSL
+// and any fork that does not advertise a 3.0+ OPENSSL_VERSION_NUMBER must use
+// the low level EC_KEY API to obtain the same named-curve P-256 key. The gate
+// requires the version macro to be defined so that an unknown fork falls back
+// to EC_KEY rather than to an API it may not have.
+#if defined(OPENSSL_VERSION_NUMBER) && (OPENSSL_VERSION_NUMBER >= 0x30000000L) && !defined(LIBRESSL_VERSION_NUMBER)
+
+static EVP_PKEY* gen_ec_p256_key(void)
+{
+    EVP_PKEY* result = EVP_EC_gen("P-256");
+    if (result == NULL)
+    {
+        LogError("EVP_EC_gen(P-256) failed");
+    }
+    return result;
+}
+
+#else
+
+#include <openssl/ec.h>
+#include <openssl/obj_mac.h>
+
+static EVP_PKEY* gen_ec_p256_key(void)
+{
+    EVP_PKEY* result;
+    EC_KEY* ec_key;
+
+    if ((ec_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)) == NULL)
+    {
+        LogError("EC_KEY_new_by_curve_name(prime256v1) failed");
+        result = NULL;
+    }
+    else
+    {
+        // Without this the private key is serialized with explicit curve
+        // parameters instead of the P-256 OID, which is what EVP_EC_gen()
+        // produces and what CSR consumers expect.
+        EC_KEY_set_asn1_flag(ec_key, OPENSSL_EC_NAMED_CURVE);
+
+        if (EC_KEY_generate_key(ec_key) != 1)
+        {
+            LogError("EC_KEY_generate_key failed");
+            EC_KEY_free(ec_key);
+            result = NULL;
+        }
+        else if ((result = EVP_PKEY_new()) == NULL)
+        {
+            LogError("EVP_PKEY_new failed");
+            EC_KEY_free(ec_key);
+        }
+        else if (EVP_PKEY_assign_EC_KEY(result, ec_key) != 1)
+        {
+            LogError("EVP_PKEY_assign_EC_KEY failed");
+            EVP_PKEY_free(result);
+            EC_KEY_free(ec_key);
+            result = NULL;
+        }
+        // On success ec_key is owned by result and must not be freed here.
+    }
+
+    return result;
+}
+
+#endif
 
 int csr_gen_ec_p256(const char* common_name, char** csr_base64, char** private_key_pem)
 {
@@ -43,9 +109,8 @@ int csr_gen_ec_p256(const char* common_name, char** csr_base64, char** private_k
 
     do
     {
-        if ((pkey = EVP_EC_gen("P-256")) == NULL)
+        if ((pkey = gen_ec_p256_key()) == NULL)
         {
-            LogError("EVP_EC_gen(P-256) failed");
             break;
         }
 
