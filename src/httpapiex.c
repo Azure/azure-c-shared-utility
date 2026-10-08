@@ -11,6 +11,19 @@
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/vector.h"
+#include "azure_c_shared_utility/lock.h"
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+/* returns the previous value of *destination */
+#define COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
+    _InterlockedCompareExchangePointer((void* volatile*)(destination), (void*)(exchange), (void*)(comparand))
+#elif defined(__GNUC__) || defined(__clang__)
+#define COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
+    __sync_val_compare_and_swap((void* volatile*)(destination), (void*)(comparand), (void*)(exchange))
+#else
+#define HTTPAPIEX_NO_ATOMICS
+#endif
 
 typedef struct HTTPAPIEX_SAVED_OPTION_TAG
 {
@@ -32,9 +45,101 @@ MU_DEFINE_ENUM_STRINGS(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
 
 static int useGlobalInitialization = 0;
 
+/* Lock serializing every access to useGlobalInitialization and the HTTPAPI_Init/HTTPAPI_Deinit calls
+   it gates. It is created on first use and kept for the lifetime of the process; the creation itself
+   is made race free by a compare and exchange, so no external one time initialization facility is
+   needed. */
+static void* volatile globalInitializationLock = NULL;
+
+#if defined(HTTPAPIEX_NO_ATOMICS)
+/* Toolchains without an atomic compare and exchange are single threaded targets; this matches the
+   behavior of pal/generic/refcount_os.h, which also gives up atomicity on those platforms. */
+static void* compare_exchange_ptr(void* volatile* destination, void* exchange, void* comparand)
+{
+    void* result = (void*)*destination;
+    if (result == comparand)
+    {
+        *destination = exchange;
+    }
+    return result;
+}
+#define COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
+    compare_exchange_ptr((void* volatile*)(destination), (void*)(exchange), (void*)(comparand))
+#endif
+
+static LOCK_HANDLE get_global_initialization_lock(void)
+{
+    /*an atomic read: exchanging NULL for NULL never changes the value*/
+    LOCK_HANDLE result = (LOCK_HANDLE)COMPARE_EXCHANGE_PTR(&globalInitializationLock, NULL, NULL);
+
+    if (result == NULL)
+    {
+        LOCK_HANDLE createdLock = Lock_Init();
+        if (createdLock == NULL)
+        {
+            LogError("failure creating the lock protecting the HTTP global initialization");
+        }
+        else
+        {
+            result = (LOCK_HANDLE)COMPARE_EXCHANGE_PTR(&globalInitializationLock, createdLock, NULL);
+            if (result == NULL)
+            {
+                /*this call installed the lock*/
+                result = createdLock;
+            }
+            else
+            {
+                /*another thread installed its lock first*/
+                (void)Lock_Deinit(createdLock);
+            }
+        }
+    }
+
+    return result;
+}
+
+/* Returns the lock to hand to release_global_initialization_lock, or NULL when the lock could not be
+   created or acquired. In that case the caller proceeds unsynchronized, which is the legacy
+   behavior, rather than failing an API that used to succeed. */
+static LOCK_HANDLE acquire_global_initialization_lock(void)
+{
+    LOCK_HANDLE result = get_global_initialization_lock();
+
+    if ((result != NULL) && (Lock(result) != LOCK_OK))
+    {
+        LogError("failure acquiring the lock protecting the HTTP global initialization");
+        result = NULL;
+    }
+
+    return result;
+}
+
+static void release_global_initialization_lock(LOCK_HANDLE lock)
+{
+    if (lock != NULL)
+    {
+        (void)Unlock(lock);
+    }
+}
+
+/* Reads useGlobalInitialization under the lock, so the value is a consistent snapshot and the read
+   does not race with HTTPAPIEX_Init/HTTPAPIEX_Deinit. */
+static int get_global_initialization_count(void)
+{
+    int result;
+    LOCK_HANDLE lock = acquire_global_initialization_lock();
+
+    result = useGlobalInitialization;
+
+    release_global_initialization_lock(lock);
+
+    return result;
+}
+
 HTTPAPIEX_RESULT HTTPAPIEX_Init(void)
 {
     HTTPAPIEX_RESULT result;
+    LOCK_HANDLE lock = acquire_global_initialization_lock();
 
     /*Codes_SRS_HTTPAPIEX_21_045: [If HTTPAPIEX_Init is calling more than once, it shall initialize the HTTP by calling HTTAPI_Init only once, and return success for all calls.] */
     if (useGlobalInitialization == 0)
@@ -57,17 +162,23 @@ HTTPAPIEX_RESULT HTTPAPIEX_Init(void)
         result = HTTPAPIEX_OK;
     }
 
+    release_global_initialization_lock(lock);
+
     return result;
 }
 
 void HTTPAPIEX_Deinit(void)
 {
+    LOCK_HANDLE lock = acquire_global_initialization_lock();
+
     /*Codes_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
     useGlobalInitialization--;
     if (useGlobalInitialization == 0)
     {
         HTTPAPI_Deinit();
     }
+
+    release_global_initialization_lock(lock);
 }
 
 HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
@@ -437,7 +548,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         {
                         case 0:
                         {
-                            if (useGlobalInitialization > 0)
+                            if (get_global_initialization_count() > 0)
                             {
                                 /*Codes_SRS_HTTPAPIEX_21_048: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Init.] */
                                 goOn = true;
@@ -523,7 +634,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         case 0:
                         {
                             /*Codes_SRS_HTTPAPIEX_21_049: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Deinit.] */
-                            if (useGlobalInitialization == 0)
+                            if (get_global_initialization_count() == 0)
                             {
                                 HTTPAPI_Deinit();
                             }
@@ -591,7 +702,7 @@ void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle)
         {
             HTTPAPI_CloseConnection(handleData->httpHandle);
             /*Codes_SRS_HTTPAPIEX_21_050: [If HTTPAPIEX_Init was called, HTTPAPI_Destroy shall not call HTTPAPI_Deinit.] */
-            if (useGlobalInitialization == 0)
+            if (get_global_initialization_count() == 0)
             {
                 HTTPAPI_Deinit();
             }
