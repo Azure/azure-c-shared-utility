@@ -17,6 +17,7 @@ set(${theseTestsName}_c_files
 ../../src/httpapiex.c
 ../real_test_files/real_vector.c
 ../real_test_files/real_crt_abstractions.c
+${LOCK_C_FILE}
 )
 
 set(${theseTestsName}_h_files
