@@ -148,15 +148,16 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE *tls_io_instance)
             }
         }
         else if ((rcv_bytes == MBEDTLS_ERR_SSL_WANT_READ) ||
-                 (rcv_bytes == MBEDTLS_ERR_SSL_WANT_WRITE) ||
-                 (rcv_bytes == 0))
+                 (rcv_bytes == MBEDTLS_ERR_SSL_WANT_WRITE))
         {
             // No application data is available yet. Not an error.
         }
         else
         {
-            // Anything else is fatal for this connection. Without reporting it
-            // the failure is only ever noticed by an upper layer timeout.
+            // Anything else is fatal for this connection, including 0, which
+            // means the peer closed the transport without a CloseNotify.
+            // Without reporting it the failure is only ever noticed by an
+            // upper layer timeout.
             LogError("Failure reading from the TLS connection (%d)", rcv_bytes);
             indicate_error(tls_io_instance);
             result = MU_FAILURE;
