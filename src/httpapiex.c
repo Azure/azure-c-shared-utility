@@ -98,9 +98,9 @@ static LOCK_HANDLE get_global_initialization_lock(void)
     return result;
 }
 
-/* Returns the lock to hand to release_global_initialization_lock, or NULL when the lock could not be
-   created or acquired. In that case the caller proceeds unsynchronized, which is the legacy
-   behavior, rather than failing an API that used to succeed. */
+/* Returns the lock, already acquired, or NULL when it could not be created or acquired. The counter
+   is never touched when this returns NULL: the caller must fail instead, so that useGlobalInitialization
+   is only ever reached while the lock is held. */
 static LOCK_HANDLE acquire_global_initialization_lock(void)
 {
     LOCK_HANDLE result = get_global_initialization_lock();
@@ -116,24 +116,7 @@ static LOCK_HANDLE acquire_global_initialization_lock(void)
 
 static void release_global_initialization_lock(LOCK_HANDLE lock)
 {
-    if (lock != NULL)
-    {
-        (void)Unlock(lock);
-    }
-}
-
-/* Reads useGlobalInitialization under the lock, so the value is a consistent snapshot and the read
-   does not race with HTTPAPIEX_Init/HTTPAPIEX_Deinit. */
-static int get_global_initialization_count(void)
-{
-    int result;
-    LOCK_HANDLE lock = acquire_global_initialization_lock();
-
-    result = useGlobalInitialization;
-
-    release_global_initialization_lock(lock);
-
-    return result;
+    (void)Unlock(lock);
 }
 
 HTTPAPIEX_RESULT HTTPAPIEX_Init(void)
@@ -141,28 +124,36 @@ HTTPAPIEX_RESULT HTTPAPIEX_Init(void)
     HTTPAPIEX_RESULT result;
     LOCK_HANDLE lock = acquire_global_initialization_lock();
 
-    /*Codes_SRS_HTTPAPIEX_21_045: [If HTTPAPIEX_Init is calling more than once, it shall initialize the HTTP by calling HTTAPI_Init only once, and return success for all calls.] */
-    if (useGlobalInitialization == 0)
+    if (lock == NULL)
     {
-        /*Codes_SRS_HTTPAPIEX_21_044: [HTTPAPIEX_Init shall initialize the HTTP by calling HTTAPI_Init.] */
-        if (HTTPAPI_Init() == HTTPAPI_OK)
+        LogError("cannot initialize HTTP without the lock protecting the HTTP global initialization");
+        result = HTTPAPIEX_ERROR;
+    }
+    /*Codes_SRS_HTTPAPIEX_21_045: [If HTTPAPIEX_Init is calling more than once, it shall initialize the HTTP by calling HTTAPI_Init only once, and return success for all calls.] */
+    else
+    {
+        if (useGlobalInitialization == 0)
+        {
+            /*Codes_SRS_HTTPAPIEX_21_044: [HTTPAPIEX_Init shall initialize the HTTP by calling HTTAPI_Init.] */
+            if (HTTPAPI_Init() == HTTPAPI_OK)
+            {
+                useGlobalInitialization++;
+                result = HTTPAPIEX_OK;
+            }
+            else
+            {
+                /*Codes_SRS_HTTPAPIEX_21_046: [If HTTAPI_Init, HTTPAPIEX_Init shall return HTTPAPIEX_ERROR.] */
+                result = HTTPAPIEX_ERROR;
+            }
+        }
+        else
         {
             useGlobalInitialization++;
             result = HTTPAPIEX_OK;
         }
-        else
-        {
-            /*Codes_SRS_HTTPAPIEX_21_046: [If HTTAPI_Init, HTTPAPIEX_Init shall return HTTPAPIEX_ERROR.] */
-            result = HTTPAPIEX_ERROR;
-        }
-    }
-    else
-    {
-        useGlobalInitialization++;
-        result = HTTPAPIEX_OK;
-    }
 
-    release_global_initialization_lock(lock);
+        release_global_initialization_lock(lock);
+    }
 
     return result;
 }
@@ -171,14 +162,22 @@ void HTTPAPIEX_Deinit(void)
 {
     LOCK_HANDLE lock = acquire_global_initialization_lock();
 
-    /*Codes_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
-    useGlobalInitialization--;
-    if (useGlobalInitialization == 0)
+    if (lock == NULL)
     {
-        HTTPAPI_Deinit();
+        /*the lock only fails to exist when no HTTPAPIEX_Init ever succeeded, so there is no reference to release*/
+        LogError("cannot de-initialize HTTP without the lock protecting the HTTP global initialization");
     }
+    else
+    {
+        /*Codes_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
+        useGlobalInitialization--;
+        if (useGlobalInitialization == 0)
+        {
+            HTTPAPI_Deinit();
+        }
 
-    release_global_initialization_lock(lock);
+        release_global_initialization_lock(lock);
+    }
 }
 
 HTTPAPIEX_HANDLE HTTPAPIEX_Create(const char* hostName)
@@ -548,19 +547,11 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         {
                         case 0:
                         {
-                            if (get_global_initialization_count() > 0)
-                            {
-                                /*Codes_SRS_HTTPAPIEX_21_048: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Init.] */
-                                goOn = true;
-                            }
-                            else if (HTTPAPI_Init() != HTTPAPI_OK)
-                            {
-                                goOn = false;
-                            }
-                            else
-                            {
-                                goOn = true;
-                            }
+                            /*Codes_SRS_HTTPAPIEX_21_048: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Init.] */
+                            /*the handle takes a reference on the global initialization and holds it until the
+                              request is rolled back or the handle is destroyed, so no other thread can
+                              de-initialize HTTP while this handle is using it*/
+                            goOn = (HTTPAPIEX_Init() == HTTPAPIEX_OK);
                             break;
                         }
                         case 1:
@@ -634,10 +625,8 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                         case 0:
                         {
                             /*Codes_SRS_HTTPAPIEX_21_049: [If HTTPAPIEX_Init was called, HTTPAPI_ExecuteRequest shall not call HTTPAPI_Deinit.] */
-                            if (get_global_initialization_count() == 0)
-                            {
-                                HTTPAPI_Deinit();
-                            }
+                            /*releases the reference taken in step 0; HTTPAPI_Deinit runs only when it was the last one*/
+                            HTTPAPIEX_Deinit();
                             break;
                         }
                         case 1:
@@ -702,10 +691,8 @@ void HTTPAPIEX_Destroy(HTTPAPIEX_HANDLE handle)
         {
             HTTPAPI_CloseConnection(handleData->httpHandle);
             /*Codes_SRS_HTTPAPIEX_21_050: [If HTTPAPIEX_Init was called, HTTPAPI_Destroy shall not call HTTPAPI_Deinit.] */
-            if (get_global_initialization_count() == 0)
-            {
-                HTTPAPI_Deinit();
-            }
+            /*releases the reference this handle took in step 0 of HTTPAPIEX_ExecuteRequest*/
+            HTTPAPIEX_Deinit();
         }
         STRING_delete(handleData->hostName);
 

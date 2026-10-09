@@ -806,6 +806,80 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_not_call_HTTPAPI_Deinit_after_HTTPAPIEX_Init_suc
     HTTPAPIEX_Deinit();
 }
 
+/*a handle that completed a request holds a reference on the global HTTP initialization, so a
+  concurrent HTTPAPIEX_Deinit must not de-initialize HTTP under it*/
+TEST_FUNCTION(HTTPAPIEX_Deinit_does_not_deinitialize_HTTP_while_a_handle_holds_a_reference)
+{
+    /// arrange
+    unsigned int httpStatusCode;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    HTTPAPIEX_HANDLE httpapiexhandle;
+
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+    httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_HEAD, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody));
+    umock_c_reset_all_calls();
+
+    /// act
+    HTTPAPIEX_Deinit();
+
+    /// assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls()); /*HTTPAPI_Deinit was not called*/
+    ASSERT_ARE_EQUAL(size_t, (size_t)1, HTTPAPI_Init_calls);
+
+    /// destroy
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    HTTPAPIEX_Destroy(httpapiexhandle);
+}
+
+/*releasing the last reference, here by destroying the handle, de-initializes HTTP*/
+TEST_FUNCTION(HTTPAPIEX_Destroy_deinitializes_HTTP_when_it_releases_the_last_reference)
+{
+    /// arrange
+    unsigned int httpStatusCode;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    HTTPAPIEX_HANDLE httpapiexhandle;
+
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+    httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_HEAD, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody));
+    HTTPAPIEX_Deinit();
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_ARG)) /*this is hostname*/
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(VECTOR_destroy(IGNORED_ARG)) /*these are the options vector*/
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_free(httpapiexhandle)); /*this is the handle*/
+
+    /// act
+    HTTPAPIEX_Destroy(httpapiexhandle);
+
+    /// assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(size_t, (size_t)0, HTTPAPI_Init_calls);
+
+    /// destroy
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+}
+
 /*Tests_SRS_HTTPAPIEX_02_005: [If creating the handle fails for any reason, then HTTAPIEX_Create shall return NULL.] */
 TEST_FUNCTION(HTTPAPIEX_Create_fails_when_malloc_fails)
 {

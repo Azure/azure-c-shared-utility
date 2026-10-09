@@ -13,6 +13,7 @@ HTTAPIEX is a utility module that provides HTTP requests with build-in retry cap
 
 ## Thread safety
 HTTPAPIEX_Init, HTTPAPIEX_Deinit, HTTPAPIEX_ExecuteRequest and HTTPAPIEX_Destroy serialize their accesses to the global HTTPAPI initialization count, so they may be called concurrently from different threads.
+HTTPAPIEX_ExecuteRequest takes a reference on that initialization and the handle holds it until the request is rolled back or the handle is destroyed, so a concurrent HTTPAPIEX_Deinit cannot de-initialize HTTP while a handle is using it.
 Calls that operate on the same HTTPAPIEX_HANDLE are not thread safe and must not be made concurrently on that handle.
 
 ## Exposed API
