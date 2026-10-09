@@ -454,6 +454,10 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_entropy_add_source, my_mbedtls_entropy_add_source);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_entropy_add_source, MBEDTLS_ERR_ENTROPY_MAX_SOURCES);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_ctr_drbg_seed, MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED);
+#else
+        // Without this the injected failure value would be 0, which is
+        // PSA_SUCCESS, and the negative test would not actually fail the call.
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(psa_crypto_init, PSA_ERROR_INSUFFICIENT_MEMORY);
 #endif
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_ssl_config_defaults, MBEDTLS_ERR_SSL_ALLOC_FAILED);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_ssl_set_hostname, MBEDTLS_ERR_SSL_ALLOC_FAILED);
