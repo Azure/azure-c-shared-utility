@@ -135,9 +135,9 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE *tls_io_instance)
 {
     int result = 0;
     unsigned char buffer[64];
-    int rcv_bytes = 1;
+    int rcv_bytes;
 
-    while (rcv_bytes > 0)
+    do
     {
         rcv_bytes = mbedtls_ssl_read(&tls_io_instance->ssl, buffer, sizeof(buffer));
         if (rcv_bytes > 0)
@@ -147,7 +147,22 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE *tls_io_instance)
                 tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
             }
         }
-    }
+        else if ((rcv_bytes == MBEDTLS_ERR_SSL_WANT_READ) ||
+                 (rcv_bytes == MBEDTLS_ERR_SSL_WANT_WRITE))
+        {
+            // No application data is available yet. Not an error.
+        }
+        else
+        {
+            // Anything else is fatal for this connection, including 0, which
+            // means the peer closed the transport without a CloseNotify.
+            // Without reporting it the failure is only ever noticed by an
+            // upper layer timeout.
+            LogError("Failure reading from the TLS connection (%d)", rcv_bytes);
+            indicate_error(tls_io_instance);
+            result = MU_FAILURE;
+        }
+    } while (rcv_bytes > 0);
 
     return result;
 }
@@ -524,6 +539,7 @@ static int mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
 {
     const char* pers = "azure_iot_client";
     int result = 0;
+    int mbed_result;
 #if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
     psa_status_t psa_status;
 #endif // MBEDTLS_VERSION_NUMBER
@@ -552,7 +568,7 @@ static int mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
         else
 #endif // MBEDTLS_VERSION_NUMBER
         {
-        // mbedTLS initialize...
+        // mbedTLS initialize. None of these can fail.
         mbedtls_x509_crt_init(&tls_io_instance->trusted_certificates_parsed);
         mbedtls_x509_crt_init(&tls_io_instance->owncert);
         mbedtls_pk_init(&tls_io_instance->pKey);
@@ -560,36 +576,78 @@ static int mbedtls_init(TLS_IO_INSTANCE *tls_io_instance)
 
 #if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
         mbedtls_entropy_init(&tls_io_instance->entropy);
-        // Add a weak entropy source here,avoid some platform doesn't have strong / hardware entropy
-        mbedtls_entropy_add_source(&tls_io_instance->entropy, tlsio_entropy_poll, NULL, MBEDTLS_ENTROPY_MAX_GATHER, MBEDTLS_ENTROPY_SOURCE_WEAK);
-
         mbedtls_ctr_drbg_init(&tls_io_instance->ctr_drbg);
-        mbedtls_ctr_drbg_seed(&tls_io_instance->ctr_drbg, mbedtls_entropy_func, &tls_io_instance->entropy, (const unsigned char *)pers, strlen(pers));
 #endif // MBEDTLS_VERSION_NUMBER
 
         mbedtls_ssl_config_init(&tls_io_instance->config);
-        mbedtls_ssl_config_defaults(&tls_io_instance->config, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
-#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
-        // mbedtls_ssl_conf_rng() was removed in mbedTLS 4.x.
-        mbedtls_ssl_conf_rng(&tls_io_instance->config, mbedtls_ctr_drbg_random, &tls_io_instance->ctr_drbg);
-#endif // MBEDTLS_VERSION_NUMBER
-        mbedtls_ssl_conf_authmode(&tls_io_instance->config, MBEDTLS_SSL_VERIFY_REQUIRED);
-#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
-        mbedtls_ssl_conf_min_tls_version(&tls_io_instance->config, MBEDTLS_SSL_VERSION_TLS1_2); // v1.2
-#else
-        mbedtls_ssl_conf_min_version(&tls_io_instance->config, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3); // v1.2
-#endif // MBEDTLS_VERSION_NUMBER
-
         mbedtls_ssl_init(&tls_io_instance->ssl);
-        mbedtls_ssl_set_bio(&tls_io_instance->ssl, tls_io_instance, on_io_send, on_io_recv, NULL);
-        mbedtls_ssl_set_hostname(&tls_io_instance->ssl, tls_io_instance->hostname);
-
         mbedtls_ssl_session_init(&tls_io_instance->ssn);
 
-        mbedtls_ssl_set_session(&tls_io_instance->ssl, &tls_io_instance->ssn);
-        mbedtls_ssl_setup(&tls_io_instance->ssl, &tls_io_instance->config);
-
+        // Every mbedTLS context now holds resources, so from this point on a
+        // failure has to unwind through mbedtls_uninit().
         tls_io_instance->tls_status = TLS_STATE_INITIALIZED;
+
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
+        // Add a weak entropy source here, avoid some platform doesn't have strong / hardware entropy
+        if ((mbed_result = mbedtls_entropy_add_source(&tls_io_instance->entropy, tlsio_entropy_poll, NULL, MBEDTLS_ENTROPY_MAX_GATHER, MBEDTLS_ENTROPY_SOURCE_WEAK)) != 0)
+        {
+            LogError("mbedtls_entropy_add_source failed (%d)", mbed_result);
+            result = MU_FAILURE;
+        }
+        // An unseeded CTR_DRBG produces predictable output, so this must never be ignored.
+        else if ((mbed_result = mbedtls_ctr_drbg_seed(&tls_io_instance->ctr_drbg, mbedtls_entropy_func, &tls_io_instance->entropy, (const unsigned char *)pers, strlen(pers))) != 0)
+        {
+            LogError("mbedtls_ctr_drbg_seed failed (%d)", mbed_result);
+            result = MU_FAILURE;
+        }
+        else
+#endif // MBEDTLS_VERSION_NUMBER
+        if ((mbed_result = mbedtls_ssl_config_defaults(&tls_io_instance->config, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
+        {
+            LogError("mbedtls_ssl_config_defaults failed (%d)", mbed_result);
+            result = MU_FAILURE;
+        }
+        else
+        {
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
+            // mbedtls_ssl_conf_rng() was removed in mbedTLS 4.x.
+            mbedtls_ssl_conf_rng(&tls_io_instance->config, mbedtls_ctr_drbg_random, &tls_io_instance->ctr_drbg);
+#endif // MBEDTLS_VERSION_NUMBER
+            mbedtls_ssl_conf_authmode(&tls_io_instance->config, MBEDTLS_SSL_VERIFY_REQUIRED);
+#if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
+            mbedtls_ssl_conf_min_tls_version(&tls_io_instance->config, MBEDTLS_SSL_VERSION_TLS1_2); // v1.2
+#else
+            mbedtls_ssl_conf_min_version(&tls_io_instance->config, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3); // v1.2
+#endif // MBEDTLS_VERSION_NUMBER
+
+            mbedtls_ssl_set_bio(&tls_io_instance->ssl, tls_io_instance, on_io_send, on_io_recv, NULL);
+
+            // If this fails the expected host name is not registered, and the
+            // server certificate would then be accepted on chain validity
+            // alone. It must fail the creation rather than be ignored.
+            if ((mbed_result = mbedtls_ssl_set_hostname(&tls_io_instance->ssl, tls_io_instance->hostname)) != 0)
+            {
+                LogError("mbedtls_ssl_set_hostname failed (%d)", mbed_result);
+                result = MU_FAILURE;
+            }
+            // mbedtls_ssl_setup() has to run before mbedtls_ssl_set_session(),
+            // which rejects a context that has not been set up yet.
+            else if ((mbed_result = mbedtls_ssl_setup(&tls_io_instance->ssl, &tls_io_instance->config)) != 0)
+            {
+                LogError("mbedtls_ssl_setup failed (%d)", mbed_result);
+                result = MU_FAILURE;
+            }
+            else if ((mbed_result = mbedtls_ssl_set_session(&tls_io_instance->ssl, &tls_io_instance->ssn)) != 0)
+            {
+                LogError("mbedtls_ssl_set_session failed (%d)", mbed_result);
+                result = MU_FAILURE;
+            }
+        }
+
+        if (result != 0)
+        {
+            mbedtls_uninit(tls_io_instance);
+        }
         }
     }
 
@@ -655,10 +713,9 @@ CONCRETE_IO_HANDLE tlsio_mbedtls_create(void *io_create_parameters)
                 {
                     result->tls_status = TLS_STATE_NOT_INITIALIZED;
 
-                    // Note: mbedtls_init() only fails before it has initialized
-                    // any mbedTLS context, so there is nothing to unwind with
-                    // mbedtls_uninit() here. Keep that true if it gains new
-                    // failure points.
+                    // mbedtls_init() releases everything it initialized before
+                    // returning a failure, so only what was allocated here has
+                    // to be unwound.
                     if (mbedtls_init((void*)result) != 0)
                     {
                         LogError("Failure initializing mbedTLS");
@@ -753,9 +810,15 @@ int tlsio_mbedtls_open(CONCRETE_IO_HANDLE tls_io, ON_IO_OPEN_COMPLETE on_io_open
 
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING_UNDERLYING_IO;
 
-            mbedtls_ssl_session_reset(&tls_io_instance->ssl);
+            int reset_result = mbedtls_ssl_session_reset(&tls_io_instance->ssl);
 
-            if (xio_open(tls_io_instance->socket_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
+            if (reset_result != 0)
+            {
+                LogError("mbedtls_ssl_session_reset failed (%d)", reset_result);
+                tls_io_instance->tlsio_state = TLSIO_STATE_NOT_OPEN;
+                result = MU_FAILURE;
+            }
+            else if (xio_open(tls_io_instance->socket_io, on_underlying_io_open_complete, tls_io_instance, on_underlying_io_bytes_received, tls_io_instance, on_underlying_io_error, tls_io_instance) != 0)
             {
 
                 LogError("Underlying IO open failed");
@@ -793,15 +856,29 @@ int tlsio_mbedtls_close(CONCRETE_IO_HANDLE tls_io, ON_IO_CLOSE_COMPLETE on_io_cl
 
             if (tls_io_instance->tls_status == TLS_STATE_INITIALIZED)
             {
+                int mbed_result;
+
                 if (is_error)
                 {
                     // forced shutdown if tls is in ERROR state
-                    mbedtls_ssl_session_reset(&tls_io_instance->ssl);
+                    mbed_result = mbedtls_ssl_session_reset(&tls_io_instance->ssl);
+                    if (mbed_result != 0)
+                    {
+                        LogError("mbedtls_ssl_session_reset failed (%d)", mbed_result);
+                    }
                 }
                 else
                 {
-                    // Tell the peer that you're going to close
-                    mbedtls_ssl_close_notify(&tls_io_instance->ssl);
+                    // Tell the peer that you're going to close. A failure here
+                    // is reported but does not stop the close: the underlying
+                    // socket is torn down either way. The BIO this adapter
+                    // installs never reports a partial write, so the retry loop
+                    // the mbedTLS samples use does not apply.
+                    mbed_result = mbedtls_ssl_close_notify(&tls_io_instance->ssl);
+                    if (mbed_result != 0)
+                    {
+                        LogError("mbedtls_ssl_close_notify failed (%d)", mbed_result);
+                    }
                 }
 
                 tls_io_instance->tls_status = TLS_STATE_CLOSING;

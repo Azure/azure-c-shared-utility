@@ -99,6 +99,7 @@ static void my_gballoc_free(void* ptr)
 typedef int(*f_rng)(void *p_rng, unsigned char *output, size_t output_len);
 typedef void(*f_dbg)(void* a, int b, const char* c, int d, const char* e);
 typedef int(*f_entropy)(void *, unsigned char *, size_t);
+typedef int(*f_rng_t)(void *, unsigned char *, size_t);
 
 MOCKABLE_FUNCTION(, void, mbedtls_init, void*, instance, const char*, hostname);
 MOCKABLE_FUNCTION(, int, mbedtls_x509_crt_parse, mbedtls_x509_crt*, crt, const unsigned char*, buf, size_t, buflen);
@@ -106,7 +107,7 @@ MOCKABLE_FUNCTION(, void, mbedtls_x509_crt_init, mbedtls_x509_crt*, crt);
 MOCKABLE_FUNCTION(, void, mbedtls_x509_crt_free, mbedtls_x509_crt*, crt);
 
 #if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_3_0_0 && MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
-MOCKABLE_FUNCTION(, int, mbedtls_pk_parse_key, mbedtls_pk_context*, ctx, const unsigned char*, key, size_t, keylen, const unsigned char*, pwd, size_t, pwdlen, int (*f_rng)(void *, unsigned char *, size_t), void *p_rng);
+MOCKABLE_FUNCTION(, int, mbedtls_pk_parse_key, mbedtls_pk_context*, ctx, const unsigned char*, key, size_t, keylen, const unsigned char*, pwd, size_t, pwdlen, f_rng_t, f_rng, void*, p_rng);
 #else
 MOCKABLE_FUNCTION(, int, mbedtls_pk_parse_key, mbedtls_pk_context*, ctx, const unsigned char*, key, size_t, keylen, const unsigned char*, pwd, size_t, pwdlen);
 #endif
@@ -447,11 +448,22 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         REGISTER_GLOBAL_MOCK_RETURN(socketio_get_interface_description, TEST_INTERFACE_DESC);
         REGISTER_GLOBAL_MOCK_FAIL_RETURN(socketio_get_interface_description, NULL);
 
-        REGISTER_GLOBAL_MOCK_RETURN(mbedtls_ssl_read, 0);
+        REGISTER_GLOBAL_MOCK_RETURN(mbedtls_ssl_read, MBEDTLS_ERR_SSL_WANT_READ);
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_ssl_set_bio, my_mbedtls_ssl_set_bio);
 #if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_entropy_add_source, my_mbedtls_entropy_add_source);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_entropy_add_source, MBEDTLS_ERR_ENTROPY_MAX_SOURCES);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_ctr_drbg_seed, MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED);
+#else
+        // Without this the injected failure value would be 0, which is
+        // PSA_SUCCESS, and the negative test would not actually fail the call.
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(psa_crypto_init, PSA_ERROR_INSUFFICIENT_MEMORY);
 #endif
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_ssl_config_defaults, MBEDTLS_ERR_SSL_ALLOC_FAILED);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_ssl_set_hostname, MBEDTLS_ERR_SSL_ALLOC_FAILED);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_ssl_setup, MBEDTLS_ERR_SSL_ALLOC_FAILED);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_ssl_set_session, MBEDTLS_ERR_SSL_BAD_INPUT_DATA);
+        REGISTER_GLOBAL_MOCK_FAIL_RETURN(mbedtls_ssl_session_reset, MBEDTLS_ERR_SSL_ALLOC_FAILED);
         REGISTER_GLOBAL_MOCK_HOOK(mbedtls_ssl_write, my_mbedtls_ssl_write);
 
         REGISTER_GLOBAL_MOCK_HOOK(on_io_open_complete, my_on_io_open_complete);
@@ -509,7 +521,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         return result;
     }
 
-    static void setup_tlsio_mbedtls_create_mocks(bool call_iface_desc)
+    static void setup_tlsio_mbedtls_create_mocks_ex(bool call_iface_desc, bool fail_ssl_setup)
     {
         STRICT_EXPECTED_CALL(gballoc_calloc(IGNORED_ARG, IGNORED_ARG));
         if (call_iface_desc)
@@ -528,29 +540,63 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mbedtls_pk_init(IGNORED_ARG));
 #if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_init(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_init(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_session_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_defaults(IGNORED_ARG, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT));
         STRICT_EXPECTED_CALL(mbedtls_ssl_conf_authmode(IGNORED_ARG, MBEDTLS_SSL_VERIFY_REQUIRED));
         // mbedtls_ssl_conf_min_tls_version() is static inline and therefore
         // not mocked, so it produces no expected call here.
 #else
         STRICT_EXPECTED_CALL(mbedtls_entropy_init(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(mbedtls_entropy_add_source(IGNORED_ARG, IGNORED_ARG, NULL, IGNORED_ARG, IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_init(IGNORED_ARG));
-        STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_seed(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_init(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_init(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_session_init(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_entropy_add_source(IGNORED_ARG, IGNORED_ARG, NULL, IGNORED_ARG, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_seed(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_config_defaults(IGNORED_ARG, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT));
         STRICT_EXPECTED_CALL(mbedtls_ssl_conf_rng(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_conf_authmode(IGNORED_ARG, MBEDTLS_SSL_VERIFY_REQUIRED));
         STRICT_EXPECTED_CALL(mbedtls_ssl_conf_min_version(IGNORED_ARG, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3));
 #endif
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_init(IGNORED_ARG));
         STRICT_EXPECTED_CALL(mbedtls_ssl_set_bio(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, NULL));
         STRICT_EXPECTED_CALL(mbedtls_ssl_set_hostname(IGNORED_ARG, IGNORED_ARG));
-        STRICT_EXPECTED_CALL(mbedtls_ssl_session_init(IGNORED_ARG));
+        // mbedtls_ssl_setup() has to precede mbedtls_ssl_set_session(), which
+        // rejects a context that has not been set up.
+        if (fail_ssl_setup)
+        {
+            STRICT_EXPECTED_CALL(mbedtls_ssl_setup(IGNORED_ARG, IGNORED_ARG)).SetReturn(MBEDTLS_ERR_SSL_ALLOC_FAILED);
+        }
+        else
+        {
+            STRICT_EXPECTED_CALL(mbedtls_ssl_setup(IGNORED_ARG, IGNORED_ARG));
+            STRICT_EXPECTED_CALL(mbedtls_ssl_set_session(IGNORED_ARG, IGNORED_ARG));
+        }
+    }
 
-        STRICT_EXPECTED_CALL(mbedtls_ssl_set_session(IGNORED_ARG, IGNORED_ARG));
-        STRICT_EXPECTED_CALL(mbedtls_ssl_setup(IGNORED_ARG, IGNORED_ARG));
+    static void setup_tlsio_mbedtls_create_mocks(bool call_iface_desc)
+    {
+        setup_tlsio_mbedtls_create_mocks_ex(call_iface_desc, false);
+    }
+
+    // Every mbedTLS call in mbedtls_init() that can fail has to fail the
+    // creation, and everything already initialized has to be released.
+    static void setup_mbedtls_init_failure_cleanup_mocks(void)
+    {
+        STRICT_EXPECTED_CALL(mbedtls_ssl_free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_session_free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_config_free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_x509_crt_free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_pk_free(IGNORED_ARG));
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_4_0_0
+        STRICT_EXPECTED_CALL(mbedtls_ctr_drbg_free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(mbedtls_entropy_free(IGNORED_ARG));
+#endif
+        STRICT_EXPECTED_CALL(xio_destroy(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     }
 
     TEST_FUNCTION(tlsio_mbedtls_create_config_NULL_fail)
@@ -606,9 +652,13 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         umock_c_negative_tests_snapshot();
 
         size_t count = umock_c_negative_tests_call_count();
-        // Only the first 2 calls can fail
-        for (size_t index = 0; index < 2; index++)
+        for (size_t index = 0; index < count; index++)
         {
+            if (!umock_c_negative_tests_can_call_fail(index))
+            {
+                continue;
+            }
+
             umock_c_negative_tests_reset();
             umock_c_negative_tests_fail_call(index);
 
@@ -621,6 +671,49 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
 
         //cleanup
         umock_c_negative_tests_deinit();
+    }
+
+    // A failure after the mbedTLS contexts have been initialized has to release
+    // them before returning.
+    TEST_FUNCTION(tlsio_mbedtls_create_ssl_setup_fails)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+
+        setup_tlsio_mbedtls_create_mocks_ex(false, true);
+        setup_mbedtls_init_failure_cleanup_mocks();
+
+        //act
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+
+        //assert
+        ASSERT_IS_NULL(handle);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    }
+
+    // A failed mbedtls_ssl_set_hostname() leaves the expected server name
+    // unregistered, so the handshake would no longer check it. Creation must
+    // fail instead.
+    TEST_FUNCTION(tlsio_mbedtls_create_set_hostname_fails)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+
+        STRICT_EXPECTED_CALL(mbedtls_ssl_set_hostname(IGNORED_ARG, IGNORED_ARG)).SetReturn(MBEDTLS_ERR_SSL_ALLOC_FAILED);
+
+        //act
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+
+        //assert
+        ASSERT_IS_NULL(handle);
     }
 
 #if defined(MBEDTLS_VERSION_NUMBER) && MBEDTLS_VERSION_NUMBER >= TLSIO_MBEDTLS_VERSION_4_0_0
@@ -740,6 +833,32 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
 
         //cleanup
         tlsio_mbedtls_close(handle, NULL, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    // A context that cannot be reset is not usable, so the open has to fail
+    // before the underlying socket is opened.
+    TEST_FUNCTION(tlsio_mbedtls_open_session_reset_fails)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(mbedtls_ssl_session_reset(IGNORED_ARG)).SetReturn(MBEDTLS_ERR_SSL_ALLOC_FAILED);
+
+        //act
+        int result = tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+
+        //assert
+        ASSERT_ARE_NOT_EQUAL(int, 0, result);
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
         tlsio_mbedtls_destroy(handle);
     }
 
@@ -1110,6 +1229,97 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         umock_c_reset_all_calls();
 
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_ARG));
+
+        //act
+        tlsio_mbedtls_dowork(handle);
+
+        //assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    // A fatal TLS error while reading has to be reported, instead of leaving the
+    // connection to be given up on by an upper layer timeout.
+    TEST_FUNCTION(tlsio_mbedtls_dowork_read_error_indicates_error)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+            .SetReturn(MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE);
+        STRICT_EXPECTED_CALL(on_io_error(IGNORED_ARG));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_ARG));
+
+        //act
+        tlsio_mbedtls_dowork(handle);
+
+        //assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    // MBEDTLS_ERR_SSL_WANT_READ only means no application data is pending.
+    TEST_FUNCTION(tlsio_mbedtls_dowork_want_read_is_not_an_error)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+            .SetReturn(MBEDTLS_ERR_SSL_WANT_READ);
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_ARG));
+
+        //act
+        tlsio_mbedtls_dowork(handle);
+
+        //assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+
+    // A zero return means the peer closed the transport without a CloseNotify;
+    // the context cannot be used afterwards, so it must be reported.
+    TEST_FUNCTION(tlsio_mbedtls_dowork_read_zero_indicates_error)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+            .SetReturn(0);
+        STRICT_EXPECTED_CALL(on_io_error(IGNORED_ARG));
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_ARG));
 
         //act
