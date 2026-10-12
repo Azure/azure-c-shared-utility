@@ -295,6 +295,39 @@ extern "C"
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/httpapiex.h"
+#include "azure_c_shared_utility/lock.h"
+
+/* Test double for the lock protecting the HTTP global initialization. These tests are single
+   threaded, so a static object is enough. It is deliberately not the platform adapter and not a
+   mock: it allocates nothing, so the lock bootstrap never appears in the recorded gballoc calls on
+   any platform, and it keeps the call expectations below independent of it. */
+static int test_lock;
+static int test_lock_depth;
+
+LOCK_HANDLE Lock_Init(void)
+{
+    return (LOCK_HANDLE)&test_lock;
+}
+
+LOCK_RESULT Lock(LOCK_HANDLE handle)
+{
+    (void)handle;
+    test_lock_depth++;
+    return LOCK_OK;
+}
+
+LOCK_RESULT Unlock(LOCK_HANDLE handle)
+{
+    (void)handle;
+    test_lock_depth--;
+    return LOCK_OK;
+}
+
+LOCK_RESULT Lock_Deinit(LOCK_HANDLE handle)
+{
+    (void)handle;
+    return LOCK_OK;
+}
 
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
@@ -546,6 +579,8 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
+    /*every path through HTTPAPIEX must release the lock it took*/
+    ASSERT_ARE_EQUAL(int, 0, test_lock_depth);
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 

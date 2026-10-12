@@ -13,15 +13,35 @@
 #include "azure_c_shared_utility/vector.h"
 #include "azure_c_shared_utility/lock.h"
 
-#if defined(_MSC_VER)
+/* Atomic compare and exchange, used only to publish the lock below. Returns the previous value of
+   *destination. A port whose toolchain provides none of the implementations here can supply its own
+   by defining HTTPAPIEX_LOCK_STORAGE and HTTPAPIEX_COMPARE_EXCHANGE_PTR; without one, the
+   thread-safety guarantee documented for this module does not hold. */
+#if defined(HTTPAPIEX_COMPARE_EXCHANGE_PTR)
+/* supplied by the port, together with HTTPAPIEX_LOCK_STORAGE */
+#elif defined(_MSC_VER)
 #include <intrin.h>
-/* returns the previous value of *destination */
-#define COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
+#define HTTPAPIEX_LOCK_STORAGE void* volatile
+#define HTTPAPIEX_COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
     _InterlockedCompareExchangePointer((void* volatile*)(destination), (void*)(exchange), (void*)(comparand))
 #elif defined(__GNUC__) || defined(__clang__)
-#define COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
+#define HTTPAPIEX_LOCK_STORAGE void* volatile
+#define HTTPAPIEX_COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
     __sync_val_compare_and_swap((void* volatile*)(destination), (void*)(comparand), (void*)(exchange))
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L) && !defined(__STDC_NO_ATOMICS__)
+#include <stdatomic.h>
+#define HTTPAPIEX_LOCK_STORAGE _Atomic(void*)
+#define HTTPAPIEX_COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
+    compare_exchange_ptr((destination), (void*)(exchange), (void*)(comparand))
+#define HTTPAPIEX_C11_ATOMICS
 #else
+/* No atomic compare and exchange is available. Two threads reaching the bootstrap at the same time
+   can each publish their own lock, so the counter updates are not serialized: on such a toolchain
+   HTTPAPIEX is NOT thread safe and must be used from a single thread, unless the port defines
+   HTTPAPIEX_COMPARE_EXCHANGE_PTR and HTTPAPIEX_LOCK_STORAGE. */
+#define HTTPAPIEX_LOCK_STORAGE void* volatile
+#define HTTPAPIEX_COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
+    compare_exchange_ptr((destination), (void*)(exchange), (void*)(comparand))
 #define HTTPAPIEX_NO_ATOMICS
 #endif
 
@@ -49,11 +69,18 @@ static int useGlobalInitialization = 0;
    it gates. It is created on first use and kept for the lifetime of the process; the creation itself
    is made race free by a compare and exchange, so no external one time initialization facility is
    needed. */
-static void* volatile globalInitializationLock = NULL;
+static HTTPAPIEX_LOCK_STORAGE globalInitializationLock = NULL;
 
-#if defined(HTTPAPIEX_NO_ATOMICS)
-/* Toolchains without an atomic compare and exchange are single threaded targets; this matches the
-   behavior of pal/generic/refcount_os.h, which also gives up atomicity on those platforms. */
+#if defined(HTTPAPIEX_C11_ATOMICS)
+static void* compare_exchange_ptr(_Atomic(void*)* destination, void* exchange, void* comparand)
+{
+    /*on failure atomic_compare_exchange_strong stores the current value in expected, on success it
+      leaves it untouched; either way expected ends up holding the previous value*/
+    void* expected = comparand;
+    (void)atomic_compare_exchange_strong(destination, &expected, exchange);
+    return expected;
+}
+#elif defined(HTTPAPIEX_NO_ATOMICS)
 static void* compare_exchange_ptr(void* volatile* destination, void* exchange, void* comparand)
 {
     void* result = (void*)*destination;
@@ -63,14 +90,12 @@ static void* compare_exchange_ptr(void* volatile* destination, void* exchange, v
     }
     return result;
 }
-#define COMPARE_EXCHANGE_PTR(destination, exchange, comparand) \
-    compare_exchange_ptr((void* volatile*)(destination), (void*)(exchange), (void*)(comparand))
 #endif
 
 static LOCK_HANDLE get_global_initialization_lock(void)
 {
     /*an atomic read: exchanging NULL for NULL never changes the value*/
-    LOCK_HANDLE result = (LOCK_HANDLE)COMPARE_EXCHANGE_PTR(&globalInitializationLock, NULL, NULL);
+    LOCK_HANDLE result = (LOCK_HANDLE)HTTPAPIEX_COMPARE_EXCHANGE_PTR(&globalInitializationLock, NULL, NULL);
 
     if (result == NULL)
     {
@@ -81,7 +106,7 @@ static LOCK_HANDLE get_global_initialization_lock(void)
         }
         else
         {
-            result = (LOCK_HANDLE)COMPARE_EXCHANGE_PTR(&globalInitializationLock, createdLock, NULL);
+            result = (LOCK_HANDLE)HTTPAPIEX_COMPARE_EXCHANGE_PTR(&globalInitializationLock, createdLock, NULL);
             if (result == NULL)
             {
                 /*this call installed the lock*/

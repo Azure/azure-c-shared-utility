@@ -14,6 +14,8 @@ HTTAPIEX is a utility module that provides HTTP requests with build-in retry cap
 ## Thread safety
 HTTPAPIEX_Init, HTTPAPIEX_Deinit, HTTPAPIEX_ExecuteRequest and HTTPAPIEX_Destroy serialize their accesses to the global HTTPAPI initialization count, so they may be called concurrently from different threads.
 HTTPAPIEX_ExecuteRequest takes a reference on that initialization and the handle holds it until the request is rolled back or the handle is destroyed, so a concurrent HTTPAPIEX_Deinit cannot de-initialize HTTP while a handle is using it.
+The lock that serializes those accesses is published with an atomic compare and exchange, taken from `_InterlockedCompareExchangePointer` (MSVC), `__sync_val_compare_and_swap` (GCC/clang) or C11 `<stdatomic.h>`. A toolchain that provides none of these has no race free bootstrap, so on it HTTPAPIEX is **not** thread safe and must be used from a single thread; such a port can restore the guarantee by defining `HTTPAPIEX_LOCK_STORAGE` and `HTTPAPIEX_COMPARE_EXCHANGE_PTR` (returning the previous value) for its own compare and exchange.
+HTTPAPIEX_Init returns HTTPAPIEX_ERROR, and HTTPAPIEX_Deinit does nothing, if the lock cannot be created or acquired; the count is never touched outside the lock.
 Calls that operate on the same HTTPAPIEX_HANDLE are not thread safe and must not be made concurrently on that handle.
 
 ## Exposed API

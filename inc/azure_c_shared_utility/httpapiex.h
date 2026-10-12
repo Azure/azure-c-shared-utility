@@ -49,9 +49,11 @@ MU_DEFINE_ENUM(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
  *  This API may be called more than once; the underlying HTTP stack is initialized only on the
  *      first call and a reference is taken on every call. Each call must be matched by a call to
  *      @c HTTPAPIEX_Deinit.
- *  This API is thread safe.
+ *  This API is thread safe on toolchains that provide an atomic compare and exchange; see the
+ *      thread safety section of the HTTPAPIEX requirements.
  *
- * @return    An @c HTTPAPIEX_RESULT indicating the status of the call.
+ * @return  An @c HTTPAPIEX_RESULT indicating the status of the call. @c HTTPAPIEX_ERROR is returned
+ *          if the lock protecting the initialization cannot be created or acquired.
  */
 MOCKABLE_FUNCTION(, HTTPAPIEX_RESULT, HTTPAPIEX_Init);
 
@@ -60,7 +62,8 @@ MOCKABLE_FUNCTION(, HTTPAPIEX_RESULT, HTTPAPIEX_Init);
  *
  *  Releases one reference taken by @c HTTPAPIEX_Init. The underlying HTTP stack is released when
  *      the last reference is dropped, after which no other HTTPAPIEX API shall be called.
- *  This API is thread safe.
+ *  This API is thread safe on toolchains that provide an atomic compare and exchange; see the
+ *      thread safety section of the HTTPAPIEX requirements.
  */
 MOCKABLE_FUNCTION(, void, HTTPAPIEX_Deinit);
 
