@@ -336,7 +336,8 @@ static void send_client_hello(TLS_IO_INSTANCE* tls_io_instance)
     {
         // SCH_CRED_MANUAL_CRED_VALIDATION flag signals to schannel to NOT use
         // the Windows certificate store, but instead have application verify
-        // certificate.
+        // certificate. This also disables schannel's server name check, so
+        // verify_custom_certificate_if_needed checks the name.
         auth_data.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
     }
 
@@ -448,9 +449,12 @@ static int verify_custom_certificate_if_needed(TLS_IO_INSTANCE* tls_io_instance)
             LogError("QueryContextAttributes failed: %x", status);
             result = MU_FAILURE;
         }
-        else if (x509_verify_certificate_in_chain(tls_io_instance->trustedCertificate, serverCertificateToVerify) != 0)
+        else if ((tls_io_instance->ignore_server_name_check &&
+                  x509_verify_certificate_in_chain(tls_io_instance->trustedCertificate, serverCertificateToVerify) != 0) ||
+                 (!tls_io_instance->ignore_server_name_check &&
+                  x509_verify_certificate_in_chain_for_hostname(tls_io_instance->trustedCertificate, serverCertificateToVerify, tls_io_instance->host_name) != 0))
         {
-            LogError("Failed to verify trusted certificate in chain");
+            LogError("Failed to verify server certificate against the trusted certificate");
             result = MU_FAILURE;
         }
         else
@@ -712,6 +716,7 @@ static void on_underlying_io_bytes_received(void* context, const unsigned char* 
                     if (verify_custom_certificate_if_needed(tls_io_instance) != 0)
                     {
                         LogError("Unable to verify server certificate against custom server trusted certificate");
+                        tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                         if (tls_io_instance->on_io_open_complete != NULL)
                         {
                             tls_io_instance->on_io_open_complete(tls_io_instance->on_io_open_complete_context, IO_OPEN_ERROR);
