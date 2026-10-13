@@ -189,7 +189,9 @@ void HTTPAPIEX_Deinit(void)
 
     if (lock == NULL)
     {
-        /*the lock only fails to exist when no HTTPAPIEX_Init ever succeeded, so there is no reference to release*/
+        /*the lock could not be created or could not be acquired; releasing a reference would mean
+          touching the count unsynchronized, so any outstanding reference is left in place for a
+          later successful call to release*/
         LogError("cannot de-initialize HTTP without the lock protecting the HTTP global initialization");
     }
     else

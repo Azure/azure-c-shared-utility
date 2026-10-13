@@ -63,7 +63,8 @@ MOCKABLE_FUNCTION(, HTTPAPIEX_RESULT, HTTPAPIEX_Init);
  *
  *  Releases one reference taken by a successful @c HTTPAPIEX_Init. The underlying HTTP stack is
  *      released when the last reference is dropped, after which no other HTTPAPIEX API shall be
- *      called.
+ *      called. If the lock protecting the initialization cannot be created or acquired, no
+ *      reference is released and the call has no effect.
  *  This API is thread safe on toolchains that provide an atomic compare and exchange; see the
  *      thread safety section of the HTTPAPIEX requirements.
  */
