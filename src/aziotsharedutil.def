@@ -229,6 +229,8 @@ EXPORTS
     x509_schannel_create
     x509_schannel_destroy
     x509_schannel_get_certificate_context
+    x509_verify_certificate_in_chain
+    x509_verify_certificate_in_chain_for_hostname
 
     xio_close
     xio_create

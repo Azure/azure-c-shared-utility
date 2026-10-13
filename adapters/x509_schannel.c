@@ -826,9 +826,15 @@ static int add_certificates_to_store(const char* trustedCertificate, HCERTSTORE 
     return result;
 }
 
-// x509_verify_certificate_in_chain determines whether the certificate in pCertContextToVerify
-// chains up to the PEM represented by trustedCertificate or not.
-int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
+/**
+ * @brief Verifies that pCertContextToVerify chains up to trustedCertificate and, if serverName is
+ *        not NULL, that it is valid for serverName.
+ * @param trustedCertificate PEM certificate(s) the chain must end in.
+ * @param pCertContextToVerify Certificate to verify.
+ * @param serverName Server name to match, or NULL to skip the name check.
+ * @return 0 on success, non-zero otherwise.
+ */
+static int verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify, wchar_t* serverName)
 {
     int result;
     HCERTSTORE hCertStore = NULL;
@@ -864,9 +870,16 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
         memset(&ChainPara, 0, sizeof(ChainPara));
         ChainPara.cbSize = sizeof(ChainPara);
 
+        SSL_EXTRA_CERT_CHAIN_POLICY_PARA SslPolicyPara;
+        memset(&SslPolicyPara, 0, sizeof(SslPolicyPara));
+        SslPolicyPara.cbSize = sizeof(SslPolicyPara);
+        SslPolicyPara.dwAuthType = AUTHTYPE_SERVER;
+        SslPolicyPara.pwszServerName = serverName;
+
         CERT_CHAIN_POLICY_PARA PolicyPara;
         memset(&PolicyPara, 0, sizeof(PolicyPara));
         PolicyPara.cbSize = sizeof(PolicyPara);
+        PolicyPara.pvExtraPolicyPara = (serverName != NULL) ? &SslPolicyPara : NULL;
 
         CERT_CHAIN_POLICY_STATUS PolicyStatus;
         memset(&PolicyStatus, 0, sizeof(PolicyStatus));
@@ -914,6 +927,54 @@ int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONT
     if (hCertStore != NULL)
     {
         CertCloseStore(hCertStore, 0);
+    }
+
+    return result;
+}
+
+int x509_verify_certificate_in_chain(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify)
+{
+    return verify_certificate_in_chain(trustedCertificate, pCertContextToVerify, NULL);
+}
+
+int x509_verify_certificate_in_chain_for_hostname(const char* trustedCertificate, PCCERT_CONTEXT pCertContextToVerify, const char* hostname)
+{
+    int result;
+
+    if ((trustedCertificate == NULL) || (pCertContextToVerify == NULL) || (hostname == NULL) || (hostname[0] == '\0'))
+    {
+        LogError("Invalid argument: trustedCertificate=%p, pCertContextToVerify=%p, hostname=%p", trustedCertificate, pCertContextToVerify, hostname);
+        result = MU_FAILURE;
+    }
+    else
+    {
+        int serverNameLength = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, hostname, -1, NULL, 0);
+        wchar_t* serverName;
+
+        if (serverNameLength <= 0)
+        {
+            LogError("MultiByteToWideChar failed to size the hostname, error 0x%08x", GetLastError());
+            result = MU_FAILURE;
+        }
+        else if ((serverName = (wchar_t*)malloc(safe_multiply_size_t((size_t)serverNameLength, sizeof(wchar_t)))) == NULL)
+        {
+            LogError("Unable to allocate the hostname");
+            result = MU_FAILURE;
+        }
+        else
+        {
+            if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, hostname, -1, serverName, serverNameLength) != serverNameLength)
+            {
+                LogError("MultiByteToWideChar failed to convert the hostname, error 0x%08x", GetLastError());
+                result = MU_FAILURE;
+            }
+            else
+            {
+                result = verify_certificate_in_chain(trustedCertificate, pCertContextToVerify, serverName);
+            }
+
+            free(serverName);
+        }
     }
 
     return result;

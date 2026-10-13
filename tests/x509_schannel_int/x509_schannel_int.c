@@ -146,6 +146,8 @@
 
 // NOTE: This certificate is for test purposes only and must not be used in any production environment.
 // Simulated server certificate that is chained up to X509_TEST_CERTIFICATE_CHAIN1
+// Its only name (CN and DNS subjectAltName).
+#define X509_TEST_SERVER_CERTIFICATE_NAME "test-x509-1"
 const char* x509_test_server_certificate = 
 "-----BEGIN CERTIFICATE-----""\n"
 "MIIDeDCCAmCgAwIBAgIQTw2XxN6ct5VDfdcMxzzcBDANBgkqhkiG9w0BAQsFADA6""\n"
@@ -314,8 +316,8 @@ const char* x509_test_server_certificate =
 "-----END PRIVATE KEY-----"
 
 
-// Tests whether serverCertificate chains up to trustedCertificate or not
-static void test_VerifyCertificateChain(const char* trustedCertificate, const char* serverCertificate, bool expectSuccess)
+// Tests whether serverCertificate chains up to trustedCertificate and, unless hostname is NULL, is valid for hostname
+static void test_VerifyCertificateChainForHostname(const char* trustedCertificate, const char* serverCertificate, const char* hostname, bool expectSuccess)
 {
     char serverCertificateEncoded[TEST_MAX_SERVER_CERTIFICATE_ENCODE_SIZE];
     DWORD serverCertificateEncodedLen = sizeof(serverCertificateEncoded);
@@ -325,17 +327,26 @@ static void test_VerifyCertificateChain(const char* trustedCertificate, const ch
     PCCERT_CONTEXT pCertContext = CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, (const BYTE*)serverCertificateEncoded, serverCertificateEncodedLen);
     ASSERT_IS_NOT_NULL(pCertContext, "CertCreateCertificateContext fails, GetLastError=0x%08x", GetLastError());
 
-    int result = x509_verify_certificate_in_chain(trustedCertificate, pCertContext);
+    int result = (hostname == NULL) ?
+        x509_verify_certificate_in_chain(trustedCertificate, pCertContext) :
+        x509_verify_certificate_in_chain_for_hostname(trustedCertificate, pCertContext, hostname);
+
+    (void)CertFreeCertificateContext(pCertContext);
 
     if (expectSuccess)
     {
-        ASSERT_ARE_EQUAL(int, result, 0, "x509_verify_certificate_in_chain failed but should've succeeded");
+        ASSERT_ARE_EQUAL(int, result, 0, "certificate verification failed but should've succeeded");
     }
     else
     {
-        ASSERT_ARE_NOT_EQUAL(int, result, 0, "x509_verify_certificate_in_chain succeeded but should've failed");
-
+        ASSERT_ARE_NOT_EQUAL(int, result, 0, "certificate verification succeeded but should've failed");
     }
+}
+
+// Tests whether serverCertificate chains up to trustedCertificate or not
+static void test_VerifyCertificateChain(const char* trustedCertificate, const char* serverCertificate, bool expectSuccess)
+{
+    test_VerifyCertificateChainForHostname(trustedCertificate, serverCertificate, NULL, expectSuccess);
 }
 
 // Everything the running test created, so that function cleanup releases it even when an
@@ -523,6 +534,30 @@ TEST_FUNCTION(x509_verify_certificate_no_chains_two_certs)
 TEST_FUNCTION(x509_verify_certificate_no_chains_three_certs)
 {
     test_VerifyCertificateChain(X509_TEST_CERTIFICATE_CHAIN2 X509_TEST_CERTIFICATE_CHAIN3 X509_TEST_CERTIFICATE_CHAIN4, x509_test_server_certificate, false);
+}
+
+// Test server certificate that chains to the trusted root is accepted for the name it was issued to
+TEST_FUNCTION(x509_verify_certificate_for_hostname_matching_name_succeeds)
+{
+    test_VerifyCertificateChainForHostname(X509_TEST_CERTIFICATE_CHAIN1, x509_test_server_certificate, X509_TEST_SERVER_CERTIFICATE_NAME, true);
+}
+
+// Test server certificate that chains to the trusted root is rejected for any other name
+TEST_FUNCTION(x509_verify_certificate_for_hostname_other_name_fails)
+{
+    test_VerifyCertificateChainForHostname(X509_TEST_CERTIFICATE_CHAIN1, x509_test_server_certificate, "wrong-name.example.com", false);
+}
+
+// Test server certificate is rejected for a name that only shares a prefix with the name it was issued to
+TEST_FUNCTION(x509_verify_certificate_for_hostname_name_prefix_fails)
+{
+    test_VerifyCertificateChainForHostname(X509_TEST_CERTIFICATE_CHAIN1, x509_test_server_certificate, X509_TEST_SERVER_CERTIFICATE_NAME ".example.com", false);
+}
+
+// Test server certificate issued for the requested name is still rejected when it does not chain to the trusted root
+TEST_FUNCTION(x509_verify_certificate_for_hostname_matching_name_does_not_chain_fails)
+{
+    test_VerifyCertificateChainForHostname(X509_TEST_CERTIFICATE_CHAIN2, x509_test_server_certificate, X509_TEST_SERVER_CERTIFICATE_NAME, false);
 }
 
 // A PKCS#1 RSA private key is bound to its certificate and can sign with it.
