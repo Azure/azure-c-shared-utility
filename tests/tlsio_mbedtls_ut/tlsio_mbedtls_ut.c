@@ -1307,7 +1307,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
     TEST_FUNCTION(tlsio_mbedtls_dowork_new_session_ticket_is_not_an_error)
     {
         //arrange
-        TLSIO_CONFIG tls_io_config;
+        TLSIO_CONFIG tls_io_config = { 0 };
         tls_io_config.hostname = TEST_HOSTNAME;
         tls_io_config.port = TEST_CONNECTION_PORT;
         tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
@@ -1320,7 +1320,7 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
             .SetReturn(MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET);
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
-            .CopyOutArgumentBuffer_buf(TEST_DATA_VALUE, sizeof(unsigned char**))
+            .CopyOutArgumentBuffer_buf(TEST_DATA_VALUE, sizeof(TEST_DATA_VALUE))
             .SetReturn(TEST_DATA_SIZE);
         STRICT_EXPECTED_CALL(on_bytes_received(IGNORED_ARG, IGNORED_ARG, TEST_DATA_SIZE));
         STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
