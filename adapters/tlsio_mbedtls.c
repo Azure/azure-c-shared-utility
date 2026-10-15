@@ -136,22 +136,33 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE *tls_io_instance)
     int result = 0;
     unsigned char buffer[64];
     int rcv_bytes;
+    bool keep_reading;
 
     do
     {
         rcv_bytes = mbedtls_ssl_read(&tls_io_instance->ssl, buffer, sizeof(buffer));
+        keep_reading = false;
         if (rcv_bytes > 0)
         {
             if (tls_io_instance->on_bytes_received != NULL)
             {
                 tls_io_instance->on_bytes_received(tls_io_instance->on_bytes_received_context, buffer, rcv_bytes);
             }
+            keep_reading = true;
         }
         else if ((rcv_bytes == MBEDTLS_ERR_SSL_WANT_READ) ||
                  (rcv_bytes == MBEDTLS_ERR_SSL_WANT_WRITE))
         {
             // No application data is available yet. Not an error.
         }
+#if defined(MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET)
+        else if (rcv_bytes == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET)
+        {
+            // A TLS 1.3 server sent a NewSessionTicket after the handshake.
+            // Not an error; application data may follow it.
+            keep_reading = true;
+        }
+#endif
         else
         {
             // Anything else is fatal for this connection, including 0, which
@@ -162,7 +173,7 @@ static int decode_ssl_received_bytes(TLS_IO_INSTANCE *tls_io_instance)
             indicate_error(tls_io_instance);
             result = MU_FAILURE;
         }
-    } while (rcv_bytes > 0);
+    } while (keep_reading);
 
     return result;
 }
