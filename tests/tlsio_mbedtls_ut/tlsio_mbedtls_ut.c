@@ -1302,6 +1302,42 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         tlsio_mbedtls_destroy(handle);
     }
 
+#if defined(MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET)
+    // A TLS 1.3 NewSessionTicket is not an error, and data after it is still read.
+    TEST_FUNCTION(tlsio_mbedtls_dowork_new_session_ticket_is_not_an_error)
+    {
+        //arrange
+        TLSIO_CONFIG tls_io_config;
+        tls_io_config.hostname = TEST_HOSTNAME;
+        tls_io_config.port = TEST_CONNECTION_PORT;
+        tls_io_config.underlying_io_interface = TEST_INTERFACE_DESC;
+        tls_io_config.underlying_io_parameters = NULL;
+        CONCRETE_IO_HANDLE handle = tlsio_mbedtls_create(&tls_io_config);
+        (void)tlsio_mbedtls_open(handle, on_io_open_complete, NULL, on_bytes_received, NULL, on_io_error, NULL);
+        g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
+        umock_c_reset_all_calls();
+
+        STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+            .SetReturn(MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET);
+        STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+            .CopyOutArgumentBuffer_buf(TEST_DATA_VALUE, sizeof(unsigned char**))
+            .SetReturn(TEST_DATA_SIZE);
+        STRICT_EXPECTED_CALL(on_bytes_received(IGNORED_ARG, IGNORED_ARG, TEST_DATA_SIZE));
+        STRICT_EXPECTED_CALL(mbedtls_ssl_read(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_ARG));
+
+        //act
+        tlsio_mbedtls_dowork(handle);
+
+        //assert
+        ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+        //cleanup
+        (void)tlsio_mbedtls_close(handle, on_io_close_complete, NULL);
+        tlsio_mbedtls_destroy(handle);
+    }
+#endif
+
     // A zero return means the peer closed the transport without a CloseNotify;
     // the context cannot be used afterwards, so it must be reported.
     TEST_FUNCTION(tlsio_mbedtls_dowork_read_zero_indicates_error)
