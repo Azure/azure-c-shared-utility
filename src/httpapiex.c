@@ -368,8 +368,6 @@ static int buildBufferIfNotExist(BUFFER_HANDLE originalRequestContent, bool* isO
     return result;
 }
 
-static unsigned int dummyStatusCode;
-
 static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE requestType, const char* relativePath,
     HTTP_HEADERS_HANDLE requestHttpHeadersHandle, BUFFER_HANDLE requestContent, unsigned int* statusCode,
     HTTP_HEADERS_HANDLE responseHttpHeadersHandle, BUFFER_HANDLE responseContent,
@@ -377,7 +375,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
     const char** toBeUsedRelativePath,
     HTTP_HEADERS_HANDLE *toBeUsedRequestHttpHeadersHandle, bool *isOriginalRequestHttpHeadersHandle,
     BUFFER_HANDLE *toBeUsedRequestContent, bool *isOriginalRequestContent,
-    unsigned int** toBeUsedStatusCode,
+    unsigned int* localStatusCode, unsigned int** toBeUsedStatusCode,
     HTTP_HEADERS_HANDLE *toBeUsedResponseHttpHeadersHandle, bool *isOriginalResponseHttpHeadersHandle,
     BUFFER_HANDLE *toBeUsedResponseContent, bool *isOriginalResponseContent)
 {
@@ -418,7 +416,7 @@ static int buildAllRequests(HTTPAPIEX_HANDLE_DATA* handle, HTTPAPI_REQUEST_TYPE 
             if (statusCode == NULL)
             {
                 /*Codes_SRS_HTTPAPIEX_02_016: [If statusCode is not NULL then If statusCode is NULL then HTTPAPIEX_ExecuteRequest shall use it for parameter statusCode to the calls of HTTPAPI_ExecuteRequest.] */
-                *toBeUsedStatusCode = &dummyStatusCode;
+                *toBeUsedStatusCode = localStatusCode;
             }
             else
             {
@@ -525,6 +523,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
             const char* toBeUsedRelativePath;
             HTTP_HEADERS_HANDLE toBeUsedRequestHttpHeadersHandle; bool isOriginalRequestHttpHeadersHandle;
             BUFFER_HANDLE toBeUsedRequestContent; bool isOriginalRequestContent;
+            unsigned int localStatusCode; // per call, so concurrent requests without a statusCode do not share it
             unsigned int* toBeUsedStatusCode;
             HTTP_HEADERS_HANDLE toBeUsedResponseHttpHeadersHandle; bool isOriginalResponseHttpHeadersHandle;
             BUFFER_HANDLE toBeUsedResponseContent;  bool isOriginalResponseContent;
@@ -533,7 +532,7 @@ HTTPAPIEX_RESULT HTTPAPIEX_ExecuteRequest(HTTPAPIEX_HANDLE handle, HTTPAPI_REQUE
                 &toBeUsedRelativePath,
                 &toBeUsedRequestHttpHeadersHandle, &isOriginalRequestHttpHeadersHandle,
                 &toBeUsedRequestContent, &isOriginalRequestContent,
-                &toBeUsedStatusCode,
+                &localStatusCode, &toBeUsedStatusCode,
                 &toBeUsedResponseHttpHeadersHandle, &isOriginalResponseHttpHeadersHandle,
                 &toBeUsedResponseContent, &isOriginalResponseContent) != 0)
             {
