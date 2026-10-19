@@ -669,20 +669,29 @@ static int wait_for_socket_connection(SOCKET_IO_INSTANCE* socket_io_instance)
     fd_set fdset;
     struct timeval tv;
 
-    FD_ZERO(&fdset);
-    FD_SET(socket_io_instance->socket, &fdset);
-    tv.tv_sec = CONNECT_TIMEOUT;
-    tv.tv_usec = 0;
-
-    do
+    // FD_SET on a descriptor at or above FD_SETSIZE writes past the end of fdset.
+    if (socket_io_instance->socket >= FD_SETSIZE)
     {
-        retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
+        LogError("Failure: socket %d is not below FD_SETSIZE.", socket_io_instance->socket);
+        retval = -1;
+    }
+    else
+    {
+        FD_ZERO(&fdset);
+        FD_SET(socket_io_instance->socket, &fdset);
+        tv.tv_sec = CONNECT_TIMEOUT;
+        tv.tv_usec = 0;
 
-        if (retval < 0)
+        do
         {
-            select_errno = errno;
-        }
-    } while (retval < 0 && select_errno == EINTR);
+            retval = select(socket_io_instance->socket + 1, NULL, &fdset, NULL, &tv);
+
+            if (retval < 0)
+            {
+                select_errno = errno;
+            }
+        } while (retval < 0 && select_errno == EINTR);
+    }
 
     if (retval != 1)
     {
