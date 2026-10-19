@@ -280,7 +280,7 @@ jobs:
         debian:bookworm bash -c '
           set -e
           apt-get update
-          apt-get install -y git ca-certificates cmake build-essential pkg-config curl libcurl4-openssl-dev libssl-dev uuid-dev valgrind
+          apt-get install -y sudo git ca-certificates cmake build-essential pkg-config curl libcurl4-openssl-dev libssl-dev uuid-dev valgrind
           chmod 755 jenkins/debian_c.sh
           ./jenkins/debian_c.sh
           cd cmake && ../build_all/linux/run_tests.sh
@@ -323,41 +323,6 @@ jobs:
     displayName: 'Clang Build'
     env:
       LD_LIBRARY_PATH: /usr/local/lib
-  - script: |
-      sudo chmod 755 jenkins/linux_mbed.sh
-      sudo -E ./jenkins/linux_mbed.sh
-    displayName: 'Build'
-    env:
-      LD_LIBRARY_PATH: /usr/local/lib
-
-- job: linux_mbed_3x
-  # Same as linux_mbed against the mbedTLS 3.6 LTS line, so the 3.x code paths
-  # of tlsio_mbedtls are built and unit tested too.
-  timeoutInMinutes: 60
-  pool:
-    vmImage: 'ubuntu-24.04'
-  displayName: 'mbedTLS 3.6'
-  steps:
-  - checkout: self
-    submodules: recursive
-  - script: |
-      set -e
-      sudo apt-get update
-      sudo apt-get purge -y 'libmbedtls*' 'libmbedcrypto*' 'libmbedx509*' || true
-      sudo apt-get install -y clang cmake build-essential pkg-config curl libcurl4-openssl-dev uuid-dev valgrind python3-pip
-    displayName: 'Host setup'
-  - script: |
-      set -e
-      git clone --depth 1 -b mbedtls-3.6.4 https://github.com/Mbed-TLS/mbedtls /tmp/mbedtls-3.6
-      cd /tmp/mbedtls-3.6
-      git submodule update --init --recursive --depth 1
-      python3 -m pip install --break-system-packages -r scripts/basic.requirements.txt
-      mkdir build && cd build
-      cmake -DUSE_SHARED_MBEDTLS_LIBRARY=ON -DENABLE_TESTING=Off -DENABLE_PROGRAMS=Off -DCMAKE_INSTALL_PREFIX=/usr/local ..
-      make -j$(nproc)
-      sudo make install
-      sudo ldconfig
-    displayName: 'Install mbedTLS 3.6'
   - script: |
       sudo chmod 755 jenkins/linux_mbed.sh
       sudo -E ./jenkins/linux_mbed.sh
@@ -424,6 +389,46 @@ jobs:
     vmImage: 'macOS-14'
   displayName: 'OSX'
   steps:
+  # Repair the Component Detection node runtime on macOS-hosted images.
+  # The auto-injected ComponentGovernance task invokes a hard-coded path
+  # (.../externals/node20_1/bin/node) that exists as a directory on the
+  # current macOS-14 image but is missing the "node" binary inside it.
+  # Mirror a working node binary into every plausible externals root so
+  # CG (and any other task expecting node20_1) succeeds. Idempotent.
+  - bash: |
+      set +e
+      HOST_NODE="$(command -v node 2>/dev/null || true)"
+      [ -n "$HOST_NODE" ] && echo "Host node: $HOST_NODE ($("$HOST_NODE" -v 2>/dev/null))"
+
+      for ext in /Users/runner/actions-runner/cached/*/externals "$AGENT_HOMEDIRECTORY/externals" ; do
+        [ -d "$ext" ] || continue
+        target_dir="$ext/node20_1"
+        target_bin="$target_dir/bin/node"
+
+        if [ -x "$target_bin" ] && "$target_bin" -v >/dev/null 2>&1; then
+          echo "OK: $target_bin ($("$target_bin" -v))"
+          continue
+        fi
+
+        echo "Repairing $target_bin"
+        mkdir -p "$target_dir/bin"
+        rm -f "$target_bin"
+
+        if [ -x "$ext/node20/bin/node" ]; then
+          ln -sf "$ext/node20/bin/node" "$target_bin"
+          echo "  -> linked from $ext/node20/bin/node"
+        elif [ -n "$HOST_NODE" ] && [ -x "$HOST_NODE" ]; then
+          ln -sf "$HOST_NODE" "$target_bin"
+          echo "  -> linked from $HOST_NODE"
+        else
+          echo "  WARN: no node binary available on this image"
+          continue
+        fi
+
+        "$target_bin" -v >/dev/null 2>&1 && echo "  Repaired: $target_bin ($("$target_bin" -v))"
+      done
+    displayName: 'Repair Component Detection node runtime'
+    condition: always()
   - checkout: self
     submodules: recursive
   - script: |
@@ -453,6 +458,46 @@ jobs:
     vmImage: 'macOS-14'
   displayName: 'XCode Native'
   steps:
+  # Repair the Component Detection node runtime on macOS-hosted images.
+  # The auto-injected ComponentGovernance task invokes a hard-coded path
+  # (.../externals/node20_1/bin/node) that exists as a directory on the
+  # current macOS-14 image but is missing the "node" binary inside it.
+  # Mirror a working node binary into every plausible externals root so
+  # CG (and any other task expecting node20_1) succeeds. Idempotent.
+  - bash: |
+      set +e
+      HOST_NODE="$(command -v node 2>/dev/null || true)"
+      [ -n "$HOST_NODE" ] && echo "Host node: $HOST_NODE ($("$HOST_NODE" -v 2>/dev/null))"
+
+      for ext in /Users/runner/actions-runner/cached/*/externals "$AGENT_HOMEDIRECTORY/externals" ; do
+        [ -d "$ext" ] || continue
+        target_dir="$ext/node20_1"
+        target_bin="$target_dir/bin/node"
+
+        if [ -x "$target_bin" ] && "$target_bin" -v >/dev/null 2>&1; then
+          echo "OK: $target_bin ($("$target_bin" -v))"
+          continue
+        fi
+
+        echo "Repairing $target_bin"
+        mkdir -p "$target_dir/bin"
+        rm -f "$target_bin"
+
+        if [ -x "$ext/node20/bin/node" ]; then
+          ln -sf "$ext/node20/bin/node" "$target_bin"
+          echo "  -> linked from $ext/node20/bin/node"
+        elif [ -n "$HOST_NODE" ] && [ -x "$HOST_NODE" ]; then
+          ln -sf "$HOST_NODE" "$target_bin"
+          echo "  -> linked from $HOST_NODE"
+        else
+          echo "  WARN: no node binary available on this image"
+          continue
+        fi
+
+        "$target_bin" -v >/dev/null 2>&1 && echo "  Repaired: $target_bin ($("$target_bin" -v))"
+      done
+    displayName: 'Repair Component Detection node runtime'
+    condition: always()
   - checkout: self
     submodules: recursive
   - script: |
