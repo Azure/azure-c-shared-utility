@@ -50,6 +50,7 @@ static void my_gballoc_free(void* ptr)
 #include "azure_macro_utils/macro_utils.h"
 
 #include "mbedtls/config.h"
+#include "mbedtls/version.h"
 #include "mbedtls/debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"
@@ -59,6 +60,7 @@ static void my_gballoc_free(void* ptr)
 #include "mbedtls/entropy_poll.h"
 
 #define TLSIO_MBEDTLS_VERSION_3_0_0    0x03000000
+#define TLSIO_MBEDTLS_VERSION_2_16_0   0x02160000
 
 /**
  * Include the mockable headers here.
@@ -106,6 +108,10 @@ MOCKABLE_FUNCTION(, int, mbedtls_ssl_setup, mbedtls_ssl_context*, ssl, const mbe
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_set_session, mbedtls_ssl_context*, ssl, const mbedtls_ssl_session*, session)
 MOCKABLE_FUNCTION(, int, mbedtls_ssl_read, mbedtls_ssl_context*, ssl, unsigned char*, buf, size_t, len)
 MOCKABLE_FUNCTION(, size_t, mbedtls_ssl_get_max_frag_len, const mbedtls_ssl_context*, ssl)
+// Note: unlike mbedtls_ssl_get_max_frag_len which returns size_t,
+// mbedtls_ssl_get_max_out_record_payload returns int (it can return a
+// negative MBEDTLS_ERR_* value).
+MOCKABLE_FUNCTION(, int, mbedtls_ssl_get_max_out_record_payload, const mbedtls_ssl_context*, ssl)
 
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_authmode, mbedtls_ssl_config*, conf, int, authmode)
 MOCKABLE_FUNCTION(, void, mbedtls_ssl_conf_rng, mbedtls_ssl_config*, conf, f_rng, fr, void*, p_rng);
@@ -835,7 +841,11 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_2_16_0
         STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
+#else
+        STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_out_record_payload(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
+#endif
         STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(TEST_DATA_SIZE);
 
         //act
@@ -863,7 +873,11 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
         g_open_complete(g_open_complete_ctx, IO_OPEN_OK);
         umock_c_reset_all_calls();
 
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_2_16_0
         STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
+#else
+        STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_out_record_payload(IGNORED_PTR_ARG)).SetReturn(TEST_DATA_SIZE);
+#endif
         STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, TEST_DATA_VALUE, TEST_DATA_SIZE)).SetReturn(-1);
 
         //act
@@ -903,7 +917,11 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             size_t data_left = total_data - index * MAX_FRAGMENT_SIZE;
             size_t data_processed = data_left > MAX_FRAGMENT_SIZE ? MAX_FRAGMENT_SIZE : data_left;
             const unsigned char* data_ptr = dummy_data + index * MAX_FRAGMENT_SIZE;
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_2_16_0
             STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+#else
+            STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_out_record_payload(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+#endif
             STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, data_ptr, data_left));
             STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         }
@@ -948,7 +966,11 @@ BEGIN_TEST_SUITE(tlsio_mbedtls_ut)
             size_t data_left = total_data - index * MAX_FRAGMENT_SIZE;
             size_t data_processed = data_left > MAX_FRAGMENT_SIZE ? MAX_FRAGMENT_SIZE : data_left;
             const unsigned char* data_ptr = dummy_data + index * MAX_FRAGMENT_SIZE;
+#if !defined(MBEDTLS_VERSION_NUMBER) || MBEDTLS_VERSION_NUMBER < TLSIO_MBEDTLS_VERSION_2_16_0
             STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_frag_len(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+#else
+            STRICT_EXPECTED_CALL(mbedtls_ssl_get_max_out_record_payload(IGNORED_PTR_ARG)).SetReturn(MAX_FRAGMENT_SIZE);
+#endif
             STRICT_EXPECTED_CALL(mbedtls_ssl_write(IGNORED_PTR_ARG, data_ptr, data_left));
             STRICT_EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
         }
