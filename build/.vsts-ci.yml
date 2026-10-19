@@ -330,6 +330,41 @@ jobs:
     env:
       LD_LIBRARY_PATH: /usr/local/lib
 
+- job: linux_mbed_3x
+  # Same as linux_mbed against the mbedTLS 3.6 LTS line, so the 3.x code paths
+  # of tlsio_mbedtls are built and unit tested too.
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'ubuntu-24.04'
+  displayName: 'mbedTLS 3.6'
+  steps:
+  - checkout: self
+    submodules: recursive
+  - script: |
+      set -e
+      sudo apt-get update
+      sudo apt-get purge -y 'libmbedtls*' 'libmbedcrypto*' 'libmbedx509*' || true
+      sudo apt-get install -y clang cmake build-essential pkg-config curl libcurl4-openssl-dev uuid-dev valgrind python3-pip
+    displayName: 'Host setup'
+  - script: |
+      set -e
+      git clone --depth 1 -b mbedtls-3.6.4 https://github.com/Mbed-TLS/mbedtls /tmp/mbedtls-3.6
+      cd /tmp/mbedtls-3.6
+      git submodule update --init --recursive --depth 1
+      python3 -m pip install --break-system-packages -r scripts/basic.requirements.txt
+      mkdir build && cd build
+      cmake -DUSE_SHARED_MBEDTLS_LIBRARY=ON -DENABLE_TESTING=Off -DENABLE_PROGRAMS=Off -DCMAKE_INSTALL_PREFIX=/usr/local ..
+      make -j$(nproc)
+      sudo make install
+      sudo ldconfig
+    displayName: 'Install mbedTLS 3.6'
+  - script: |
+      sudo chmod 755 jenkins/linux_mbed.sh
+      sudo -E ./jenkins/linux_mbed.sh
+    displayName: 'Build'
+    env:
+      LD_LIBRARY_PATH: /usr/local/lib
+
 - job: wolfssl
   timeoutInMinutes: 60
   pool:
