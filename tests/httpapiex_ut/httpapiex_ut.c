@@ -295,6 +295,54 @@ extern "C"
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/httpapiex.h"
+#include "azure_c_shared_utility/lock.h"
+
+/* Test double for the lock protecting the HTTP global initialization. These tests are single
+   threaded, so a static object is enough. It is deliberately not the platform adapter and not a
+   mock: it allocates nothing, so the lock bootstrap never appears in the recorded gballoc calls on
+   any platform, and it keeps the call expectations below independent of it.
+   The two synchronization failures the module must handle are injectable. The lock is published
+   once per process, so once it has been created only the acquire path is reachable; refusing
+   acquisition as well when creation is set to fail keeps those tests independent of the order in
+   which the suite runs them. */
+static int test_lock;
+static int test_lock_depth;
+static int test_lock_init_shall_fail;
+static int test_lock_shall_fail;
+
+LOCK_HANDLE Lock_Init(void)
+{
+    return (test_lock_init_shall_fail != 0) ? NULL : (LOCK_HANDLE)&test_lock;
+}
+
+LOCK_RESULT Lock(LOCK_HANDLE handle)
+{
+    LOCK_RESULT result;
+    (void)handle;
+    if ((test_lock_init_shall_fail != 0) || (test_lock_shall_fail != 0))
+    {
+        result = LOCK_ERROR;
+    }
+    else
+    {
+        test_lock_depth++;
+        result = LOCK_OK;
+    }
+    return result;
+}
+
+LOCK_RESULT Unlock(LOCK_HANDLE handle)
+{
+    (void)handle;
+    test_lock_depth--;
+    return LOCK_OK;
+}
+
+LOCK_RESULT Lock_Deinit(LOCK_HANDLE handle)
+{
+    (void)handle;
+    return LOCK_OK;
+}
 
 IMPLEMENT_UMOCK_C_ENUM_TYPE(HTTPAPI_RESULT, HTTPAPI_RESULT_VALUES);
 TEST_DEFINE_ENUM_TYPE(HTTPAPIEX_RESULT, HTTPAPIEX_RESULT_VALUES);
@@ -541,11 +589,16 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     currentHTTPAPI_Init_call = 0;
     for (i = 0; i<N_MAX_FAILS; i++) whenShallHTTPAPI_Init_fail[i] = 0;
 
+    test_lock_init_shall_fail = 0;
+    test_lock_shall_fail = 0;
+
     umock_c_reset_all_calls();
 }
 
 TEST_FUNCTION_CLEANUP(TestMethodCleanup)
 {
+    /*every path through HTTPAPIEX must release the lock it took*/
+    ASSERT_ARE_EQUAL(int, 0, test_lock_depth);
     TEST_MUTEX_RELEASE(g_testByTest);
 }
 
@@ -601,6 +654,58 @@ TEST_FUNCTION(HTTPAPIEX_Init_initialize_HTTP_fails)
     /// assert
     ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/*the counter must not be touched when the lock protecting it is unavailable*/
+TEST_FUNCTION(HTTPAPIEX_Init_fails_when_the_lock_cannot_be_created)
+{
+    /// arrange
+    HTTPAPIEX_RESULT result;
+    test_lock_init_shall_fail = 1;
+
+    /// act
+    result = HTTPAPIEX_Init();
+
+    /// assert
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls()); /*HTTPAPI_Init was not called*/
+    ASSERT_ARE_EQUAL(size_t, (size_t)0, HTTPAPI_Init_calls);
+}
+
+TEST_FUNCTION(HTTPAPIEX_Init_fails_when_the_lock_cannot_be_acquired)
+{
+    /// arrange
+    HTTPAPIEX_RESULT result;
+    test_lock_shall_fail = 1;
+
+    /// act
+    result = HTTPAPIEX_Init();
+
+    /// assert
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_ERROR, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls()); /*HTTPAPI_Init was not called*/
+    ASSERT_ARE_EQUAL(size_t, (size_t)0, HTTPAPI_Init_calls);
+}
+
+TEST_FUNCTION(HTTPAPIEX_Deinit_does_not_deinitialize_HTTP_when_the_lock_cannot_be_acquired)
+{
+    /// arrange
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+    umock_c_reset_all_calls();
+    test_lock_shall_fail = 1;
+
+    /// act
+    HTTPAPIEX_Deinit();
+
+    /// assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls()); /*HTTPAPI_Deinit was not called*/
+    ASSERT_ARE_EQUAL(size_t, (size_t)1, HTTPAPI_Init_calls);
+
+    /// destroy
+    /*the reference is untouched, so releasing it once still de-initializes HTTP*/
+    test_lock_shall_fail = 0;
+    HTTPAPIEX_Deinit();
+    ASSERT_ARE_EQUAL(size_t, (size_t)0, HTTPAPI_Init_calls);
 }
 
 /*Tests_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
@@ -805,6 +910,80 @@ TEST_FUNCTION(HTTPAPIEX_Destroy_not_call_HTTPAPI_Deinit_after_HTTPAPIEX_Init_suc
     ///destroy
     destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
     HTTPAPIEX_Deinit();
+}
+
+/*a handle that completed a request holds a reference on the global HTTP initialization, so a
+  concurrent HTTPAPIEX_Deinit must not de-initialize HTTP under it*/
+TEST_FUNCTION(HTTPAPIEX_Deinit_does_not_deinitialize_HTTP_while_a_handle_holds_a_reference)
+{
+    /// arrange
+    unsigned int httpStatusCode;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    HTTPAPIEX_HANDLE httpapiexhandle;
+
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+    httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_HEAD, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody));
+    umock_c_reset_all_calls();
+
+    /// act
+    HTTPAPIEX_Deinit();
+
+    /// assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls()); /*HTTPAPI_Deinit was not called*/
+    ASSERT_ARE_EQUAL(size_t, (size_t)1, HTTPAPI_Init_calls);
+
+    /// destroy
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    HTTPAPIEX_Destroy(httpapiexhandle);
+}
+
+/*releasing the last reference, here by destroying the handle, de-initializes HTTP*/
+TEST_FUNCTION(HTTPAPIEX_Destroy_deinitializes_HTTP_when_it_releases_the_last_reference)
+{
+    /// arrange
+    unsigned int httpStatusCode;
+    HTTP_HEADERS_HANDLE requestHttpHeaders;
+    BUFFER_HANDLE requestHttpBody = TEST_BUFFER_REQ_BODY;
+    HTTP_HEADERS_HANDLE responseHttpHeaders;
+    BUFFER_HANDLE responseHttpBody = TEST_BUFFER_RESP_BODY;
+    HTTPAPIEX_HANDLE httpapiexhandle;
+
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+    httpapiexhandle = HTTPAPIEX_Create(TEST_HOSTNAME);
+    createHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
+    setupAllCallBeforeHTTPsequence();
+    setupAllCallForHTTPsequence(TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, responseHttpHeaders, responseHttpBody);
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_ExecuteRequest(httpapiexhandle, HTTPAPI_REQUEST_HEAD, TEST_RELATIVE_PATH, requestHttpHeaders, requestHttpBody, &httpStatusCode, responseHttpHeaders, responseHttpBody));
+    HTTPAPIEX_Deinit();
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(HTTPAPI_CloseConnection(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(HTTPAPI_Deinit());
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG)) /*this is hostname*/
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(VECTOR_size(IGNORED_PTR_ARG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(VECTOR_destroy(IGNORED_PTR_ARG)) /*these are the options vector*/
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(gballoc_free(httpapiexhandle)); /*this is the handle*/
+
+    /// act
+    HTTPAPIEX_Destroy(httpapiexhandle);
+
+    /// assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(size_t, (size_t)0, HTTPAPI_Init_calls);
+
+    /// destroy
+    destroyHttpObjects(&requestHttpHeaders, &responseHttpHeaders);
 }
 
 /*Tests_SRS_HTTPAPIEX_02_005: [If creating the handle fails for any reason, then HTTAPIEX_Create shall return NULL.] */
