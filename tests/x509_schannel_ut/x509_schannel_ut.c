@@ -518,6 +518,43 @@ static BOOL my_CertSetCertificateContextProperty(
 
 static const HCERTSTORE testCertStore = (HCERTSTORE)0x1234;
 
+#define TEST_HOSTNAME "test-host.example.com"
+#define TEST_HOSTNAME_W L"test-host.example.com"
+
+/*what the last CertVerifyCertificateChainPolicy call received as SSL extra policy parameters*/
+static bool g_ssl_policy_para_passed;
+static DWORD g_ssl_policy_auth_type;
+static wchar_t g_ssl_policy_server_name[256];
+
+static BOOL my_CertVerifyCertificateChainPolicy(
+    LPCSTR pszPolicyOID,
+    PCCERT_CHAIN_CONTEXT pChainContext,
+    PCERT_CHAIN_POLICY_PARA pPolicyPara,
+    PCERT_CHAIN_POLICY_STATUS pPolicyStatus
+)
+{
+    (void)pszPolicyOID;
+    (void)pChainContext;
+    (void)pPolicyStatus;
+
+    g_ssl_policy_para_passed = (pPolicyPara != NULL) && (pPolicyPara->pvExtraPolicyPara != NULL);
+    if (g_ssl_policy_para_passed)
+    {
+        const SSL_EXTRA_CERT_CHAIN_POLICY_PARA* sslPara = (const SSL_EXTRA_CERT_CHAIN_POLICY_PARA*)pPolicyPara->pvExtraPolicyPara;
+        g_ssl_policy_auth_type = sslPara->dwAuthType;
+        if (sslPara->pwszServerName != NULL)
+        {
+            size_t i;
+            for (i = 0; (i < (sizeof(g_ssl_policy_server_name) / sizeof(g_ssl_policy_server_name[0])) - 1) && (sslPara->pwszServerName[i] != L'\0'); i++)
+            {
+                g_ssl_policy_server_name[i] = sslPara->pwszServerName[i];
+            }
+            g_ssl_policy_server_name[i] = L'\0';
+        }
+    }
+    return TRUE;
+}
+
 
 BEGIN_TEST_SUITE(x509_schannel_unittests)
 
@@ -598,7 +635,7 @@ TEST_SUITE_INITIALIZE(a)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertCreateCertificateChainEngine, FALSE);
     REGISTER_GLOBAL_MOCK_HOOK(CertGetCertificateChain, my_CertGetCertificateChain);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertGetCertificateChain, FALSE);
-    REGISTER_GLOBAL_MOCK_RETURN(CertVerifyCertificateChainPolicy, TRUE);
+    REGISTER_GLOBAL_MOCK_HOOK(CertVerifyCertificateChainPolicy, my_CertVerifyCertificateChainPolicy);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(CertVerifyCertificateChainPolicy, FALSE);
 
 #if _MSC_VER > 1500
@@ -627,6 +664,9 @@ TEST_FUNCTION_INITIALIZE(initialize)
     memset(g_captured_key_name, 0, sizeof(g_captured_key_name));
     g_captured_key_name_is_valid = false;
     g_thumbprint_fill = 0xAB;
+    g_ssl_policy_para_passed = false;
+    g_ssl_policy_auth_type = 0;
+    memset(g_ssl_policy_server_name, 0, sizeof(g_ssl_policy_server_name));
 }
 
 TEST_FUNCTION_CLEANUP(cleans)
@@ -683,7 +723,7 @@ static void setup_x509_schannel_create_mocks(void)
     STRICT_EXPECTED_CALL(CertGetCertificateContextProperty(IGNORED_PTR_ARG, CERT_SHA1_HASH_PROP_ID, IGNORED_PTR_ARG, IGNORED_PTR_ARG)); /*the key container is named after the certificate thumbprint*/
     STRICT_EXPECTED_CALL(NCryptOpenStorageProvider(IGNORED_PTR_ARG, MS_KEY_STORAGE_PROVIDER, 0)) /*this is opening the CNG key storage provider that will hold the private key*/
         .IgnoreArgument_pszProviderName();
-    STRICT_EXPECTED_CALL(NCryptImportKey((NCRYPT_PROV_HANDLE)IGNORED_PTR_ARG, (NCRYPT_KEY_HANDLE)IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, NCRYPT_OVERWRITE_KEY_FLAG)) /*tranferring the key from the blob to the key storage provider*/
+    STRICT_EXPECTED_CALL(NCryptImportKey((NCRYPT_PROV_HANDLE)IGNORED_PTR_ARG, (NCRYPT_KEY_HANDLE)IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, NCRYPT_OVERWRITE_KEY_FLAG)) /*tranferring the key from the blob to the key storage provider*/
         .IgnoreArgument_hProvider()
         .IgnoreArgument_hImportKey();
     STRICT_EXPECTED_CALL(CertSetCertificateContextProperty(IGNORED_PTR_ARG, CERT_KEY_PROV_INFO_PROP_ID, 0, IGNORED_PTR_ARG)); /*give the private key*/
@@ -1025,6 +1065,7 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_succeeds)
     ///assert
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_FALSE(g_ssl_policy_para_passed, "no server name shall be passed to the SSL policy");
 }
 
 TEST_FUNCTION(x509_verify_certificate_in_chain_no_closing_crlf_succeeds)
@@ -1120,6 +1161,114 @@ TEST_FUNCTION(x509_verify_certificate_in_chain_fails)
 
             ///act
             int result = x509_verify_certificate_in_chain(testTrustedCertificateThreeCerts, &testCertContextToVerify);
+
+            ///assert
+            ASSERT_ARE_NOT_EQUAL(int, 0, result, "Test %lu fails", (unsigned long)i);
+        }
+    }
+
+    //cleanup
+    umock_c_negative_tests_deinit();
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_for_hostname_NULL_trustedCertificate_fails)
+{
+    ///act
+    int result = x509_verify_certificate_in_chain_for_hostname(NULL, &testCertContextToVerify, TEST_HOSTNAME);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_for_hostname_NULL_certToVerify_fails)
+{
+    ///act
+    int result = x509_verify_certificate_in_chain_for_hostname(testTrustedCertificateOneCertWithCrlf, NULL, TEST_HOSTNAME);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_for_hostname_NULL_hostname_fails)
+{
+    ///act
+    int result = x509_verify_certificate_in_chain_for_hostname(testTrustedCertificateOneCertWithCrlf, &testCertContextToVerify, NULL);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_for_hostname_empty_hostname_fails)
+{
+    ///act
+    int result = x509_verify_certificate_in_chain_for_hostname(testTrustedCertificateOneCertWithCrlf, &testCertContextToVerify, "");
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+static void setup_x509_verify_certificate_in_chain_for_hostname_mocks(DWORD dwExpectedError)
+{
+    const char* expectedCerts[1] = { testTrustedCertificateOneCertWithCrlf };
+
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    setup_x509_verify_certificate_in_chain_mocks(dwExpectedError, expectedCerts, 1);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_for_hostname_passes_hostname_to_ssl_policy)
+{
+    ///arrange
+    setup_x509_verify_certificate_in_chain_for_hostname_mocks(ERROR_SUCCESS);
+
+    ///act
+    int result = x509_verify_certificate_in_chain_for_hostname(testTrustedCertificateOneCertWithCrlf, &testCertContextToVerify, TEST_HOSTNAME);
+
+    ///assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_TRUE(g_ssl_policy_para_passed, "the server name shall be passed to the SSL policy");
+    ASSERT_ARE_EQUAL(int, AUTHTYPE_SERVER, (int)g_ssl_policy_auth_type);
+    ASSERT_IS_TRUE(wcscmp(TEST_HOSTNAME_W, g_ssl_policy_server_name) == 0, "unexpected server name passed to the SSL policy");
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_for_hostname_name_mismatch_fails)
+{
+    ///arrange
+    setup_x509_verify_certificate_in_chain_for_hostname_mocks((DWORD)CERT_E_CN_NO_MATCH);
+
+    ///act
+    int result = x509_verify_certificate_in_chain_for_hostname(testTrustedCertificateOneCertWithCrlf, &testCertContextToVerify, TEST_HOSTNAME);
+
+    ///assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(x509_verify_certificate_in_chain_for_hostname_fails_when_underlying_calls_fail)
+{
+    ///arrange
+    int negativeTestsInitResult = umock_c_negative_tests_init();
+    ASSERT_ARE_EQUAL(int, 0, negativeTestsInitResult);
+
+    setup_x509_verify_certificate_in_chain_for_hostname_mocks(ERROR_SUCCESS);
+
+    umock_c_negative_tests_snapshot();
+
+    size_t count = umock_c_negative_tests_call_count();
+    for (size_t i = 0; i < count; i++)
+    {
+        if (umock_c_negative_tests_can_call_fail(i))
+        {
+            umock_c_negative_tests_reset();
+            umock_c_negative_tests_fail_call(i);
+
+            ///act
+            int result = x509_verify_certificate_in_chain_for_hostname(testTrustedCertificateOneCertWithCrlf, &testCertContextToVerify, TEST_HOSTNAME);
 
             ///assert
             ASSERT_ARE_NOT_EQUAL(int, 0, result, "Test %lu fails", (unsigned long)i);
