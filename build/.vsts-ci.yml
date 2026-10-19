@@ -445,7 +445,10 @@ jobs:
       mergeTestResults: true
       testRunTitle: 'OSX'
     condition: succeededOrFailed()
-  - script: rm -rf $(Agent.BuildDirectory)/*
+  # Recreate s/: the Component Detection task injected after this step runs from it.
+  - script: |
+      rm -rf $(Agent.BuildDirectory)/*
+      mkdir -p $(Agent.BuildDirectory)/s
     displayName: 'Cleanup'
     condition: always()
 
@@ -517,7 +520,10 @@ jobs:
       mergeTestResults: true
       testRunTitle: 'XCode'
     condition: succeededOrFailed()
-  - script: rm -rf $(Agent.BuildDirectory)/*
+  # Recreate s/: the Component Detection task injected after this step runs from it.
+  - script: |
+      rm -rf $(Agent.BuildDirectory)/*
+      mkdir -p $(Agent.BuildDirectory)/s
     displayName: 'Cleanup'
     condition: always()
 
