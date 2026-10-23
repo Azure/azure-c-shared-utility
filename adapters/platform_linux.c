@@ -42,6 +42,10 @@ const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description();
 #endif
 #endif
 
+/* Successful platform_init calls not yet matched by platform_deinit. platform_deinit releases the logger
+   reference only for those, so extra calls (e.g. after a failed platform_init) keep the caller's logger. */
+static unsigned int platform_logger_refs = 0;
+
 int platform_init(void)
 {
     int result;
@@ -76,6 +80,10 @@ int platform_init(void)
         if (result != 0)
         {
             PLATFORM_LOGGER_DEINIT();
+        }
+        else
+        {
+            platform_logger_refs++;
         }
     }
     return result;
@@ -132,5 +140,9 @@ void platform_deinit(void)
 #elif USE_WOLFSSL
     tlsio_wolfssl_deinit();
 #endif
-    PLATFORM_LOGGER_DEINIT();
+    if (platform_logger_refs > 0)
+    {
+        platform_logger_refs--;
+        PLATFORM_LOGGER_DEINIT();
+    }
 }

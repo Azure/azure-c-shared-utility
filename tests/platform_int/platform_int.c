@@ -44,6 +44,30 @@ static int application_logger_init_is_kept_after_platform_deinit(void)
     return result;
 }
 
+static int extra_platform_deinit_keeps_application_logger(void)
+{
+    /* Init and deinit twice, ignoring the second init's result (it fails on Linux: OpenSSL init is not
+       re-entrant). Deinit must not release more logger references than successful inits took. */
+    int result;
+    if (logger_init() != 0)
+    {
+        result = 1;
+    }
+    else
+    {
+        result = platform_init();
+        if (result == 0)
+        {
+            (void)platform_init();
+            platform_deinit();
+            platform_deinit();
+            LogError("platform_int: application log after extra platform_deinit");
+        }
+        logger_deinit();
+    }
+    return result;
+}
+
 int main(void)
 {
     int failed = 0;
@@ -64,6 +88,12 @@ int main(void)
     if (application_logger_init_is_kept_after_platform_deinit() != 0)
     {
         (void)printf("FAILED: application_logger_init_is_kept_after_platform_deinit\r\n");
+        failed++;
+    }
+
+    if (extra_platform_deinit_keeps_application_logger() != 0)
+    {
+        (void)printf("FAILED: extra_platform_deinit_keeps_application_logger\r\n");
         failed++;
     }
 

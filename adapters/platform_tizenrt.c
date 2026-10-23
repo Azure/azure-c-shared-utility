@@ -18,9 +18,18 @@
 #endif
 #endif
 
+/* Successful platform_init calls not yet matched by platform_deinit. platform_deinit releases the logger
+   reference only for those, so extra calls (e.g. after a failed platform_init) keep the caller's logger. */
+static unsigned int platform_logger_refs = 0;
+
 int platform_init(void)
 {
-    return PLATFORM_LOGGER_INIT();
+    int result = PLATFORM_LOGGER_INIT();
+    if (result == 0)
+    {
+        platform_logger_refs++;
+    }
+    return result;
 }
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
@@ -40,5 +49,9 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 
 void platform_deinit(void)
 {
-    PLATFORM_LOGGER_DEINIT();
+    if (platform_logger_refs > 0)
+    {
+        platform_logger_refs--;
+        PLATFORM_LOGGER_DEINIT();
+    }
 }
