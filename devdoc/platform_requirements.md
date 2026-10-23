@@ -12,6 +12,9 @@ implementers
 may find it makes more sense to perform these operations outside of the scope of the Azure IoT SDK.
 In that case, the `platform_init` and `platform_deinit` calls may be left empty.
 
+With c-logging (the default logging), `platform_init` and `platform_deinit` must still call `logger_init` and
+`logger_deinit`: c-logging aborts on any log line until `logger_init` is called.
+
 ### References 
 [Azure IoT porting guide](https://github.com/Azure/azure-c-shared-utility/blob/master/devdoc/porting_guide.md)<br/>
 [platform.h](https://github.com/Azure/azure-c-shared-utility/blob/master/inc/azure_c_shared_utility/platform.h)<br/>
@@ -34,7 +37,11 @@ int platform_init();
 
 **SRS_PLATFORM_30_000: [** The `platform_init` call shall perform any global initialization needed by the platform and return 0 on success. **]**
 
+**SRS_PLATFORM_30_002: [** When c-logging is used, `platform_init` shall call `logger_init` before anything that can log. **]**
+
 **SRS_PLATFORM_30_001: [** On failure, `platform_init` shall return a non-zero value. **]**
+
+**SRS_PLATFORM_30_003: [** On failure, `platform_init` shall call `logger_deinit` if it called `logger_init`. **]**
 
 
 ###   platform_deinit
@@ -46,6 +53,8 @@ void platform_deinit();
 ```
 
 **SRS_PLATFORM_30_010: [** The `platform_deinit` call shall perform any global deinitialization needed by the platform. **]**
+
+**SRS_PLATFORM_30_011: [** When c-logging is used, `platform_deinit` shall call `logger_deinit` last. **]**
 
 
 ###   platform_get_default_tlsio

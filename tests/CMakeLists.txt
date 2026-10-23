@@ -106,6 +106,8 @@ if(${run_unittests})
 endif()
 
 if(${run_int_tests})
+    add_subdirectory(platform_int)
+
     # socketio_int drives socketio_get_interface_description directly, which only exists as
     # a real implementation when socketio is part of the build. The Apple TLS configuration
     # builds without socketio and supplies a stub that returns NULL.

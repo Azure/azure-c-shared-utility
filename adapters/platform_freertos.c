@@ -8,11 +8,21 @@
 
 #include "debug.h"
 
+/* c-logging aborts on any log line until logger_init is called; platform_init owns that reference. */
+#if !defined(NO_LOGGING) && !defined(MINIMAL_LOGERROR) && !defined(ESP8266_RTOS)
+#include "c_logging/logger.h"
+#define PLATFORM_LOGGER_INIT() logger_init()
+#define PLATFORM_LOGGER_DEINIT() logger_deinit()
+#else
+#define PLATFORM_LOGGER_INIT() 0
+#define PLATFORM_LOGGER_DEINIT() ((void)0)
+#endif
+
 int platform_init(void)
 {
     //TODO Add proper network events synchronization
     ThreadAPI_Sleep(10000);
-    return 0;
+    return PLATFORM_LOGGER_INIT();
 }
 
 const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
@@ -33,5 +43,6 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 void platform_deinit(void)
 {
     TRACE_INFO("Deinitializing platform \r\n");
+    PLATFORM_LOGGER_DEINIT();
     while(1) {};
 }
