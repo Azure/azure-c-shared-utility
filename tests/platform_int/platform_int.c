@@ -4,8 +4,9 @@
 #include <stdio.h>
 
 #include "azure_c_shared_utility/platform.h"
-#include "azure_c_shared_utility/xlogging.h"
+/* logger.h first: with NO_LOGGING, xlogging.h must be the one that defines the log macros. */
 #include "c_logging/logger.h"
+#include "azure_c_shared_utility/xlogging.h"
 
 /* Logging with c-logging aborts while it is not initialized; each check below fails by aborting
    if platform_init did not initialize it. */

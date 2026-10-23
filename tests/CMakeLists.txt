@@ -44,6 +44,10 @@ if(${run_unittests})
         add_subdirectory(timer_win32_ut)
     else()
         add_subdirectory(socketio_berkeley_ut)
+        # platform_linux.c with OpenSSL (the default TLS stack on Linux)
+        if(DEFINED LINUX AND ${use_openssl} AND NOT (${use_wolfssl} OR ${use_mbedtls} OR ${use_bearssl}))
+            add_subdirectory(platform_linux_ut)
+        endif()
     endif()
 
     #normally, with proper include paths, the below tests can be run under windows too.

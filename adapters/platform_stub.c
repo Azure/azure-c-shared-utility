@@ -3,7 +3,9 @@
 
 #include "azure_c_shared_utility/platform.h"
 
-/* c-logging aborts on any log line until logger_init is called; platform_init owns that reference. */
+/* c-logging aborts on any log line until logger_init is called; platform_init owns that reference.
+   Unit tests predefine PLATFORM_LOGGER_INIT/PLATFORM_LOGGER_DEINIT to mock them. */
+#ifndef PLATFORM_LOGGER_INIT
 #if !defined(NO_LOGGING) && !defined(MINIMAL_LOGERROR) && !defined(ESP8266_RTOS)
 #include "c_logging/logger.h"
 #define PLATFORM_LOGGER_INIT() logger_init()
@@ -11,6 +13,7 @@
 #else
 #define PLATFORM_LOGGER_INIT() 0
 #define PLATFORM_LOGGER_DEINIT() ((void)0)
+#endif
 #endif
 
 int platform_init(void)
