@@ -58,6 +58,7 @@ typedef struct HTTP_HANDLE_DATA_TAG
     unsigned int    is_connected : 1;
     unsigned int    send_completed : 1;
     bool            tls_renegotiation;
+    bool            tls_verification;
 } HTTP_HANDLE_DATA;
 
 /*the following function does the same as sscanf(pos2, "%d", &sec)*/
@@ -1486,6 +1487,12 @@ HTTPAPI_RESULT HTTPAPI_SetOption(HTTP_HANDLE handle, const char* optionName, con
     {
         bool tls_renegotiation = *(bool*)value;
         http_instance->tls_renegotiation = tls_renegotiation;
+        result = HTTPAPI_OK;
+    }
+    else if (strcmp(OPTION_DISABLE_TLS_VERIFICATION, optionName) == 0)
+    {
+        bool tls_verification = *(bool*)value;
+        http_instance->tls_verification = tls_verification;
         result = HTTPAPI_OK;
     }
     else
