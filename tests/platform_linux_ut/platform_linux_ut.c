@@ -16,8 +16,15 @@
 #include "azure_c_shared_utility/httpapiex.h"
 #include "azure_c_shared_utility/tlsio_openssl.h"
 
+/* C linkage: this file may be compiled as C++; the mocked adapter is C. */
+#ifdef __cplusplus
+extern "C" {
+#endif
 MOCKABLE_FUNCTION(, int, mock_logger_init);
 MOCKABLE_FUNCTION(, void, mock_logger_deinit);
+#ifdef __cplusplus
+}
+#endif
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/platform.h"
