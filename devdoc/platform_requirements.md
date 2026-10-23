@@ -41,7 +41,7 @@ int platform_init();
 
 **SRS_PLATFORM_30_001: [** On failure, `platform_init` shall return a non-zero value. **]**
 
-**SRS_PLATFORM_30_003: [** On failure, `platform_init` shall call `logger_deinit` if it called `logger_init`. **]**
+**SRS_PLATFORM_30_003: [** If `platform_init` fails after `logger_init` succeeded, it shall call `logger_deinit`; if `logger_init` failed, it shall not. **]**
 
 
 ###   platform_deinit
