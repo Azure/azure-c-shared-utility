@@ -43,14 +43,14 @@ void my_gballoc_free(void* ptr)
 #if USE_WOLFSSL
 #include "azure_c_shared_utility/tlsio_wolfssl.h"
 #endif
+#include "umock_c/umock_c_prod.h"
+MOCKABLE_FUNCTION(, int, mock_logger_init);
+MOCKABLE_FUNCTION(, void, mock_logger_deinit);
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/platform.h"
 
 #define ENABLE_MOCKS
-
-MOCKABLE_FUNCTION(, int, mock_logger_init);
-MOCKABLE_FUNCTION(, void, mock_logger_deinit);
 
 MOCK_FUNCTION_WITH_CODE(WSAAPI, int, WSAStartup, WORD, wVersionRequested, LPWSADATA, lpWSAData)
 MOCK_FUNCTION_END(0)
