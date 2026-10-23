@@ -44,6 +44,10 @@ if(${run_unittests})
         add_subdirectory(timer_win32_ut)
     else()
         add_subdirectory(socketio_berkeley_ut)
+        # platform_linux.c with OpenSSL (the default TLS stack on Linux)
+        if(DEFINED LINUX AND ${use_openssl} AND NOT (${use_wolfssl} OR ${use_mbedtls} OR ${use_bearssl}))
+            add_subdirectory(platform_linux_ut)
+        endif()
     endif()
 
     #normally, with proper include paths, the below tests can be run under windows too.
@@ -106,6 +110,8 @@ if(${run_unittests})
 endif()
 
 if(${run_int_tests})
+    add_subdirectory(platform_int)
+
     # socketio_int drives socketio_get_interface_description directly, which only exists as
     # a real implementation when socketio is part of the build. The Apple TLS configuration
     # builds without socketio and supplies a stub that returns NULL.

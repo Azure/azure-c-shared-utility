@@ -13,7 +13,7 @@ set(theseTestsName platform_win32_ut)
 generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_c_files
-    ${PLATFORM_C_FILE}
+    platform_win32_mocked.c
 )
 
 set(${theseTestsName}_h_files

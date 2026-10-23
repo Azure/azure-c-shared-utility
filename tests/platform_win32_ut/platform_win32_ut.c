@@ -43,6 +43,16 @@ void my_gballoc_free(void* ptr)
 #if USE_WOLFSSL
 #include "azure_c_shared_utility/tlsio_wolfssl.h"
 #endif
+#include "umock_c/umock_c_prod.h"
+/* C linkage: this file may be compiled as C++; the mocked adapter is C. */
+#ifdef __cplusplus
+extern "C" {
+#endif
+MOCKABLE_FUNCTION(, int, mock_logger_init);
+MOCKABLE_FUNCTION(, void, mock_logger_deinit);
+#ifdef __cplusplus
+}
+#endif
 #undef ENABLE_MOCKS
 
 #include "azure_c_shared_utility/platform.h"
@@ -152,6 +162,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_GLOBAL_MOCK_RETURN(tlsio_schannel_get_interface_description, TEST_IO_INTERFACE_DESCRIPTION);
     REGISTER_GLOBAL_MOCK_RETURNS(HTTPAPIEX_Init, HTTPAPIEX_OK, HTTPAPIEX_ERROR);
+    REGISTER_GLOBAL_MOCK_RETURNS(mock_logger_init, 0, MU_FAILURE);
 
 #ifdef USE_OPENSSL
     REGISTER_GLOBAL_MOCK_RETURN(tlsio_openssl_get_interface_description, TEST_IO_INTERFACE_DESCRIPTION);
@@ -186,6 +197,7 @@ TEST_FUNCTION(platform_init_success)
     int result;
 
     //arrange
+    STRICT_EXPECTED_CALL(mock_logger_init());
     STRICT_EXPECTED_CALL(WSAStartup(IGNORED_ARG, IGNORED_ARG));
 #ifndef DONT_USE_UPLOADTOBLOB
     STRICT_EXPECTED_CALL(HTTPAPIEX_Init());
@@ -204,12 +216,29 @@ TEST_FUNCTION(platform_init_success)
     // cleanup
 }
 
+TEST_FUNCTION(platform_init_logger_init_fail)
+{
+    int result;
+
+    //arrange
+    STRICT_EXPECTED_CALL(mock_logger_init()).SetReturn(MU_FAILURE);
+
+    //act
+    result = platform_init();
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
 TEST_FUNCTION(platform_init_WSAStartup_0_fail)
 {
     int result;
 
     //arrange
+    STRICT_EXPECTED_CALL(mock_logger_init());
     STRICT_EXPECTED_CALL(WSAStartup(IGNORED_ARG, IGNORED_ARG)).SetReturn(1);
+    STRICT_EXPECTED_CALL(mock_logger_deinit());
 
     //act
     result = platform_init();
@@ -227,8 +256,10 @@ TEST_FUNCTION(platform_init_HTTPAPIEX_fail)
     int result;
 
     //arrange
+    STRICT_EXPECTED_CALL(mock_logger_init());
     STRICT_EXPECTED_CALL(WSAStartup(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(HTTPAPIEX_Init()).SetReturn(HTTPAPIEX_ERROR);
+    STRICT_EXPECTED_CALL(mock_logger_deinit());
 
     //act
     result = platform_init();
@@ -240,6 +271,29 @@ TEST_FUNCTION(platform_init_HTTPAPIEX_fail)
     // cleanup
 }
 #endif /* DONT_USE_UPLOADTOBLOB */
+
+#ifdef USE_OPENSSL
+TEST_FUNCTION(platform_init_tlsio_openssl_init_fail)
+{
+    int result;
+
+    //arrange
+    STRICT_EXPECTED_CALL(mock_logger_init());
+    STRICT_EXPECTED_CALL(WSAStartup(IGNORED_ARG, IGNORED_ARG));
+#ifndef DONT_USE_UPLOADTOBLOB
+    STRICT_EXPECTED_CALL(HTTPAPIEX_Init());
+#endif /* DONT_USE_UPLOADTOBLOB */
+    STRICT_EXPECTED_CALL(tlsio_openssl_init()).SetReturn(MU_FAILURE);
+    STRICT_EXPECTED_CALL(mock_logger_deinit());
+
+    //act
+    result = platform_init();
+
+    //assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+#endif
 
 TEST_FUNCTION(platform_get_default_tlsio_success)
 {
@@ -287,6 +341,7 @@ TEST_FUNCTION(platform_deinit_success)
 #ifdef USE_OPENSSL
     STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
 #endif
+    STRICT_EXPECTED_CALL(mock_logger_deinit());
 
     //act
     platform_deinit();

@@ -29,29 +29,55 @@ const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description();
 #include <unistd.h>
 #include <sys/utsname.h>
 
+/* c-logging aborts on any log line until logger_init is called; platform_init owns that reference.
+   Unit tests predefine PLATFORM_LOGGER_INIT/PLATFORM_LOGGER_DEINIT to mock them. */
+#ifndef PLATFORM_LOGGER_INIT
+#if !defined(NO_LOGGING) && !defined(MINIMAL_LOGERROR) && !defined(ESP8266_RTOS)
+#include "c_logging/logger.h"
+#define PLATFORM_LOGGER_INIT() logger_init()
+#define PLATFORM_LOGGER_DEINIT() logger_deinit()
+#else
+#define PLATFORM_LOGGER_INIT() 0
+#define PLATFORM_LOGGER_DEINIT() ((void)0)
+#endif
+#endif
+
 int platform_init(void)
 {
-    int result = 0;
-#ifdef USE_HTTP
-#ifndef DONT_USE_UPLOADTOBLOB
-    if (HTTPAPIEX_Init() == HTTPAPIEX_ERROR)
+    int result;
+    if (PLATFORM_LOGGER_INIT() != 0)
     {
-        LogError("HTTP for upload to blob failed on initialization.");
+        (void)printf("platform_init: logger_init failed\r\n");
         result = MU_FAILURE;
     }
+    else
+    {
+        result = 0;
+#ifdef USE_HTTP
+#ifndef DONT_USE_UPLOADTOBLOB
+        if (HTTPAPIEX_Init() == HTTPAPIEX_ERROR)
+        {
+            LogError("HTTP for upload to blob failed on initialization.");
+            result = MU_FAILURE;
+        }
 #endif /* DONT_USE_UPLOADTOBLOB */
 #endif /* USE_HTTP */
 #ifdef USE_OPENSSL
-    if (result == 0)
-    {
-        result = tlsio_openssl_init();
-    }
+        if (result == 0)
+        {
+            result = tlsio_openssl_init();
+        }
 #elif USE_WOLFSSL
-    if (result == 0)
-    {
-        result = tlsio_wolfssl_init();
-    }
+        if (result == 0)
+        {
+            result = tlsio_wolfssl_init();
+        }
 #endif
+        if (result != 0)
+        {
+            PLATFORM_LOGGER_DEINIT();
+        }
+    }
     return result;
 }
 
@@ -106,4 +132,5 @@ void platform_deinit(void)
 #elif USE_WOLFSSL
     tlsio_wolfssl_deinit();
 #endif
+    PLATFORM_LOGGER_DEINIT();
 }
