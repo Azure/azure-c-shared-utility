@@ -97,6 +97,9 @@ TEST_FUNCTION(platform_init_calls_logger_init_first)
     //assert
     ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    //cleanup
+    platform_deinit();
 }
 
 TEST_FUNCTION(platform_init_logger_init_fails)
@@ -150,11 +153,49 @@ TEST_FUNCTION(platform_init_tlsio_openssl_init_fails_releases_logger)
 TEST_FUNCTION(platform_deinit_calls_logger_deinit_last)
 {
     //arrange
+    ASSERT_ARE_EQUAL(int, 0, platform_init());
+    umock_c_reset_all_calls();
 #if defined(USE_HTTP) && !defined(DONT_USE_UPLOADTOBLOB)
     STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit());
 #endif
     STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
     STRICT_EXPECTED_CALL(mock_logger_deinit());
+
+    //act
+    platform_deinit();
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(platform_deinit_after_failed_platform_init_keeps_logger)
+{
+    //arrange
+    STRICT_EXPECTED_CALL(tlsio_openssl_init()).SetReturn(MU_FAILURE);
+    ASSERT_ARE_NOT_EQUAL(int, 0, platform_init());
+    umock_c_reset_all_calls();
+#if defined(USE_HTTP) && !defined(DONT_USE_UPLOADTOBLOB)
+    STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit());
+#endif
+    STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
+
+    //act
+    platform_deinit();
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(platform_deinit_releases_logger_once_per_successful_platform_init)
+{
+    //arrange
+    ASSERT_ARE_EQUAL(int, 0, platform_init());
+    platform_deinit();
+    umock_c_reset_all_calls();
+#if defined(USE_HTTP) && !defined(DONT_USE_UPLOADTOBLOB)
+    STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit());
+#endif
+    STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
 
     //act
     platform_deinit();

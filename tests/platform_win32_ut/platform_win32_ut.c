@@ -214,6 +214,7 @@ TEST_FUNCTION(platform_init_success)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
+    platform_deinit();
 }
 
 TEST_FUNCTION(platform_init_logger_init_fail)
@@ -334,6 +335,8 @@ TEST_FUNCTION(platform_get_platform_info_success)
 TEST_FUNCTION(platform_deinit_success)
 {
     //arrange
+    ASSERT_ARE_EQUAL(int, 0, platform_init());
+    umock_c_reset_all_calls();
     STRICT_EXPECTED_CALL(WSACleanup());
 #ifndef DONT_USE_UPLOADTOBLOB
     STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit());
@@ -350,6 +353,29 @@ TEST_FUNCTION(platform_deinit_success)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
+}
+
+TEST_FUNCTION(platform_deinit_after_failed_platform_init_keeps_logger)
+{
+    //arrange
+    STRICT_EXPECTED_CALL(mock_logger_init());
+    STRICT_EXPECTED_CALL(WSAStartup(IGNORED_ARG, IGNORED_ARG)).SetReturn(1);
+    STRICT_EXPECTED_CALL(mock_logger_deinit());
+    ASSERT_ARE_NOT_EQUAL(int, 0, platform_init());
+    umock_c_reset_all_calls();
+    STRICT_EXPECTED_CALL(WSACleanup());
+#ifndef DONT_USE_UPLOADTOBLOB
+    STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit());
+#endif /* DONT_USE_UPLOADTOBLOB */
+#ifdef USE_OPENSSL
+    STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
+#endif
+
+    //act
+    platform_deinit();
+
+    //assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
 END_TEST_SUITE(platform_win32_ut)
