@@ -36,6 +36,7 @@ set(run_reals_check OFF)
 
 if ((NOT TARGET c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-build-tools/CMakeLists.txt))
     add_subdirectory(deps/c-build-tools)
+    include(${CMAKE_CURRENT_LIST_DIR}/configs/cxx23_visual_studio_generator.cmake)
     set_default_build_options()
 endif()
 
