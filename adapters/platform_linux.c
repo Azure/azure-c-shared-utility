@@ -46,6 +46,16 @@ const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description();
    reference only for those, so extra calls (e.g. after a failed platform_init) keep the caller's logger. */
 static unsigned int platform_logger_refs = 0;
 
+/** @brief Releases the HTTP reference platform_init takes for upload to blob, when that is compiled in. */
+static void release_http_for_upload_to_blob(void)
+{
+#ifdef USE_HTTP
+#ifndef DONT_USE_UPLOADTOBLOB
+    HTTPAPIEX_Deinit();
+#endif /* DONT_USE_UPLOADTOBLOB */
+#endif /* USE_HTTP */
+}
+
 int platform_init(void)
 {
     int result;
@@ -70,11 +80,21 @@ int platform_init(void)
         if (result == 0)
         {
             result = tlsio_openssl_init();
+            if (result != 0)
+            {
+                /*a failed platform_init must hold no reference*/
+                release_http_for_upload_to_blob();
+            }
         }
 #elif USE_WOLFSSL
         if (result == 0)
         {
             result = tlsio_wolfssl_init();
+            if (result != 0)
+            {
+                /*a failed platform_init must hold no reference*/
+                release_http_for_upload_to_blob();
+            }
         }
 #endif
         if (result != 0)
@@ -129,11 +149,7 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 
 void platform_deinit(void)
 {
-#ifdef USE_HTTP
-#ifndef DONT_USE_UPLOADTOBLOB
-    HTTPAPIEX_Deinit();
-#endif /* DONT_USE_UPLOADTOBLOB */
-#endif /* USE_HTTP */
+    release_http_for_upload_to_blob();
 
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();

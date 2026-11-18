@@ -285,6 +285,9 @@ TEST_FUNCTION(platform_init_tlsio_openssl_init_fail)
     STRICT_EXPECTED_CALL(HTTPAPIEX_Init());
 #endif /* DONT_USE_UPLOADTOBLOB */
     STRICT_EXPECTED_CALL(tlsio_openssl_init()).SetReturn(MU_FAILURE);
+#ifndef DONT_USE_UPLOADTOBLOB
+    STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit()); /*a failed platform_init must hold no reference*/
+#endif /* DONT_USE_UPLOADTOBLOB */
     STRICT_EXPECTED_CALL(mock_logger_deinit());
 
     //act

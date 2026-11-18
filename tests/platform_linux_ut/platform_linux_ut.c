@@ -132,7 +132,7 @@ TEST_FUNCTION(platform_init_HTTPAPIEX_Init_fails_releases_logger)
 }
 #endif
 
-TEST_FUNCTION(platform_init_tlsio_openssl_init_fails_releases_logger)
+TEST_FUNCTION(platform_init_tlsio_openssl_init_fails_releases_HTTPAPIEX_and_logger)
 {
     //arrange
     STRICT_EXPECTED_CALL(mock_logger_init());
@@ -140,6 +140,9 @@ TEST_FUNCTION(platform_init_tlsio_openssl_init_fails_releases_logger)
     STRICT_EXPECTED_CALL(HTTPAPIEX_Init());
 #endif
     STRICT_EXPECTED_CALL(tlsio_openssl_init()).SetReturn(MU_FAILURE);
+#if defined(USE_HTTP) && !defined(DONT_USE_UPLOADTOBLOB)
+    STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit());
+#endif
     STRICT_EXPECTED_CALL(mock_logger_deinit());
 
     //act

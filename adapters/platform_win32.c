@@ -48,6 +48,14 @@
    reference only for those, so extra calls (e.g. after a failed platform_init) keep the caller's logger. */
 static unsigned int platform_logger_refs = 0;
 
+/** @brief Releases the HTTP reference platform_init takes for upload to blob, when that is compiled in. */
+static void release_http_for_upload_to_blob(void)
+{
+#ifndef DONT_USE_UPLOADTOBLOB
+    HTTPAPIEX_Deinit();
+#endif /* DONT_USE_UPLOADTOBLOB */
+}
+
 int platform_init(void)
 {
     int result;
@@ -80,6 +88,11 @@ int platform_init(void)
             if (result == 0)
             {
                 result = tlsio_openssl_init();
+                if (result != 0)
+                {
+                    /*a failed platform_init must hold no reference*/
+                    release_http_for_upload_to_blob();
+                }
             }
 #endif
         }
@@ -267,9 +280,7 @@ void platform_deinit(void)
 {
     (void)WSACleanup();
 
-#ifndef DONT_USE_UPLOADTOBLOB
-    HTTPAPIEX_Deinit();
-#endif /* DONT_USE_UPLOADTOBLOB */
+    release_http_for_upload_to_blob();
 
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();
