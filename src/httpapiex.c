@@ -196,11 +196,20 @@ void HTTPAPIEX_Deinit(void)
     }
     else
     {
-        /*Codes_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
-        useGlobalInitialization--;
         if (useGlobalInitialization == 0)
         {
-            HTTPAPI_Deinit();
+            /*no successful HTTPAPIEX_Init to release; going below zero would make the next
+              HTTPAPIEX_Init skip HTTPAPI_Init*/
+            LogError("HTTPAPIEX_Deinit called without a matching successful HTTPAPIEX_Init");
+        }
+        else
+        {
+            /*Codes_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
+            useGlobalInitialization--;
+            if (useGlobalInitialization == 0)
+            {
+                HTTPAPI_Deinit();
+            }
         }
 
         release_global_initialization_lock(lock);
