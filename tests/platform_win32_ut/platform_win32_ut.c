@@ -360,7 +360,7 @@ TEST_FUNCTION(platform_deinit_success)
     // cleanup
 }
 
-TEST_FUNCTION(platform_deinit_after_failed_platform_init_keeps_logger_Winsock_and_HTTPAPIEX)
+TEST_FUNCTION(platform_deinit_after_failed_platform_init_does_nothing)
 {
     //arrange
     STRICT_EXPECTED_CALL(mock_logger_init());
@@ -368,10 +368,6 @@ TEST_FUNCTION(platform_deinit_after_failed_platform_init_keeps_logger_Winsock_an
     STRICT_EXPECTED_CALL(mock_logger_deinit());
     ASSERT_ARE_NOT_EQUAL(int, 0, platform_init());
     umock_c_reset_all_calls();
-    /*no WSACleanup or HTTPAPIEX_Deinit: a failed platform_init holds neither, so another owner's must survive*/
-#ifdef USE_OPENSSL
-    STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
-#endif
 
     //act
     platform_deinit();
