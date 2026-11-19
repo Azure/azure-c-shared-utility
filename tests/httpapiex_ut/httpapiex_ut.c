@@ -708,6 +708,23 @@ TEST_FUNCTION(HTTPAPIEX_Deinit_does_not_deinitialize_HTTP_when_the_lock_cannot_b
     ASSERT_ARE_EQUAL(size_t, (size_t)0, HTTPAPI_Init_calls);
 }
 
+/*an unmatched HTTPAPIEX_Deinit must not drive the count negative, or the next HTTPAPIEX_Init would skip HTTPAPI_Init*/
+TEST_FUNCTION(HTTPAPIEX_Deinit_without_a_matching_HTTPAPIEX_Init_has_no_effect)
+{
+    /// act
+    HTTPAPIEX_Deinit();
+
+    /// assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls()); /*HTTPAPI_Deinit was not called*/
+
+    STRICT_EXPECTED_CALL(HTTPAPI_Init());
+    ASSERT_ARE_EQUAL(HTTPAPIEX_RESULT, HTTPAPIEX_OK, HTTPAPIEX_Init());
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls()); /*HTTPAPI_Init was still called*/
+
+    /// destroy
+    HTTPAPIEX_Deinit();
+}
+
 /*Tests_SRS_HTTPAPIEX_21_047: [HTTPAPIEX_Deinit shall de-initialize the HTTP by calling HTTAPI_Deinit.] */
 TEST_FUNCTION(HTTPAPIEX_Deinit_deinitialize_HTTP_succeeds)
 {
