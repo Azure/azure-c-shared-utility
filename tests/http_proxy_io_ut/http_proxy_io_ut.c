@@ -83,6 +83,48 @@ MOCK_FUNCTION_END();
 
 #undef ENABLE_MOCKS
 
+#ifdef AZURE_C_SHARED_UTILITY_USE_GSSAPI
+
+#include <gssapi/gssapi.h>
+
+#define TEST_BUFFER_HANDLE                      (BUFFER_HANDLE)0x4245
+#define TEST_GSS_NAME                           (gss_name_t)0x4321
+#define TEST_GSS_CTX                            (gss_ctx_id_t)0x4322
+
+static unsigned char test_gss_output_token_bytes[16] = { 0x60, 0x01 };
+static size_t g_gss_output_token_length;
+static OM_uint32 g_gss_init_result;
+static unsigned char test_decoded_server_token[4] = { 0xa1, 0x01 };
+
+/* The gss library is not linked into this test; these mocks stand in for it,
+ * following the tlsio_wolfssl_ut pattern for external libraries. */
+MOCK_FUNCTION_WITH_CODE(, OM_uint32, gss_import_name, OM_uint32*, minor_status, gss_buffer_t, input_name_buffer, gss_OID, input_name_type, gss_name_t*, output_name)
+    *minor_status = 0;
+    *output_name = TEST_GSS_NAME;
+MOCK_FUNCTION_END(GSS_S_COMPLETE)
+MOCK_FUNCTION_WITH_CODE(, OM_uint32, gss_init_sec_context, OM_uint32*, minor_status, gss_cred_id_t, claimant_cred_handle, gss_ctx_id_t*, context_handle, gss_name_t, target_name, gss_OID, mech_type, OM_uint32, req_flags, OM_uint32, time_req, gss_channel_bindings_t, input_chan_bindings, gss_buffer_t, input_token, gss_OID*, actual_mech_type, gss_buffer_t, output_token, OM_uint32*, ret_flags, OM_uint32*, time_rec)
+    *minor_status = 0;
+    if (!GSS_ERROR(g_gss_init_result))
+    {
+        *context_handle = TEST_GSS_CTX;
+    }
+    output_token->value = test_gss_output_token_bytes;
+    output_token->length = g_gss_output_token_length;
+MOCK_FUNCTION_END(g_gss_init_result)
+MOCK_FUNCTION_WITH_CODE(, OM_uint32, gss_delete_sec_context, OM_uint32*, minor_status, gss_ctx_id_t*, context_handle, gss_buffer_t, output_token)
+    *minor_status = 0;
+    *context_handle = GSS_C_NO_CONTEXT;
+MOCK_FUNCTION_END(GSS_S_COMPLETE)
+MOCK_FUNCTION_WITH_CODE(, OM_uint32, gss_release_name, OM_uint32*, minor_status, gss_name_t*, input_name)
+    *minor_status = 0;
+    *input_name = GSS_C_NO_NAME;
+MOCK_FUNCTION_END(GSS_S_COMPLETE)
+MOCK_FUNCTION_WITH_CODE(, OM_uint32, gss_release_buffer, OM_uint32*, minor_status, gss_buffer_t, buffer)
+    *minor_status = 0;
+MOCK_FUNCTION_END(GSS_S_COMPLETE)
+
+#endif /* AZURE_C_SHARED_UTILITY_USE_GSSAPI */
+
 static char* umocktypes_stringify_const_SOCKETIO_CONFIG_ptr(const SOCKETIO_CONFIG** value)
 {
     char* result = NULL;
@@ -339,6 +381,18 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_UMOCK_ALIAS_TYPE(ON_IO_CLOSE_COMPLETE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(ON_SEND_COMPLETE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(STRING_HANDLE, void*);
+#ifdef AZURE_C_SHARED_UTILITY_USE_GSSAPI
+    REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(OM_uint32, unsigned int);
+    REGISTER_UMOCK_ALIAS_TYPE(gss_cred_id_t, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(gss_name_t, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(gss_OID, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(gss_buffer_t, void*);
+    REGISTER_UMOCK_ALIAS_TYPE(gss_channel_bindings_t, void*);
+    REGISTER_GLOBAL_MOCK_RETURN(Azure_Base64_Decode, TEST_BUFFER_HANDLE);
+    REGISTER_GLOBAL_MOCK_RETURN(BUFFER_u_char, test_decoded_server_token);
+    REGISTER_GLOBAL_MOCK_RETURN(BUFFER_length, sizeof(test_decoded_server_token));
+#endif
     REGISTER_UMOCKC_PAIRED_CREATE_DESTROY_CALLS(xio_create, xio_destroy);
 }
 
@@ -355,6 +409,11 @@ TEST_FUNCTION_INITIALIZE(TestMethodInitialize)
     {
         ASSERT_FAIL("our mutex is ABANDONED. Failure in test framework");
     }
+
+#ifdef AZURE_C_SHARED_UTILITY_USE_GSSAPI
+    g_gss_init_result = GSS_S_COMPLETE;
+    g_gss_output_token_length = sizeof(test_gss_output_token_bytes);
+#endif
 
     umock_c_reset_all_calls();
 }
@@ -2578,6 +2637,8 @@ TEST_FUNCTION(after_a_bad_status_code_http_proxy_io_open_succeeds)
     g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)connect_response_300, sizeof(connect_response_300) - 1);
     umock_c_reset_all_calls();
 
+    /* Tests_SRS_HTTP_PROXY_IO_01_105: [ http_proxy_io_open shall free any CONNECT response bytes buffered during a previous open attempt before opening the underlying IO. ]*/
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
     STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
         .IgnoreArgument_on_io_open_complete()
         .IgnoreArgument_on_io_open_complete_context()
@@ -2968,5 +3029,564 @@ TEST_FUNCTION(when_on_underlying_io_error_is_called_while_waiting_for_underlying
     // cleanup
     http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
 }
+
+#ifdef AZURE_C_SHARED_UTILITY_USE_GSSAPI
+
+/* Negotiate (SPNEGO) proxy authentication */
+
+static const char negotiate_connect_request[] = "CONNECT test_host:443 HTTP/1.1\r\nHost:test_host:443\r\nProxy-Authorization: Negotiate fake_gss_token\r\n\r\n";
+
+static CONCRETE_IO_HANDLE setup_negotiate_waiting_io(void)
+{
+    CONCRETE_IO_HANDLE http_io = http_proxy_io_get_interface_description()->concrete_io_create((void*)&http_proxy_io_config_no_username);
+    (void)http_proxy_io_get_interface_description()->concrete_io_open(http_io, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+    g_on_io_open_complete(g_on_io_open_complete_context, IO_OPEN_OK);
+    umock_c_reset_all_calls();
+    return http_io;
+}
+
+/* Expected calls for a first negotiate round on a fresh instance: challenge
+ * extraction, GSS service name resolution, one GSS step and the follow-up
+ * CONNECT carrying the encoded token. */
+static void expect_first_negotiate_round(void)
+{
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG)); // accumulate 407
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // challenge token copy
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // GSS service name
+    EXPECTED_CALL(gss_import_name(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // GSS service name
+    EXPECTED_CALL(gss_init_sec_context(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_ARG, sizeof(test_gss_output_token_bytes)));
+    EXPECTED_CALL(gss_release_buffer(IGNORED_ARG, IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // challenge token copy
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // receive buffer
+    STRICT_EXPECTED_CALL(STRING_c_str(TEST_STRING_HANDLE))
+        .SetReturn("fake_gss_token");
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // CONNECT request
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_ARG, sizeof(negotiate_connect_request) - 1, IGNORED_ARG, NULL))
+        .ValidateArgumentBuffer(2, negotiate_connect_request, sizeof(negotiate_connect_request) - 1);
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // CONNECT request
+    STRICT_EXPECTED_CALL(STRING_delete(TEST_STRING_HANDLE));
+}
+
+/* Expected calls when the challenge is extracted but the negotiate attempt is
+ * aborted before the GSS step (undeterminable body length, connection close,
+ * handshake already complete). */
+static void expect_negotiate_abort(void)
+{
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG)); // accumulate 407
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // challenge token copy
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // challenge token copy
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, NULL, NULL));
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+}
+
+/* Expected calls when the GSS step itself fails (gss_init_sec_context error or
+ * empty output token). */
+static void expect_negotiate_gss_step_failure(void)
+{
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG)); // accumulate 407
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // challenge token copy
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // GSS service name
+    EXPECTED_CALL(gss_import_name(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // GSS service name
+    EXPECTED_CALL(gss_init_sec_context(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    EXPECTED_CALL(gss_release_buffer(IGNORED_ARG, IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // challenge token copy
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, NULL, NULL));
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_096: [ If the CONNECT response status code is 407 and the response contains a Proxy-Authenticate challenge for the Negotiate scheme, the IO shall attempt SPNEGO authentication by sending a new CONNECT request carrying a Proxy-Authorization: Negotiate <base64 token> header. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_098: [ If the challenge carries a base64 token, that token shall be base64-decoded and passed as the input token to gss_init_sec_context for the next handshake round; a bare Negotiate challenge shall start a round with no input token. ]*/
+TEST_FUNCTION(negotiate_challenge_in_407_sends_CONNECT_with_negotiate_token_and_200_opens)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+
+    expect_first_negotiate_round();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // arrange (proxy accepts the authenticated CONNECT)
+    umock_c_reset_all_calls();
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)connect_response, sizeof(connect_response) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_100: [ Before parsing the response to the follow-up CONNECT, any not-yet-received body bytes of the 407 response (per Content-Length) shall be discarded. ]*/
+TEST_FUNCTION(negotiate_drains_pending_407_body_bytes_before_parsing_next_response)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 10\r\n\r\n12345";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_first_negotiate_round();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // act (the remaining 5 body bytes trickle in and must be discarded without any processing)
+    umock_c_reset_all_calls();
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)"67890", 5);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // arrange (the response to the authenticated CONNECT parses cleanly)
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)connect_response, sizeof(connect_response) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_100: [ Before parsing the response to the follow-up CONNECT, any not-yet-received body bytes of the 407 response (per Content-Length) shall be discarded. ]*/
+TEST_FUNCTION(negotiate_drains_body_bytes_arriving_in_same_packet_as_next_response)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 10\r\n\r\n12345";
+    static const char drain_and_response[] = "67890HTTP/1.1 200\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_first_negotiate_round();
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
+
+    // act (tail of the 407 body and the next response in one packet)
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)drain_and_response, sizeof(drain_and_response) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_097: [ The Negotiate challenge shall be recognized case-insensitively at any position within a comma-separated challenge list and across multiple Proxy-Authenticate header lines. ]*/
+TEST_FUNCTION(negotiate_first_in_comma_separated_challenge_list_is_recognized)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate, Basic realm=\"proxy\"\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_first_negotiate_round();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_097: [ The Negotiate challenge shall be recognized case-insensitively at any position within a comma-separated challenge list and across multiple Proxy-Authenticate header lines. ]*/
+TEST_FUNCTION(negotiate_after_other_challenge_in_list_is_recognized)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nproxy-authenticate: Basic realm=\"proxy\", negotiate\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_first_negotiate_round();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_097: [ The Negotiate challenge shall be recognized case-insensitively at any position within a comma-separated challenge list and across multiple Proxy-Authenticate header lines. ]*/
+TEST_FUNCTION(negotiate_after_challenge_with_quoted_comma_is_recognized)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"a,b\", Negotiate\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_first_negotiate_round();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_097: [ The Negotiate challenge shall be recognized case-insensitively at any position within a comma-separated challenge list and across multiple Proxy-Authenticate header lines. ]*/
+TEST_FUNCTION(negotiate_inside_quoted_string_is_not_recognized)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"foo, Negotiate xyz\"\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, NULL, NULL));
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_071: [ If the status code is not successful, the on_open_complete callback shall be triggered with IO_OPEN_ERROR, passing also the on_open_complete_context argument as context. ]*/
+TEST_FUNCTION(a_407_without_negotiate_challenge_indicates_error)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"proxy\"\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, NULL, NULL));
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_ERROR));
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_101: [ If the 407 body length cannot be determined unambiguously (Transfer-Encoding present, Content-Length missing, malformed, or overflowing), the negotiation shall be aborted and the on_open_complete callback triggered with IO_OPEN_ERROR. ]*/
+TEST_FUNCTION(chunked_407_response_aborts_negotiate)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nTransfer-Encoding: chunked\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_negotiate_abort();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_101: [ If the 407 body length cannot be determined unambiguously (Transfer-Encoding present, Content-Length missing, malformed, or overflowing), the negotiation shall be aborted and the on_open_complete callback triggered with IO_OPEN_ERROR. ]*/
+TEST_FUNCTION(missing_content_length_in_407_aborts_negotiate)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_negotiate_abort();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_101: [ If the 407 body length cannot be determined unambiguously (Transfer-Encoding present, Content-Length missing, malformed, or overflowing), the negotiation shall be aborted and the on_open_complete callback triggered with IO_OPEN_ERROR. ]*/
+TEST_FUNCTION(overflowing_content_length_in_407_aborts_negotiate)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 99999999999999999999999999\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_negotiate_abort();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_102: [ If the 407 response indicates Connection: close (or Proxy-Connection: close), the negotiation shall be aborted and the on_open_complete callback triggered with IO_OPEN_ERROR. ]*/
+TEST_FUNCTION(connection_close_in_407_aborts_negotiate)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_negotiate_abort();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_102: [ If the 407 response indicates Connection: close (or Proxy-Connection: close), the negotiation shall be aborted and the on_open_complete callback triggered with IO_OPEN_ERROR. ]*/
+TEST_FUNCTION(proxy_connection_close_in_407_aborts_negotiate)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 0\r\nProxy-Connection: Keep-Alive, close\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_negotiate_abort();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_103: [ If the proxy replies 407 again after GSSAPI has reported the security context complete, or if gss_init_sec_context fails or yields an empty output token, the on_open_complete callback shall be triggered with IO_OPEN_ERROR. ]*/
+TEST_FUNCTION(second_407_after_gss_complete_indicates_error)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    expect_first_negotiate_round();
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+
+    expect_negotiate_abort();
+
+    // act (the proxy rejects the completed handshake - no endless retry)
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_103: [ If the proxy replies 407 again after GSSAPI has reported the security context complete, or if gss_init_sec_context fails or yields an empty output token, the on_open_complete callback shall be triggered with IO_OPEN_ERROR. ]*/
+TEST_FUNCTION(gss_init_sec_context_failure_indicates_error)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    g_gss_init_result = GSS_S_FAILURE;
+    expect_negotiate_gss_step_failure();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_103: [ If the proxy replies 407 again after GSSAPI has reported the security context complete, or if gss_init_sec_context fails or yields an empty output token, the on_open_complete callback shall be triggered with IO_OPEN_ERROR. ]*/
+TEST_FUNCTION(empty_gss_output_token_indicates_error)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    g_gss_output_token_length = 0;
+    expect_negotiate_gss_step_failure();
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_098: [ If the challenge carries a base64 token, that token shall be base64-decoded and passed as the input token to gss_init_sec_context for the next handshake round; a bare Negotiate challenge shall start a round with no input token. ]*/
+/* Tests_SRS_HTTP_PROXY_IO_01_099: [ gss_init_sec_context shall be invoked requesting the SPNEGO mechanism (OID 1.3.6.1.5.5.2). ]*/
+TEST_FUNCTION(negotiate_second_round_decodes_and_uses_the_server_token)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 0\r\n\r\n";
+    static const char response_407_with_token[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate c2VydmVy\r\nContent-Length: 0\r\n\r\n";
+
+    http_io = setup_negotiate_waiting_io();
+    g_gss_init_result = GSS_S_CONTINUE_NEEDED;
+    expect_first_negotiate_round();
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    umock_c_reset_all_calls();
+
+    g_gss_init_result = GSS_S_COMPLETE;
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG)); // accumulate second 407
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // challenge token copy
+    STRICT_EXPECTED_CALL(Azure_Base64_Decode("c2VydmVy"));
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE));
+    EXPECTED_CALL(gss_init_sec_context(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_ARG, sizeof(test_gss_output_token_bytes)));
+    EXPECTED_CALL(gss_release_buffer(IGNORED_ARG, IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // challenge token copy
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // receive buffer
+    STRICT_EXPECTED_CALL(STRING_c_str(TEST_STRING_HANDLE))
+        .SetReturn("fake_gss_token");
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // CONNECT request
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_ARG, sizeof(negotiate_connect_request) - 1, IGNORED_ARG, NULL))
+        .ValidateArgumentBuffer(2, negotiate_connect_request, sizeof(negotiate_connect_request) - 1);
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // CONNECT request
+    STRICT_EXPECTED_CALL(STRING_delete(TEST_STRING_HANDLE));
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407_with_token, sizeof(response_407_with_token) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // arrange (proxy accepts)
+    umock_c_reset_all_calls();
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(test_on_io_open_complete((void*)0x4242, IO_OPEN_OK));
+
+    // act
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)connect_response, sizeof(connect_response) - 1);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+/* Tests_SRS_HTTP_PROXY_IO_01_104: [ http_proxy_io_open shall discard any partially negotiated state from a previous session (GSS security context, negotiate-complete flag, body-drain counter) before opening the underlying IO. ]*/
+TEST_FUNCTION(reopen_after_negotiate_in_flight_resets_negotiate_state)
+{
+    // arrange
+    CONCRETE_IO_HANDLE http_io;
+    /* Content-Length of 100 with no body in the buffer leaves 100 bytes of pending drain */
+    static const char response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 100\r\n\r\n";
+    int result;
+
+    http_io = setup_negotiate_waiting_io();
+    g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)response_407, sizeof(response_407) - 1);
+    (void)http_proxy_io_get_interface_description()->concrete_io_close(http_io, test_on_io_close_complete, (void*)0x4245);
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gss_delete_sec_context(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG))
+        .IgnoreArgument_on_io_open_complete()
+        .IgnoreArgument_on_io_open_complete_context()
+        .IgnoreArgument_on_bytes_received()
+        .IgnoreArgument_on_bytes_received_context()
+        .IgnoreArgument_on_io_error()
+        .IgnoreArgument_on_io_error_context();
+
+    // act
+    result = http_proxy_io_get_interface_description()->concrete_io_open(http_io, test_on_io_open_complete, (void*)0x4242, test_on_bytes_received, (void*)0x4243, test_on_io_error, (void*)0x4244);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // arrange (fresh 407 on the new connection must not be swallowed by stale
+    // drain and must be able to negotiate again; the GSS service name stays cached)
+    g_on_io_open_complete(g_on_io_open_complete_context, IO_OPEN_OK);
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(gballoc_realloc(IGNORED_ARG, IGNORED_ARG)); // accumulate 407
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // challenge token copy
+    EXPECTED_CALL(gss_init_sec_context(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(Azure_Base64_Encode_Bytes(IGNORED_ARG, sizeof(test_gss_output_token_bytes)));
+    EXPECTED_CALL(gss_release_buffer(IGNORED_ARG, IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // challenge token copy
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // receive buffer
+    STRICT_EXPECTED_CALL(STRING_c_str(TEST_STRING_HANDLE))
+        .SetReturn("fake_gss_token");
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG)); // CONNECT request
+    STRICT_EXPECTED_CALL(xio_send(TEST_IO_HANDLE, IGNORED_ARG, sizeof(negotiate_connect_request) - 1, IGNORED_ARG, NULL))
+        .ValidateArgumentBuffer(2, negotiate_connect_request, sizeof(negotiate_connect_request) - 1);
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG)); // CONNECT request
+    STRICT_EXPECTED_CALL(STRING_delete(TEST_STRING_HANDLE));
+
+    // act
+    {
+        static const char fresh_response_407[] = "HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Negotiate\r\nContent-Length: 0\r\n\r\n";
+        g_on_bytes_received(g_on_bytes_received_context, (const unsigned char*)fresh_response_407, sizeof(fresh_response_407) - 1);
+    }
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    http_proxy_io_get_interface_description()->concrete_io_destroy(http_io);
+}
+
+#endif /* AZURE_C_SHARED_UTILITY_USE_GSSAPI */
 
 END_TEST_SUITE(http_proxy_io_unittests)
