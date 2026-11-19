@@ -44,9 +44,18 @@
 #endif
 #endif
 
-/* Successful platform_init calls not yet matched by platform_deinit. platform_deinit releases the logger
-   reference only for those, so extra calls (e.g. after a failed platform_init) keep the caller's logger. */
+/* Successful platform_init calls not yet matched by platform_deinit. platform_deinit releases the logger and
+   the references platform_init took only for those, so extra calls (e.g. after a failed platform_init) release
+   nothing another owner still holds. */
 static unsigned int platform_logger_refs = 0;
+
+/** @brief Releases the HTTP reference platform_init takes for upload to blob, when that is compiled in. */
+static void release_http_for_upload_to_blob(void)
+{
+#ifndef DONT_USE_UPLOADTOBLOB
+    HTTPAPIEX_Deinit();
+#endif /* DONT_USE_UPLOADTOBLOB */
+}
 
 int platform_init(void)
 {
@@ -80,8 +89,18 @@ int platform_init(void)
             if (result == 0)
             {
                 result = tlsio_openssl_init();
+                if (result != 0)
+                {
+                    /*a failed platform_init must hold no reference*/
+                    release_http_for_upload_to_blob();
+                }
             }
 #endif
+            if (result != 0)
+            {
+                /*balances the successful WSAStartup above*/
+                (void)WSACleanup();
+            }
         }
 
         if (result != 0)
@@ -265,11 +284,13 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 
 void platform_deinit(void)
 {
-    (void)WSACleanup();
+    /*a failed platform_init already released Winsock and its HTTP reference; releasing here would consume another owner's*/
+    if (platform_logger_refs > 0)
+    {
+        (void)WSACleanup();
 
-#ifndef DONT_USE_UPLOADTOBLOB
-    HTTPAPIEX_Deinit();
-#endif /* DONT_USE_UPLOADTOBLOB */
+        release_http_for_upload_to_blob();
+    }
 
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();
