@@ -43,7 +43,7 @@ int platform_init();
 
 **SRS_PLATFORM_30_003: [** If `platform_init` fails after `logger_init` succeeded, it shall call `logger_deinit`; if `logger_init` failed, it shall not. **]**
 
-**SRS_PLATFORM_30_004: [** If `platform_init` fails, it shall release everything it acquired before the failure, so that a failed `platform_init` holds no reference. **]**
+**SRS_PLATFORM_30_004: [** If `platform_init` fails, it shall release the references it took before the failure (the `HTTPAPIEX` reference for upload to blob and, on Windows, Winsock), so that a failed `platform_init` holds no reference. **]**
 
 
 ###   platform_deinit
@@ -57,6 +57,8 @@ void platform_deinit();
 **SRS_PLATFORM_30_010: [** The `platform_deinit` call shall perform any global deinitialization needed by the platform. **]**
 
 **SRS_PLATFORM_30_011: [** When c-logging is used, `platform_deinit` shall call `logger_deinit` last, only if a successful `platform_init` is not yet matched by a `platform_deinit`. **]**
+
+**SRS_PLATFORM_30_012: [** `platform_deinit` shall release the references taken by `platform_init` only if a successful `platform_init` is not yet matched by a `platform_deinit`. **]**
 
 
 ###   platform_get_default_tlsio

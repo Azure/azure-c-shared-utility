@@ -260,6 +260,7 @@ TEST_FUNCTION(platform_init_HTTPAPIEX_fail)
     STRICT_EXPECTED_CALL(mock_logger_init());
     STRICT_EXPECTED_CALL(WSAStartup(IGNORED_ARG, IGNORED_ARG));
     STRICT_EXPECTED_CALL(HTTPAPIEX_Init()).SetReturn(HTTPAPIEX_ERROR);
+    STRICT_EXPECTED_CALL(WSACleanup()); /*balances the successful WSAStartup*/
     STRICT_EXPECTED_CALL(mock_logger_deinit());
 
     //act
@@ -288,6 +289,7 @@ TEST_FUNCTION(platform_init_tlsio_openssl_init_fail)
 #ifndef DONT_USE_UPLOADTOBLOB
     STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit()); /*a failed platform_init must hold no reference*/
 #endif /* DONT_USE_UPLOADTOBLOB */
+    STRICT_EXPECTED_CALL(WSACleanup()); /*balances the successful WSAStartup*/
     STRICT_EXPECTED_CALL(mock_logger_deinit());
 
     //act
@@ -358,7 +360,7 @@ TEST_FUNCTION(platform_deinit_success)
     // cleanup
 }
 
-TEST_FUNCTION(platform_deinit_after_failed_platform_init_keeps_logger)
+TEST_FUNCTION(platform_deinit_after_failed_platform_init_keeps_logger_Winsock_and_HTTPAPIEX)
 {
     //arrange
     STRICT_EXPECTED_CALL(mock_logger_init());
@@ -366,10 +368,7 @@ TEST_FUNCTION(platform_deinit_after_failed_platform_init_keeps_logger)
     STRICT_EXPECTED_CALL(mock_logger_deinit());
     ASSERT_ARE_NOT_EQUAL(int, 0, platform_init());
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(WSACleanup());
-#ifndef DONT_USE_UPLOADTOBLOB
-    STRICT_EXPECTED_CALL(HTTPAPIEX_Deinit());
-#endif /* DONT_USE_UPLOADTOBLOB */
+    /*no WSACleanup or HTTPAPIEX_Deinit: a failed platform_init holds neither, so another owner's must survive*/
 #ifdef USE_OPENSSL
     STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
 #endif

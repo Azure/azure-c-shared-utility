@@ -42,8 +42,9 @@ const IO_INTERFACE_DESCRIPTION* tlsio_openssl_get_interface_description();
 #endif
 #endif
 
-/* Successful platform_init calls not yet matched by platform_deinit. platform_deinit releases the logger
-   reference only for those, so extra calls (e.g. after a failed platform_init) keep the caller's logger. */
+/* Successful platform_init calls not yet matched by platform_deinit. platform_deinit releases the logger and
+   the references platform_init took only for those, so extra calls (e.g. after a failed platform_init) release
+   nothing another owner still holds. */
 static unsigned int platform_logger_refs = 0;
 
 /** @brief Releases the HTTP reference platform_init takes for upload to blob, when that is compiled in. */
@@ -149,7 +150,11 @@ STRING_HANDLE platform_get_platform_info(PLATFORM_INFO_OPTION options)
 
 void platform_deinit(void)
 {
-    release_http_for_upload_to_blob();
+    /*a failed platform_init already released its HTTP reference; releasing here would consume another owner's*/
+    if (platform_logger_refs > 0)
+    {
+        release_http_for_upload_to_blob();
+    }
 
 #ifdef USE_OPENSSL
     tlsio_openssl_deinit();
