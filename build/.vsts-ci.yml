@@ -517,14 +517,14 @@ jobs:
   timeoutInMinutes: 60
   variables:
     CodeQL.Enabled: false
-    # macOS-14 ships CMake 4.x, which removed compatibility with
+    # macOS-15 ships CMake 4.x, which removed compatibility with
     # cmake_minimum_required(VERSION < 3.5). The submodule
     # deps/azure-macro-utils-c/CMakeLists.txt still requests 2.8.x, so we
     # raise the floor via this env var (honored by CMake 3.31+/4.x) instead
     # of patching the submodule.
     CMAKE_POLICY_VERSION_MINIMUM: '3.5'
   pool:
-    vmImage: 'macOS-14'
+    vmImage: 'macOS-15'
   displayName: 'OSX'
   steps:
   - checkout: self
@@ -557,18 +557,18 @@ jobs:
     # See note on the OSX job above.
     CMAKE_POLICY_VERSION_MINIMUM: '3.5'
   pool:
-    vmImage: 'macOS-14'
+    vmImage: 'macOS-15'
   displayName: 'XCode Native'
   steps:
   - checkout: self
     submodules: true
   - script: |
       curl --version
-      export DYLD_LIBRARY_PATH="/usr/local/Cellar/curl/$(ls -b /usr/local/Cellar/curl | grep -e '[0-9\.]')/lib"
+      export DYLD_LIBRARY_PATH="$(brew --prefix curl)/lib"
       ./jenkins/osx_xcode_native.sh
     displayName: 'Build'
   - script: |
-      export DYLD_LIBRARY_PATH="/usr/local/Cellar/curl/$(ls -b /usr/local/Cellar/curl | grep -e '[0-9\.]')/lib"
+      export DYLD_LIBRARY_PATH="$(brew --prefix curl)/lib"
       cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j 8 --schedule-random
     displayName: 'Run Tests'
   - task: PublishTestResults@2
