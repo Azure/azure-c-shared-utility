@@ -418,16 +418,16 @@ jobs:
   timeoutInMinutes: 60
   variables:
     CodeQL.Enabled: false
-    # macOS-14 ships CMake 4.x, which rejects cmake_minimum_required(VERSION < 3.5) in the submodules.
+    # macOS-15 ships CMake 4.x, which rejects cmake_minimum_required(VERSION < 3.5) in the submodules.
     CMAKE_POLICY_VERSION_MINIMUM: '3.5'
   pool:
-    vmImage: 'macOS-14'
+    vmImage: 'macOS-15'
   displayName: 'OSX'
   steps:
   # Repair the Component Detection node runtime on macOS-hosted images.
   # The auto-injected ComponentGovernance task invokes a hard-coded path
   # (.../externals/node20_1/bin/node) that exists as a directory on the
-  # current macOS-14 image but is missing the "node" binary inside it.
+  # macOS-hosted images but can be missing the "node" binary inside it.
   # Mirror a working node binary into every plausible externals root so
   # CG (and any other task expecting node20_1) succeeds. Idempotent.
   - bash: |
@@ -493,13 +493,13 @@ jobs:
     CodeQL.Enabled: false
     CMAKE_POLICY_VERSION_MINIMUM: '3.5'
   pool:
-    vmImage: 'macOS-14'
+    vmImage: 'macOS-15'
   displayName: 'XCode Native'
   steps:
   # Repair the Component Detection node runtime on macOS-hosted images.
   # The auto-injected ComponentGovernance task invokes a hard-coded path
   # (.../externals/node20_1/bin/node) that exists as a directory on the
-  # current macOS-14 image but is missing the "node" binary inside it.
+  # macOS-hosted images but can be missing the "node" binary inside it.
   # Mirror a working node binary into every plausible externals root so
   # CG (and any other task expecting node20_1) succeeds. Idempotent.
   - bash: |
@@ -540,11 +540,11 @@ jobs:
     submodules: recursive
   - script: |
       curl --version
-      export DYLD_LIBRARY_PATH="/usr/local/Cellar/curl/$(ls -b /usr/local/Cellar/curl 2>/dev/null | grep -e '[0-9\.]' | head -1)/lib"
+      export DYLD_LIBRARY_PATH="$(brew --prefix curl)/lib"
       ./jenkins/osx_xcode_native.sh
     displayName: 'Build'
   - script: |
-      export DYLD_LIBRARY_PATH="/usr/local/Cellar/curl/$(ls -b /usr/local/Cellar/curl 2>/dev/null | grep -e '[0-9\.]' | head -1)/lib"
+      export DYLD_LIBRARY_PATH="$(brew --prefix curl)/lib"
       cd cmake && ctest -T test --no-compress-output -C "Debug" -V -j 8 --schedule-random
     displayName: 'Run Tests'
   - task: PublishTestResults@2
