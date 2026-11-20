@@ -171,14 +171,12 @@ TEST_FUNCTION(platform_deinit_calls_logger_deinit_last)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-TEST_FUNCTION(platform_deinit_after_failed_platform_init_keeps_logger_and_HTTPAPIEX)
+TEST_FUNCTION(platform_deinit_after_failed_platform_init_does_nothing)
 {
     //arrange
     STRICT_EXPECTED_CALL(tlsio_openssl_init()).SetReturn(MU_FAILURE);
     ASSERT_ARE_NOT_EQUAL(int, 0, platform_init());
     umock_c_reset_all_calls();
-    /*no HTTPAPIEX_Deinit: platform_init already released its reference, so another owner's must survive*/
-    STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
 
     //act
     platform_deinit();
@@ -187,13 +185,12 @@ TEST_FUNCTION(platform_deinit_after_failed_platform_init_keeps_logger_and_HTTPAP
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-TEST_FUNCTION(platform_deinit_releases_logger_and_HTTPAPIEX_once_per_successful_platform_init)
+TEST_FUNCTION(platform_deinit_acts_once_per_successful_platform_init)
 {
     //arrange
     ASSERT_ARE_EQUAL(int, 0, platform_init());
     platform_deinit();
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(tlsio_openssl_deinit());
 
     //act
     platform_deinit();

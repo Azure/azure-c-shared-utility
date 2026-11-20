@@ -54,7 +54,7 @@ The `platform_deinit` call performs any global initialization necessary for a pa
 void platform_deinit();
 ```
 
-**SRS_PLATFORM_30_010: [** The `platform_deinit` call shall perform any global deinitialization needed by the platform. **]**
+**SRS_PLATFORM_30_010: [** The `platform_deinit` call shall perform any global deinitialization needed by the platform, only if a successful `platform_init` is not yet matched by a `platform_deinit`; otherwise it shall do nothing. **]**
 
 **SRS_PLATFORM_30_011: [** When c-logging is used, `platform_deinit` shall call `logger_deinit` last, only if a successful `platform_init` is not yet matched by a `platform_deinit`. **]**
 
